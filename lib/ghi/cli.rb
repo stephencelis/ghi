@@ -5,7 +5,8 @@ require "ghi/api"
 require "ghi/issue"
 
 class GHI::CLI
-  attr_reader :user, :repo, :api, :action, :state, :number, :title
+  attr_reader :user, :repo, :api, :action, :state, :number, :title,
+    :search_term
 
   def initialize
     option_parser.parse!(ARGV)
@@ -16,6 +17,7 @@ class GHI::CLI
     @api = GHI::API.new user, repo
 
     case action
+      when :search then search search_term, state
       when :list   then list state
       when :show   then show number
       when :open   then open title
@@ -38,18 +40,20 @@ class GHI::CLI
     @option_parser ||= OptionParser.new { |opts|
       opts.banner = "Usage: #{File.basename $0} [options]"
 
-      opts.on("-l", "--list", "--show [number]") do |v|
+      opts.on("-l", "--list", "--search", "--show [state|term|number]") do |v|
         @action = :list
         case v
-        when nil, /^o/
+        when nil, /^o$/
           @state = :open
         when /^\d+$/
           @action = :show
           @number = v.to_i
-        when /^c/
+        when /^c$/
           @state = :closed
         else
-          raise OptionParser::InvalidOption
+          @action = :search
+          @state ||= :open
+          @search_term = v
         end
       end
 
@@ -59,7 +63,7 @@ class GHI::CLI
         when /^\d+$/
           @action = :reopen
           @number = v.to_i
-        when /^l/
+        when /^l/, nil
           @action = :list
           @state = :open
         else
@@ -72,7 +76,7 @@ class GHI::CLI
         when /^\d+$/
           @action = :close
           @number = v.to_i
-        when /^l/
+        when /^l/, nil
           @action = :list
           @state = :closed
         else
@@ -107,6 +111,16 @@ class GHI::CLI
         exit
       end
     }
+  end
+
+  def search(term, state)
+    issues = api.search term, state
+    puts "# #{state.to_s.capitalize} #{term.inspect} issues on #{user}/#{repo}"
+    if issues.empty?
+      puts "none"
+    else
+      puts issues.map { |i| "  #{i.number.to_s.rjust(3)}: #{i.title[0,72]}" }
+    end
   end
 
   def list(state)

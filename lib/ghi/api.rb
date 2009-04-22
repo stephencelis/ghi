@@ -17,6 +17,10 @@ class GHI::API
     @user, @repo = user, repo
   end
 
+  def search(term, state = :open)
+    get(:search, state, term)["issues"].map { |attrs| GHI::Issue.new(attrs) }
+  end
+
   def list(state = :open)
     get(:list, state)["issues"].map { |attrs| GHI::Issue.new(attrs) }
   end
