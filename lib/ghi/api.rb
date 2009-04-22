@@ -18,53 +18,61 @@ class GHI::API
   end
 
   def list(state = :open)
-    res = get :list, state
-    raise ResponseError, res if res["issues"].nil?
-    res["issues"].map { |attrs| GHI::Issue.new(attrs) }
+    get(:list, state)["issues"].map { |attrs| GHI::Issue.new(attrs) }
   end
 
   def show(number)
-    res = get :show, number
-    raise ResponseError, res if res["issue"].nil?
-    GHI::Issue.new res["issue"]
+    GHI::Issue.new get(:show, number)["issue"]
   end
 
   def open(title, body)
-    res = post(:open, :title => title, :body => body)
-    raise ResponseError, res if res["issue"].nil?
-    GHI::Issue.new res["issue"]
+    GHI::Issue.new post(:open, :title => title, :body => body)["issue"]
   end
 
   def edit(number, title, body)
-    res = post(:edit, number, :title => title, :body => body)
-    raise ResponseError, res if res["issue"].nil?
+    res = post :edit, number, :title => title, :body => body
     GHI::Issue.new res["issue"]
   end
 
   def close(number)
-    res = post :close, number
-    raise ResponseError, res if res["issue"].nil?
-    GHI::Issue.new res["issue"]
+    GHI::Issue.new post(:close, number)["issue"]
   end
 
   def reopen(number)
-    res = post :reopen, number
-    raise ResponseError, res if res["issue"].nil?
-    GHI::Issue.new res["issue"]
+    GHI::Issue.new post(:reopen, number)
+  end
+
+  def add_label(label, number)
+    post "label/add", label, number
+    p res
+  end
+
+  def remove_label(label, number)
+    post "label/remove", label, number
+  end
+
+  def comment(number, comment)
+    post(:comment, number, comment)["comment"]
   end
 
   private
 
   def get(*args)
-    res = Net::HTTP.get URI.parse(url(*args) + auth(true))
-    YAML.load res
+    res = YAML.load Net::HTTP.get(URI.parse(url(*args) + auth(true)))
+    raise ResponseError, errors(res) if res["error"]
+    res
   end
 
   def post(*args)
     params = args.last.is_a?(Hash) ? args.pop : {}
     params.update auth
-    res = Net::HTTP.post_form URI.parse(url(*args)), params
-    YAML.load res.body
+    res = YAML.load Net::HTTP.post_form(URI.parse(url(*args)), params).body
+    raise ResponseError, errors(res) if res["error"]
+    res
+  end
+
+  def errors(response)
+    [*response["error"]].map { |e| e["error"] } * ", "
   end
 
   def auth(query = false)
@@ -75,10 +83,10 @@ class GHI::API
     end
   end
 
-  def url(action, option = nil)
+  def url(action, *args)
     @url ||= API_URL.sub(":user", user).sub(":repo", repo)
     uri  = @url.sub ":action", action.to_s
-    uri += "/#{option}" unless option.nil?
+    uri += "/#{args.join("/")}" unless args.empty?
     uri
   end
 end

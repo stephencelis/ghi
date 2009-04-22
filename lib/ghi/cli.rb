@@ -5,73 +5,76 @@ require "ghi/api"
 require "ghi/issue"
 
 class GHI::CLI
-  def initialize
-    `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
-    @api = GHI::API.new *(@user, @repo = $1, $2)
+  attr_reader :user, :repo, :api, :action, :state, :number, :title
 
+  def initialize
     option_parser.parse!(ARGV)
-    case options[:action]
-      when :list   then list(options[:state])
-      when :show   then show(options[:number])
-      when :open   then open(options[:title])
-      when :edit   then edit(options[:number])
-      when :close  then close(options[:number])
-      when :reopen then reopen(options[:number])
+
+    `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
+    @user ||= $1 || GHI.login
+    @repo ||= $2
+    @api = GHI::API.new user, repo
+
+    case action
+      when :list   then list state
+      when :show   then show number
+      when :open   then open title
+      when :edit   then edit number
+      when :close  then close number
+      when :reopen then reopen number
       else puts option_parser
     end
   rescue GHI::API::InvalidConnection
     warn "#{File.basename $0}: not a GitHub repo"
+  rescue GHI::API::ResponseError => e
+    warn "#{File.basename $0}: #{e.message}"
   rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
     warn "#{File.basename $0}: #{e.message}"
   end
 
   private
 
-  def options
-    @options ||= {}
-  end
-
   def option_parser
     @option_parser ||= OptionParser.new { |opts|
       opts.banner = "Usage: #{File.basename $0} [options]"
 
       opts.on("-l", "--list", "--show [number]") do |v|
-        options[:action] = :list
+        @action = :list
         case v
         when nil, /^o/
-          options[:state] = :open
+          @state = :open
         when /^\d+$/
-          options[:action] = :show
-          options[:number] = v.to_i
+          @action = :show
+          @number = v.to_i
         when /^c/
-          options[:state] = :closed
+          @state = :closed
         else
           raise OptionParser::InvalidOption
         end
       end
 
       opts.on("-o", "--open", "--reopen [number]") do |v|
-        options[:action] = :open
+        @action = :open
         case v
         when /^\d+$/
-          options[:action] = :reopen
-          options[:number] = v.to_i
+          @action = :reopen
+          @number = v.to_i
         when /^l/
-          options[:action] = :list
-          options[:state] = :open
+          @action = :list
+          @state = :open
         else
-          options[:title] = v
+          @title = v
         end
       end
 
       opts.on("-c", "--closed", "--close [number]") do |v|
         case v
         when /^\d+$/
-          options[:action] = :close
-          options[:number] = v.to_i
+          @action = :close
+          @number = v.to_i
         when /^l/
-          options[:action] = :list
-          options[:state] = :closed
+          @action = :list
+          @state = :closed
         else
           raise OptionParser::InvalidOption
         end
@@ -80,12 +83,20 @@ class GHI::CLI
       opts.on("-e", "--edit [number]") do |v|
         case v
         when /^\d+$/
-          options[:action] = :edit
-          options[:state] = :closed
-          options[:number] = v.to_i
+          @action = :edit
+          @state = :closed
+          @number = v.to_i
         else
           raise OptionParser::MissingArgument
         end
+      end
+
+      opts.on("-r", "--repo", "--repository [name]") do |v|
+        @repo = v
+      end
+
+      opts.on("-u", "--user", "--username [name]") do |v|
+        @user = v
       end
 
       opts.on("-V", "--version") do
@@ -101,8 +112,8 @@ class GHI::CLI
   end
 
   def list(state)
-    issues = @api.list state
-    puts "# #{state.to_s.capitalize} issues on #@user/#@repo"
+    issues = api.list state
+    puts "# #{state.to_s.capitalize} issues on #{user}/#{repo}"
     if issues.empty?
       puts "none"
     else
@@ -111,7 +122,7 @@ class GHI::CLI
   end
 
   def show(number)
-    issue = @api.show number
+    issue = api.show number
     puts <<-BODY
   #{issue.number}: #{issue.title} [#{issue.state}]
 
@@ -136,7 +147,7 @@ BODY
 #
 #   http://github.github.com/github-flavored-markdown
 #
-# On #@user/#@repo:
+# On #{user}/#{repo}:
 #
 #         user:  #{GHI.login}
   BODY
@@ -150,7 +161,7 @@ BODY
     else
       title = lines.shift.strip
       body = lines.join.sub(/\b\n\b/, " ").strip
-      issue = @api.open title, body
+      issue = api.open title, body
       puts "  Opened issue #{issue.number}: #{issue.title[0,58]}"
     end
   end
@@ -159,7 +170,7 @@ BODY
     edit = ENV["VISUAL"] || ENV["EDITOR"] || "vi"
     begin
       temp = Tempfile.open("open-issue-")
-      issue = @api.show number
+      issue = api.show number
       temp.write <<-BODY
 #{issue.title}#{"\n\n" + issue.body unless issue.body.to_s.strip == ""}
 # Please explain the issue. The first line will be used as the title.
@@ -193,7 +204,7 @@ BODY
         else
           title = lines.shift.strip
           body = lines.join.sub(/\b\n\b/, " ").strip
-          issue = @api.edit(number, title, body)
+          issue = api.edit number, title, body
           puts "  Updated issue #{issue.number}: #{issue.title[0,58]}"
         end
       end
@@ -203,12 +214,12 @@ BODY
   end
 
   def close(number)
-    issue = @api.close number
+    issue = api.close number
     puts "  Closed issue #{issue.number}: #{issue.title[0,58]}"
   end
 
   def reopen(number)
-    issue = @api.reopen number
+    issue = api.reopen number
     puts "  Reopened issue #{issue.number}: #{issue.title[0,56]}"
   end
 end
