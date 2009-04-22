@@ -1,0 +1,28 @@
+= ghi
+
+http://github.com/stephencelis/ghi
+
+
+GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
+
+== HOW?
+
+Get:
+
+  % gem install stephencelis-ghi --source=http://gems.github.com
+
+
+Set (http://github.com/blog/180-local-github-config):
+
+  % git config --global github.user username
+  % git config --global github.token 6ef8395fecf207165f1a82178ae1b984
+
+
+Go:
+
+  % ghi
+  Usage: ghi [options]
+      -l, --list, --show [number]
+      -o, --open, --reopen [number]
+      -c, --closed, --close [number]
+      -e, --edit [number]

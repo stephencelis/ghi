@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require "ghi/cli"
+GHI::CLI.new
