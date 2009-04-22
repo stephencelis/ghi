@@ -11,7 +11,7 @@ class GHI::CLI
     option_parser.parse!(ARGV)
 
     `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
-    @user ||= $1 || GHI.login
+    @user ||= $1
     @repo ||= $2
     @api = GHI::API.new user, repo
 
@@ -27,7 +27,7 @@ class GHI::CLI
   rescue GHI::API::InvalidConnection
     warn "#{File.basename $0}: not a GitHub repo"
   rescue GHI::API::ResponseError => e
-    warn "#{File.basename $0}: #{e.message}"
+    warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
   rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
     warn "#{File.basename $0}: #{e.message}"
   end
@@ -92,11 +92,9 @@ class GHI::CLI
       end
 
       opts.on("-r", "--repo", "--repository [name]") do |v|
-        @repo = v
-      end
-
-      opts.on("-u", "--user", "--username [name]") do |v|
-        @user = v
+        repo = v.split "/"
+        repo.unshift GHI.login if repo.length == 1
+        @user, @repo = repo
       end
 
       opts.on("-V", "--version") do
