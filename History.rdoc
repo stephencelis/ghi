@@ -1,3 +1,11 @@
+=== 0.0.2 / 2009-04-22
+
+* 1 major enhancement
+
+  * Add --search flag.
+  * Add --repo flag.
+
+
 === 0.0.1 / 2009-04-21
 
 * 1 major enhancement

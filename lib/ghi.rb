@@ -1,5 +1,5 @@
 module GHI
-  VERSION = "0.0.1"
+  VERSION = "0.0.2"
 
   def self.login
     `git config --get github.user`.chomp
