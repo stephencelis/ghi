@@ -1,3 +1,11 @@
+=== 0.0.3 / 2009-04-23
+
+* 2 minor enhancements
+
+  * Typo corrected.
+  * README updated.
+
+
 === 0.0.2 / 2009-04-22
 
 * 1 major enhancement

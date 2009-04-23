@@ -63,7 +63,7 @@ class GHI::CLI
         when /^\d+$/
           @action = :reopen
           @number = v.to_i
-        when /^l/, nil
+        when /^l$/
           @action = :list
           @state = :open
         else

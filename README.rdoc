@@ -22,7 +22,29 @@ Go:
 
   % ghi
   Usage: ghi [options]
-      -l, --list, --show [number]
+      -l, --list [state|term|number]
+          --search, --show
       -o, --open, --reopen [number]
       -c, --closed, --close [number]
       -e, --edit [number]
+      -r, --repo, --repository [name]
+
+
+== EXAMPLE?
+
+`ghi` works simply from within the directory. Some short examples:
+
+  ghi -l                # Lists all open issues
+  ghi -lc               # Lists all closed issues
+  ghi -l "doesn't work" # Searches for all open issues matching "doesn't work"
+  ghi -l invalid -c     # Searches for all closed issues matching "invalid"
+  ghi -o                # Opens a new issue (in your $EDITOR)
+  ghi -e1               # Edits issue number 1 (in your $EDITOR)
+  ghi -c1               # Closes issue 1
+  ghi -o1               # Reopens 1
+
+
+`ghi` also works anywhere:
+
+  ghi -rghi -l              # Your fork of "ghi"
+  ghi -rstephencelis/ghi -l # Mine: "stephencelis/ghi"
