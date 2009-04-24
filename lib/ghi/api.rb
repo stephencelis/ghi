@@ -2,6 +2,9 @@ require "net/http"
 require "yaml"
 
 class GHI::API
+  class InvalidRequest < StandardError
+  end
+
   class InvalidConnection < StandardError
   end
 

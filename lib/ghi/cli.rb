@@ -53,8 +53,11 @@ module GHI::CLI #:nodoc:
         file.rewind
         launch_editor file
         @message = File.readlines(file.path).find_all { |l| !l.match(/^#/) }
-        raise "can't file empty issue" if message.to_s =~ /\A\s*\Z/
-        raise "no change"              if issue == message
+
+        if message.to_s =~ /\A\s*\Z/
+          raise GHI::API::InvalidRequest, "can't file empty issue"
+        end
+        raise GHI::API::InvalidRequest, "no change" if issue == message
       end
     end
   end
@@ -143,14 +146,11 @@ module GHI::CLI #:nodoc:
     rescue GHI::API::InvalidConnection
       warn "#{File.basename $0}: not a GitHub repo"
       exit 1
-    rescue GHI::API::ResponseError => e
+    rescue GHI::API::InvalidRequest, GHI::API::ResponseError => e
       warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
       exit 1
     rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
       warn "#{File.basename $0}: #{e.message}"
-      exit 1
-    rescue StandardError => e
-      warn e.message
       exit 1
     end
 
