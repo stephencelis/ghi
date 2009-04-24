@@ -44,7 +44,7 @@ module GHI::CLI #:nodoc:
     end
 
     def message_filename
-      @message_filename ||= "GHI_#{action.to_s.upcase}_MESSAGE"
+      @message_filename ||= "GHI_#{action.to_s.upcase}#{number}_MESSAGE"
     end
 
     def file_proc(issue)
@@ -52,10 +52,9 @@ module GHI::CLI #:nodoc:
         file << edit_format(issue).join("\n") if File.zero? message_path
         file.rewind
         launch_editor file
-        lines = File.readlines file.path
-        @message = lines.find_all { |l| !l.match(/^#/) }
+        @message = File.readlines(file.path).find_all { |l| !l.match(/^#/) }
         raise "can't file empty issue" if message.to_s =~ /\A\s*\Z/
-        raise "no change"              if file.readlines == lines
+        raise "no change"              if issue == message
       end
     end
   end
