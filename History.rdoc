@@ -1,3 +1,15 @@
+=== 0.0.4 / 2009-04-24
+
+* 1 major enhancement
+
+  * Cache messages created in $EDITOR.
+
+* 2 minor enhancements
+
+  * Refactoring and cleanup.
+  * Change editing messages.
+
+
 === 0.0.3 / 2009-04-23
 
 * 2 minor enhancements
