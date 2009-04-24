@@ -151,18 +151,7 @@ BODY
   def open(title)
     edit = ENV["VISUAL"] || ENV["EDITOR"] || "vi"
     temp = Tempfile.open("open-issue-")
-    temp.write <<-BODY
-#{"#{title}\n" unless title.nil?}
-# Please explain the issue. The first line will be used as the title.
-# Lines with "#" will be ignored, and empty issues will not be filed.
-# All line breaks will be honored in accordance with GFM:
-#
-#   http://github.github.com/github-flavored-markdown
-#
-# On #{user}/#{repo}:
-#
-#         user:  #{GHI.login}
-  BODY
+    temp.write edit_message(GHI::Issue.new(:title => title))
     temp.rewind
     system "#{edit} #{temp.path}"
     lines = File.readlines(temp.path).find_all { |l| !l.match(/^#/) }
@@ -180,49 +169,29 @@ BODY
 
   def edit(number)
     edit = ENV["VISUAL"] || ENV["EDITOR"] || "vi"
-    begin
-      temp = Tempfile.open("open-issue-")
-      issue = api.show number
-      temp.write <<-BODY
-#{issue.title}#{"\n\n" + issue.body unless issue.body.to_s.strip == ""}
-# Please explain the issue. The first line will be used as the title.
-# Lines with "#" will be ignored, and empty issues will not be filed.
-# All line breaks will be honored in accordance with GFM:
-#
-#   http://github.github.com/github-flavored-markdown
-#
-# On #@user/#@repo:
-#
-#       number:  #{issue.number}
-#         user:  #{issue.user}
-#        votes:  #{issue.votes}
-#        state:  #{issue.state}
-#   created at:  #{issue.created_at}
-      BODY
-      if issue.updated_at > issue.created_at
-        temp.write "#   updated at:  #{issue.updated_at}"
-      end
-      temp.rewind
-      system "#{edit} #{temp.path}"
-      lines = File.readlines(temp.path)
-      if temp.readlines == lines
-        warn "no change"
+    temp = Tempfile.open("open-issue-")
+    issue = api.show number
+    temp.write edit_message(issue)
+    temp.rewind
+    system "#{edit} #{temp.path}"
+    lines = File.readlines(temp.path)
+    if temp.readlines == lines
+      warn "no change"
+      exit 1
+    else
+      lines.reject! { |l| l.match(/^#/) }
+      if lines.to_s =~ /\A\s*\Z/
+        warn "can't file empty issue"
         exit 1
       else
-        lines.reject! { |l| l.match(/^#/) }
-        if lines.to_s =~ /\A\s*\Z/
-          warn "can't file empty issue"
-          exit 1
-        else
-          title = lines.shift.strip
-          body = lines.join.sub(/\b\n\b/, " ").strip
-          issue = api.edit number, title, body
-          puts "  Updated issue #{issue.number}: #{issue.title[0,58]}"
-        end
+        title = lines.shift.strip
+        body = lines.join.sub(/\b\n\b/, " ").strip
+        issue = api.edit number, title, body
+        puts "  Updated issue #{issue.number}: #{issue.title[0,58]}"
       end
-    ensure
-      temp.close!
     end
+  ensure
+    temp.close!
   end
 
   def close(number)
@@ -233,5 +202,28 @@ BODY
   def reopen(number)
     issue = api.reopen number
     puts "  Reopened issue #{issue.number}: #{issue.title[0,56]}"
+  end
+
+  def edit_message(issue)
+    l = []
+    l << issue.title.to_s                       if issue.title
+    l << ""
+    l << issue.body.to_s                        if issue.body
+    l << "# Please explain the issue. The first line will become the title."
+    l << "# Lines beginning '#' will be ignored. Empty issues won't be filed."
+    l << "# All line breaks will be honored in accordance with GFM:"
+    l << "#"
+    l << "#   http://github.github.com/github-flavored-markdown"
+    l << "#"
+    l << "# On #@user/#@repo:"
+    l << "#"
+    l << "#       number:  #{issue.number}"     if issue.number
+    l << "#        state:  #{issue.state}"      if issue.state
+    l << "#        title:  #{issue.title}"      if issue.title
+    l << "#         user:  #{issue.user || GHI.login}"
+    l << "#        votes:  #{issue.votes}"      if issue.votes
+    l << "#   created at:  #{issue.created_at}" if issue.created_at
+    l << "#   updated at:  #{issue.updated_at}" if issue.updated_at
+    l.join "\n"
   end
 end
