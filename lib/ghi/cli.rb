@@ -100,18 +100,24 @@ module GHI::CLI #:nodoc:
       l << "  updated at:  #{issue.updated_at}" if issue.updated_at
       return l unless verbose
       l << ""
-      l += issue.body.scan(/.{0,75}(?:\s|$)/).map { |line| "    #{line}" }
+      l += indent(issue.body)[0..-2]
     end
 
-    def action_format(issue)
-      key = "#{action.to_s.capitalize.sub(/e?$/, "ed")} issue #{issue.number}"
-      "#{key}: #{truncate issue.title, 78 - key.length}"
+    def action_format(value = nil)
+      key = "#{action.to_s.capitalize.sub(/e?$/, "ed")} issue #{number}"
+      "#{key}: #{truncate value.to_s, 78 - key.length}"
     end
 
     def truncate(string, length)
-      result = string.scan(/.{0,#{length}}(?:\s|$)/).first.strip
+      result = string.scan(/.{0,#{length}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
+    end
+
+    def indent(string, level = 4)
+      string.scan(/.{0,#{78 - level}}(?:\s|\Z)/).map { |line|
+        " " * level + line
+      }[0..-2]
     end
   end
 
@@ -137,6 +143,9 @@ module GHI::CLI #:nodoc:
         when :edit   then edit number
         when :close  then close number
         when :reopen then reopen number
+
+        when :take   then label GHI.login, number
+        when :take   then unlabel GHI.login, number
         else puts option_parser
       end
     rescue GHI::API::InvalidConnection
@@ -217,12 +226,17 @@ module GHI::CLI #:nodoc:
           @user, @repo = repo
         end
 
-        opts.on("-V", "--version") do
+        opts.on("--claim [number]") do |v|
+          @action = :claim
+          @number = v.to_i
+        end
+
+        opts.on_tail("-V", "--version") do
           puts "#{File.basename($0)}: v#{GHI::VERSION}"
           exit
         end
 
-        opts.on("-h", "--help") do
+        opts.on_tail("-h", "--help") do
           puts opts
           exit
         end
@@ -266,6 +280,18 @@ module GHI::CLI #:nodoc:
     def reopen(number)
       issue = api.reopen number
       puts action_format(issue)
+    end
+
+    def label(label, number)
+      labels = api.add_label label, number
+      puts action_format
+      puts indent(labels.join(", "))
+    end
+
+    def unlabel(label, number)
+      labels = api.add_label label, number
+      puts action_format
+      puts indent(labels.join(", "))
     end
   end
 end

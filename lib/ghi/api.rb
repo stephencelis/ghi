@@ -46,16 +46,15 @@ class GHI::API
   end
 
   def reopen(number)
-    GHI::Issue.new post(:reopen, number)
+    GHI::Issue.new post(:reopen, number)["issue"]
   end
 
   def add_label(label, number)
-    post "label/add", label, number
-    p res
+    post("label/add", label, number)["labels"]
   end
 
   def remove_label(label, number)
-    post "label/remove", label, number
+    post("label/remove", label, number)["labels"]
   end
 
   def comment(number, comment)
