@@ -1,4 +1,12 @@
-=== 0.0.5 / 2009/04/25
+=== 0.0.6 / 2009-04-25
+
+* 2 minor enhancements
+
+  * Accept comments as arguments in more places.
+  * Update error message to accommodate both issues and comments.
+
+
+=== 0.0.5 / 2009-04-25
 
 * 3 major enhancements
 

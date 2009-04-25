@@ -3,7 +3,8 @@
 http://github.com/stephencelis/ghi
 
 
-GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
+GitHub Issues on the command line. Use your <tt>$EDITOR</tt>, not your
+browser.
 
 == HOW?
 
@@ -22,12 +23,13 @@ Go:
       -c, --closed, --close [number]
       -e, --edit [number]
       -r, --repo, --repository [name]
-      --claim [number]
+      -m, --comment [number|comment]
+          --claim [number]
 
 
 == EXAMPLE?
 
-`ghi` works simply from within the directory. Some short examples:
+ghi works simply from within the directory. Some short examples:
 
   ghi -l                    # Lists all open issues
   ghi -lc                   # Lists all closed issues
@@ -46,7 +48,7 @@ Go:
   ghi --claim 1             # Tags issue 1 with your GitHub username
 
 
-`ghi` also works anywhere:
+ghi also works anywhere:
 
   ghi -rghi -l              # Your fork of "ghi"
   ghi -rstephencelis/ghi -l # Mine: "stephencelis/ghi"
@@ -55,3 +57,12 @@ Go:
 == CONTRIBUTORS
 
 * Jamie Macey (http://blog.tracefunc.com)
+
+
+=== CONTRIBUTE?
+
+ghi is not under currently under the control of any gem packaging system. To
+build, use RubyGems:
+
+  % gem build ghi.gemspec
+  % sudo gem install ghi*.gem
