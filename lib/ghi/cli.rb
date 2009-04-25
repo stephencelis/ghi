@@ -136,10 +136,10 @@ module GHI::CLI #:nodoc:
     include FileHelper, FormattingHelper
 
     attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
-      :number, :title, :body, :label
+      :number, :title, :body, :label, :args
 
     def initialize
-      option_parser.parse!(ARGV)
+      @args = option_parser.parse!(ARGV)
 
       if action.nil?
         puts option_parser
@@ -152,16 +152,16 @@ module GHI::CLI #:nodoc:
       @api = GHI::API.new user, repo
 
       case action
-        when :search  then search
-        when :list    then list
-        when :show    then show
-        when :open    then open
-        when :edit    then edit
-        when :close   then close
-        when :reopen  then reopen
-        when :comment then comment
-
-        when :claim   then label
+        when :search        then search
+        when :list          then list
+        when :show          then show
+        when :open          then open
+        when :edit          then edit
+        when :close         then close
+        when :reopen        then reopen
+        when :comment       then comment
+        when :label, :claim then add_label
+        when :unlabel       then remove_label
       end
     rescue GHI::API::InvalidConnection
       warn "#{File.basename $0}: not a GitHub repo"
@@ -212,7 +212,7 @@ module GHI::CLI #:nodoc:
             @action = :list
             @state = :open
           when /^m$/
-            raise OptionParser::AmbiguousOption # TODO: Parse args for message.
+            @title = ARGV * " "
           else
             @title = v
           end
@@ -226,6 +226,8 @@ module GHI::CLI #:nodoc:
           when /^l/, nil
             @action = :list
             @state = :closed
+          when nil
+            raise OptionParser::MissingArgument
           else
             raise OptionParser::InvalidOption
           end
@@ -237,10 +239,10 @@ module GHI::CLI #:nodoc:
             @action = :edit
             @state = :closed
             @number = v.to_i
-          when /^m$/
-            raise OptionParser::AmbiguousOption # TODO: Parse args for message.
-          else
+          when nil
             raise OptionParser::MissingArgument
+          else
+            raise OptionParser::InvalidOption
           end
         end
 
@@ -261,10 +263,27 @@ module GHI::CLI #:nodoc:
           end
         end
 
+        opts.on("-t", "--label [number] [label]") do |v|
+          raise OptionParser::MissingArgument if v.nil?
+          @action ||= :label
+          @number = v.to_i
+        end
+
         opts.on("--claim [number]") do |v|
+          raise OptionParser::MissingArgument if v.nil?
           @action = :claim
           @number = v.to_i
           @label = GHI.login
+        end
+
+        opts.on("-d", "--unlabel [number] [label]") do |v|
+          @action = :unlabel
+          case v
+          when /^\d+$/
+            @number = v.to_i
+          when /^\w+$/
+            @label = v
+          end
         end
 
         opts.on_tail("-V", "--version") do
@@ -338,16 +357,18 @@ module GHI::CLI #:nodoc:
       puts "(comment #{comment["status"]})" if comment
     end
 
-    def label
-      labels = api.add_label label, number
+    def add_label
+      new_label = label || body || @args * " "
+      labels = api.add_label new_label, number
       puts action_format
       puts indent(labels.join(", "))
     end
 
-    def unlabel
-      labels = api.add_label label, number
+    def remove_label
+      new_label = label || body || @args * " "
+      labels = api.remove_label new_label, number
       puts action_format
-      puts indent(labels.join(", "))
+      puts indent(labels.empty? ? "no labels" : labels.join(", "))
     end
 
     def comment

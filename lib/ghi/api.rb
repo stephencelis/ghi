@@ -67,6 +67,8 @@ class GHI::API
     res = YAML.load Net::HTTP.get(URI.parse(url(*args) + auth(true)))
     raise ResponseError, errors(res) if res["error"]
     res
+  rescue ArgumentError, URI::InvalidURIError
+    raise ResponseError, "GitHub hiccuped on your request"
   end
 
   def post(*args)
@@ -75,6 +77,8 @@ class GHI::API
     res = YAML.load Net::HTTP.post_form(URI.parse(url(*args)), params).body
     raise ResponseError, errors(res) if res["error"]
     res
+  rescue ArgumentError, URI::InvalidURIError
+    raise ResponseError, "GitHub hiccuped on your request"
   end
 
   def errors(response)

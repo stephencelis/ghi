@@ -1,3 +1,15 @@
+=== 0.0.7 / 2009-04-25
+
+* 1 major enhancement
+
+  * Labels! Label and un-label at your whim.
+
+
+* 1 minor enhancement
+
+  * Tail arguments are sometimes parsed. E.g., ghi -om "Issue message parsed".
+
+
 === 0.0.6 / 2009-04-25
 
 * 2 minor enhancements

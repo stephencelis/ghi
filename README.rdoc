@@ -15,16 +15,20 @@ Get:
 
 Go:
 
-  % ghi
   Usage: ghi [options]
       -l, --list [state|term|number]
           --search, --show
-      -o, --open, --reopen [number]
+      -o, --open [title|number]
+          --reopen
       -c, --closed, --close [number]
       -e, --edit [number]
       -r, --repo, --repository [name]
       -m, --comment [number|comment]
+      -t, --label [number] [label]
           --claim [number]
+      -d, --unlabel [number] [label]
+      -V, --version
+      -h, --help
 
 
 == EXAMPLE?
@@ -45,6 +49,8 @@ ghi works simply from within a repository. Some short examples:
   ghi -c1 -m "Comment"      # Closes issue with specified comment
   ghi -o1                   # Reopens 1 (accepts comments, too)
   ghi -m1                   # Comments on issue 1 (in your $EDITOR)
+  ghi -t1 "tag"             # Labels issue 1 with "tag"
+  ghi -d1 "tag"             # Removes the label, "tag"
   ghi --claim 1             # Tags issue 1 with your GitHub username
 
 
