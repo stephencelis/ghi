@@ -52,7 +52,7 @@ module GHI::CLI #:nodoc:
         @message = File.readlines(file.path).find_all { |l| !l.match(/^#/) }
 
         if message.to_s =~ /\A\s*\Z/
-          raise GHI::API::InvalidRequest, "can't file empty issue"
+          raise GHI::API::InvalidRequest, "can't file empty message"
         end
         raise GHI::API::InvalidRequest, "no change" if issue == message
       end
@@ -316,22 +316,22 @@ module GHI::CLI #:nodoc:
 
     def close
       issue = api.close number
-      if @comment
-        body ||= gets_from_editor issue
-        comment = api.comment number, body
+      if @comment || new_body = body
+        new_body ||= gets_from_editor issue
+        comment = api.comment number, new_body
       end
       puts action_format(issue.title)
-      puts "comment #{comment["status"]}" if comment
+      puts "(comment #{comment["status"]})" if comment
     end
 
     def reopen
       issue = api.reopen number
-      if @comment
-        body ||= gets_from_editor issue
-        comment = api.comment number, body
+      if @comment || new_body = body
+        new_body ||= gets_from_editor issue
+        comment = api.comment number, new_body
       end
       puts action_format(issue.title)
-      puts "comment #{comment["status"]}" if comment
+      puts "(comment #{comment["status"]})" if comment
     end
 
     def label

@@ -29,15 +29,21 @@ Go:
 
 `ghi` works simply from within the directory. Some short examples:
 
-  ghi -l                # Lists all open issues
-  ghi -lc               # Lists all closed issues
-  ghi -l "doesn't work" # Searches for all open issues matching "doesn't work"
-  ghi -l invalid -c     # Searches for all closed issues matching "invalid"
-  ghi -o                # Opens a new issue (in your $EDITOR)
-  ghi -e1               # Edits issue number 1 (in your $EDITOR)
-  ghi -c1               # Closes issue 1
-  ghi -o1               # Reopens 1
-  ghi --claim 1         # Tags issue 1 with your GitHub username
+  ghi -l                    # Lists all open issues
+  ghi -lc                   # Lists all closed issues
+  ghi -l "doesn't work"     # Searches for open issues matching "doesn't work"
+  ghi -l invalid -c         # Searches for closed issues matching "invalid"
+  ghi -o                    # Opens a new issue (in your $EDITOR)
+  ghi -o "New issue"        # Opens a new issue with the title "New issue"
+  ghi -o "Title" -m "Body"  # Opens a new issue with specified title and body
+  ghi -e1                   # Edits issue number 1 (in your $EDITOR)
+  ghi -e1 -m "New body"     # Edits issue number 1 with the specified body
+  ghi -c1                   # Closes issue 1
+  ghi -c1 -m                # Closes issue with comment (from your $EDITOR)
+  ghi -c1 -m "Comment"      # Closes issue with specified comment
+  ghi -o1                   # Reopens 1 (accepts comments, too)
+  ghi -m1                   # Comments on issue 1 (in your $EDITOR)
+  ghi --claim 1             # Tags issue 1 with your GitHub username
 
 
 `ghi` also works anywhere:
