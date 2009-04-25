@@ -36,11 +36,7 @@ module GHI::CLI #:nodoc:
     end
 
     def gitdir
-      @gitdir ||= begin
-        dirs = []
-        Dir.pwd.count("/").times { |n| dirs << ([".."] * n << ".git") * "/" }
-        Dir[*dirs].first
-      end
+      @gitdir ||= `git rev-parse --git-dir`
     end
 
     def message_filename
