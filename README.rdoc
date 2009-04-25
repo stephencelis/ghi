@@ -29,7 +29,7 @@ Go:
 
 == EXAMPLE?
 
-ghi works simply from within the directory. Some short examples:
+ghi works simply from within a repository. Some short examples:
 
   ghi -l                    # Lists all open issues
   ghi -lc                   # Lists all closed issues

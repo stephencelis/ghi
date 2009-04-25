@@ -141,6 +141,11 @@ module GHI::CLI #:nodoc:
     def initialize
       option_parser.parse!(ARGV)
 
+      if action.nil?
+        puts option_parser
+        exit
+      end
+
       `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
       @user ||= $1
       @repo ||= $2
@@ -157,7 +162,6 @@ module GHI::CLI #:nodoc:
         when :comment then comment
 
         when :claim   then label
-        else puts option_parser
       end
     rescue GHI::API::InvalidConnection
       warn "#{File.basename $0}: not a GitHub repo"
