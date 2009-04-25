@@ -1,3 +1,17 @@
+=== 0.0.5 / 2009/04/25
+
+* 3 major enhancements
+
+  * Flag to claim/label issues with your GitHub username (thanks, Jamie).
+  * Flag for commenting on issues.
+  * Prompt for GitHub login and token if absent from gitconfig.
+
+
+* 1 minor enhancement
+
+  * Opening issues with a title bypasses your $EDITOR.
+
+
 === 0.0.4 / 2009-04-24
 
 * 1 major enhancement

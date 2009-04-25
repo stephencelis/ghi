@@ -58,7 +58,7 @@ class GHI::API
   end
 
   def comment(number, comment)
-    post(:comment, number, comment)["comment"]
+    post(:comment, number, :comment => comment)["comment"]
   end
 
   private

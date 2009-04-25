@@ -16,12 +16,13 @@ module GHI::CLI #:nodoc:
       else
         Tempfile.new message_filename, &file_proc(issue)
       end
+      return @message if comment?
       return @message.shift.strip, @message.join.sub(/\b\n\b/, " ").strip
     end
 
     def delete_message
       File.delete message_path
-    rescue TypeError
+    rescue Errno::ENOENT, TypeError
       nil
     end
 
@@ -75,11 +76,15 @@ module GHI::CLI #:nodoc:
 
     def edit_format(issue)
       l = []
-      l << issue.title                          if issue.title
+      l << issue.title if issue.title && !comment?
       l << ""
-      l << issue.body                           if issue.body
-      l << "# Please explain the issue. The first line will become the title."
-      l << "# Lines beginning '#' will be ignored. Empty issues won't be filed."
+      l << issue.body  if issue.body  && !comment?
+      if comment?
+        l << "# Please enter your comment."
+      else
+        l << "# Please explain the issue. The first line will become the title."
+      end
+      l << "# Lines beginning '#' will be ignored; ghi aborts empty messages."
       l << "# All line breaks will be honored in accordance with GFM:"
       l << "#"
       l << "#   http://github.github.com/github-flavored-markdown"
@@ -117,15 +122,21 @@ module GHI::CLI #:nodoc:
     def indent(string, level = 4)
       string.scan(/.{0,#{78 - level}}(?:\s|\Z)/).map { |line|
         " " * level + line
-      }[0..-2]
+      }
+    end
+
+    private
+
+    def comment?
+      ![:open, :edit].include?(action)
     end
   end
 
   class Executable
     include FileHelper, FormattingHelper
 
-    attr_reader :message, :user, :repo, :api, :action, :state, :number, :title,
-      :search_term
+    attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
+      :number, :title, :body, :label
 
     def initialize
       option_parser.parse!(ARGV)
@@ -136,24 +147,30 @@ module GHI::CLI #:nodoc:
       @api = GHI::API.new user, repo
 
       case action
-        when :search then search search_term, state
-        when :list   then list state
-        when :show   then show number
-        when :open   then open title
-        when :edit   then edit number
-        when :close  then close number
-        when :reopen then reopen number
+        when :search  then search
+        when :list    then list
+        when :show    then show
+        when :open    then open
+        when :edit    then edit
+        when :close   then close
+        when :reopen  then reopen
+        when :comment then comment
 
-        when :claim  then label GHI.login, number
+        when :claim   then label
         else puts option_parser
       end
     rescue GHI::API::InvalidConnection
       warn "#{File.basename $0}: not a GitHub repo"
       exit 1
-    rescue GHI::API::InvalidRequest, GHI::API::ResponseError => e
+    rescue GHI::API::InvalidRequest => e
+      warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
+      delete_message
+      exit 1
+    rescue GHI::API::ResponseError => e
       warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
       exit 1
-    rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
+    rescue OptionParser::InvalidOption, OptionParser::MissingArgument,
+        OptionParser::AmbiguousOption => e
       warn "#{File.basename $0}: #{e.message}"
       exit 1
     end
@@ -181,7 +198,7 @@ module GHI::CLI #:nodoc:
           end
         end
 
-        opts.on("-o", "--open", "--reopen [number]") do |v|
+        opts.on("-o", "--open", "--reopen [title|number]") do |v|
           @action = :open
           case v
           when /^\d+$/
@@ -190,6 +207,8 @@ module GHI::CLI #:nodoc:
           when /^l$/
             @action = :list
             @state = :open
+          when /^m$/
+            raise OptionParser::AmbiguousOption # TODO: Parse args for message.
           else
             @title = v
           end
@@ -214,6 +233,8 @@ module GHI::CLI #:nodoc:
             @action = :edit
             @state = :closed
             @number = v.to_i
+          when /^m$/
+            raise OptionParser::AmbiguousOption # TODO: Parse args for message.
           else
             raise OptionParser::MissingArgument
           end
@@ -225,9 +246,21 @@ module GHI::CLI #:nodoc:
           @user, @repo = repo
         end
 
+        opts.on("-m", "--comment [number|comment]") do |v|
+          case v
+          when /^\d+$/, nil
+            @action ||= :comment
+            @number ||= v
+            @comment = true
+          else
+            @body = v
+          end
+        end
+
         opts.on("--claim [number]") do |v|
           @action = :claim
           @number = v.to_i
+          @label = GHI.login
         end
 
         opts.on_tail("-V", "--version") do
@@ -242,56 +275,82 @@ module GHI::CLI #:nodoc:
       }
     end
 
-    def search(term, state)
-      issues = api.search term, state
-      puts list_format(issues, term)
+    def search
+      issues = api.search search_term, state
+      puts list_format(issues, search_term)
     end
 
-    def list(state)
+    def list
       issues = api.list state
       puts list_format(issues)
     end
 
-    def show(number)
+    def show
       issue = api.show number
       puts show_format(issue)
     end
 
-    def open(title)
-      title, body = gets_from_editor GHI::Issue.new(:title => title)
-      issue = api.open title, body
+    def open
+      if title.nil?
+        new_title, new_body = gets_from_editor GHI::Issue.new("title" => body)
+      elsif @comment && body.nil?
+        new_title, new_body = gets_from_editor GHI::Issue.new("title" => title)
+      end
+      new_title ||= title
+      new_body  ||= body
+      issue = api.open new_title, new_body
       delete_message
       @number = issue.number
       puts action_format(issue.title)
     end
 
-    def edit(number)
-      title, body = gets_from_editor api.show(number)
-      issue = api.edit number, title, body
+    def edit
+      shown = api.show number
+      new_title, new_body = gets_from_editor(shown) if body.nil?
+      new_title ||= shown.title
+      new_body  ||= body
+      issue = api.edit number, new_title, new_body
       delete_message
       puts action_format(issue.title)
     end
 
-    def close(number)
+    def close
       issue = api.close number
+      if @comment
+        body ||= gets_from_editor issue
+        comment = api.comment number, body
+      end
       puts action_format(issue.title)
+      puts "comment #{comment["status"]}" if comment
     end
 
-    def reopen(number)
+    def reopen
       issue = api.reopen number
+      if @comment
+        body ||= gets_from_editor issue
+        comment = api.comment number, body
+      end
       puts action_format(issue.title)
+      puts "comment #{comment["status"]}" if comment
     end
 
-    def label(label, number)
+    def label
       labels = api.add_label label, number
       puts action_format
       puts indent(labels.join(", "))
     end
 
-    def unlabel(label, number)
+    def unlabel
       labels = api.add_label label, number
       puts action_format
       puts indent(labels.join(", "))
+    end
+
+    def comment
+      body = gets_from_editor api.show(number)
+      comment = api.comment(number, body)
+      delete_message
+      puts "comment #{comment["status"]}"
     end
   end
 end
