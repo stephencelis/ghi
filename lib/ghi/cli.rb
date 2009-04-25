@@ -144,8 +144,7 @@ module GHI::CLI #:nodoc:
         when :close  then close number
         when :reopen then reopen number
 
-        when :take   then label GHI.login, number
-        when :take   then unlabel GHI.login, number
+        when :claim  then label GHI.login, number
         else puts option_parser
       end
     rescue GHI::API::InvalidConnection
