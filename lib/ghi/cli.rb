@@ -262,24 +262,25 @@ module GHI::CLI #:nodoc:
       title, body = gets_from_editor GHI::Issue.new(:title => title)
       issue = api.open title, body
       delete_message
-      puts action_format(issue)
+      @number = issue.number
+      puts action_format(issue.title)
     end
 
     def edit(number)
       title, body = gets_from_editor api.show(number)
       issue = api.edit number, title, body
       delete_message
-      puts action_format(issue)
+      puts action_format(issue.title)
     end
 
     def close(number)
       issue = api.close number
-      puts action_format(issue)
+      puts action_format(issue.title)
     end
 
     def reopen(number)
       issue = api.reopen number
-      puts action_format(issue)
+      puts action_format(issue.title)
     end
 
     def label(label, number)
