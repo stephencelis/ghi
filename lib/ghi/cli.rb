@@ -36,7 +36,7 @@ module GHI::CLI #:nodoc:
     end
 
     def gitdir
-      @gitdir ||= `git rev-parse --git-dir`
+      @gitdir ||= `git rev-parse --git-dir`.chomp
     end
 
     def message_filename
