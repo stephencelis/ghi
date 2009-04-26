@@ -162,6 +162,8 @@ module GHI::CLI #:nodoc:
         when :comment       then comment
         when :label, :claim then add_label
         when :unlabel       then remove_label
+
+        when :url           then url
       end
     rescue GHI::API::InvalidConnection
       warn "#{File.basename $0}: not a GitHub repo"
@@ -188,12 +190,12 @@ module GHI::CLI #:nodoc:
         opts.on("-l", "--list", "--search", "--show [state|term|number]") do |v|
           @action = :list
           case v
-          when nil, /^o$/
+          when nil, /^o(?:pen)?$/
             @state = :open
           when /^\d+$/
             @action = :show
             @number = v.to_i
-          when /^c$/
+          when /^c(?:losed)?$/
             @state = :closed
           else
             @action = :search
@@ -286,6 +288,11 @@ module GHI::CLI #:nodoc:
           end
         end
 
+        opts.on("-u", "--url [number]") do |v|
+          @action = :url
+          @number = v.to_i unless v.nil?
+        end
+
         opts.on_tail("-V", "--version") do
           puts "#{File.basename($0)}: v#{GHI::VERSION}"
           exit
@@ -375,7 +382,13 @@ module GHI::CLI #:nodoc:
       body = gets_from_editor api.show(number)
       comment = api.comment(number, body)
       delete_message
-      puts "comment #{comment["status"]}"
+      puts "(comment #{comment["status"]})"
+    end
+
+    def url
+      url = "http://github.com/#{user}/#{repo}/issues"
+      url << "/#{number}/find" unless number.nil?
+      puts url
     end
   end
 end
