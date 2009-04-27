@@ -1,3 +1,15 @@
+=== 0.0.8 / 2009-04-26
+
+* 1 major enhancement
+
+  * Flag to return issues URLs.
+
+
+* 1 minor enhancement
+
+  * Preliminary specs for top-level module and API class.
+
+
 === 0.0.7 / 2009-04-25
 
 * 1 major enhancement
