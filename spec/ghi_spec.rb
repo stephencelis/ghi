@@ -1,4 +1,3 @@
-$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + "/../lib")
 require "ghi"
 
 LOGGED_OUT_YAML = <<-YAML
