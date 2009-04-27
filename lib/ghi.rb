@@ -39,15 +39,15 @@ module GHI
   def self.user?(username)
     url = "http://github.com/api/v2/yaml/user/show/#{username}"
     !YAML.load(Net::HTTP.get(URI.parse(url)))["user"].nil?
-  rescue ArgumentError # Failure to parse YAML.
+  rescue ArgumentError, URI::InvalidURIError
     false
   end
 
   def self.token?(token)
     url  = "http://github.com/api/v2/yaml/user/show/#{GHI.login}"
     url += "?login=#{GHI.login}&token=#{token}"
-    !YAML.load(Net::HTTP.get(URI.parse(url)))["user"].nil?
-  rescue ArgumentError, NoMethodError # Failure to parse YAML.
+    !YAML.load(Net::HTTP.get(URI.parse(url)))["user"]["plan"].nil?
+  rescue ArgumentError, NoMethodError, URI::InvalidURIError
     false
   end
 end

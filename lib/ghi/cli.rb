@@ -197,6 +197,8 @@ module GHI::CLI #:nodoc:
             @number = v.to_i
           when /^c(?:losed)?$/
             @state = :closed
+          when /^u$/
+            @action = :url
           else
             @action = :search
             @state ||= :open
@@ -215,6 +217,8 @@ module GHI::CLI #:nodoc:
             @state = :open
           when /^m$/
             @title = ARGV * " "
+          when /^u$/
+            @action = :url
           else
             @title = v
           end
@@ -223,10 +227,13 @@ module GHI::CLI #:nodoc:
         opts.on("-c", "--closed", "--close [number]") do |v|
           case v
           when /^\d+$/
-            @action = :close
-            @number = v.to_i
-          when /^l/, nil
+            @action ||= :close
+            @number = v.to_i unless v.nil?
+          when /^l$/, nil
             @action = :list
+            @state = :closed
+          when /^u$/, nil
+            @action = :url
             @state = :closed
           when nil
             raise OptionParser::MissingArgument
@@ -290,7 +297,12 @@ module GHI::CLI #:nodoc:
 
         opts.on("-u", "--url [number]") do |v|
           @action = :url
-          @number = v.to_i unless v.nil?
+          case v
+          when /^\d+$/
+            @number = v.to_i
+          when /^c/
+            @state = :closed
+          end
         end
 
         opts.on_tail("-V", "--version") do
@@ -387,6 +399,7 @@ module GHI::CLI #:nodoc:
 
     def url
       url = "http://github.com/#{user}/#{repo}/issues"
+      url << "/#{state}"       unless state.nil?
       url << "/#{number}/find" unless number.nil?
       puts url
     end

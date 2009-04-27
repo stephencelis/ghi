@@ -27,6 +27,7 @@ Go:
       -t, --label [number] [label]
           --claim [number]
       -d, --unlabel [number] [label]
+      -u, --url [number]
       -V, --version
       -h, --help
 
@@ -52,6 +53,8 @@ ghi works simply from within a repository. Some short examples:
   ghi -t1 "tag"             # Labels issue 1 with "tag"
   ghi -d1 "tag"             # Removes the label, "tag"
   ghi --claim 1             # Tags issue 1 with your GitHub username
+  open `ghi -u`             # Loads issues in your browser.
+  open `ghi -u1`            # Loads an issue in your browser.
 
 
 ghi also works anywhere:
