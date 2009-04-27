@@ -28,6 +28,7 @@ Go:
           --claim [number]
       -d, --unlabel [number] [label]
       -u, --url [number]
+          --[no-]colors
       -V, --version
       -h, --help
 
@@ -61,6 +62,9 @@ ghi also works anywhere:
 
   ghi -rghi -l              # Your fork of "ghi"
   ghi -rstephencelis/ghi -l # Mine: "stephencelis/ghi"
+
+
+ghi uses ANSI colors if you use them in git.
 
 
 == CONTRIBUTORS

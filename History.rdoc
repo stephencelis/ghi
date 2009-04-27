@@ -1,3 +1,15 @@
+=== 0.0.9 / 2009-04-27
+
+* 1 major enhancement
+
+  * ANSI colors (honors your .gitconfig)
+
+
+* 1 minor enhancement
+
+  * Bugfixes.
+
+
 === 0.0.8 / 2009-04-26
 
 * 1 major enhancement

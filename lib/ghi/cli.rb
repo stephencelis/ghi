@@ -130,6 +130,27 @@ module GHI::CLI #:nodoc:
     def comment?
       ![:open, :edit].include?(action)
     end
+
+    def puts(*args)
+      args = args.flatten.each { |arg|
+        arg.gsub!(/(state:)?(# Open.*|  open)$/) { "#$1\e[32m#$2\e[0m" }
+        arg.gsub!(/(state:)?(# Closed.*|  closed)$/) { "#$1\e[31m#$2\e[0m" }
+        marked = [GHI.login, search_term, tag, "(?:#|gh)-\d+"].compact * "|"
+        unless arg.include? "\e"
+          arg.gsub!(/(#{marked})/i) { "\e[1;4;33m#{$&}\e[0m" }
+        end
+      } if colorize?
+    rescue NoMethodError
+      # Do nothing.
+    ensure
+      Kernel.puts(*args)
+    end
+
+    def colorize?
+      return false unless $stdout.isatty
+      return @colorize if defined? @colorize
+      @colorize = !`git config --get-regexp color`.chomp.empty?
+    end
   end
 
   class Executable
@@ -318,6 +339,10 @@ module GHI::CLI #:nodoc:
           when /^u(?:nread)?$/
             @state = :unread
           end
+        end
+
+        opts.on("--[no-]color") do |v|
+          @colorize = v
         end
 
         opts.on_tail("-V", "--version") do

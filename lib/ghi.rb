@@ -2,7 +2,7 @@ require "net/http"
 require "yaml"
 
 module GHI
-  VERSION = "0.0.8"
+  VERSION = "0.0.9"
 
   def self.login
     return @login if defined? @login
