@@ -136,23 +136,24 @@ module GHI::CLI #:nodoc:
     include FileHelper, FormattingHelper
 
     attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
-      :number, :title, :body, :label, :args
+      :number, :title, :body, :tag, :args
 
     def initialize(*args)
-      @args = option_parser.parse!(*args)
+      @args = args
+      option_parser.parse!(*args)
 
       if action.nil?
         puts option_parser
         exit
       end
+    end
 
+    def run!
       `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
       @user ||= $1
       @repo ||= $2
       @api = GHI::API.new user, repo
-    end
 
-    def run!
       case action
         when :search        then search
         when :list          then list
@@ -162,9 +163,12 @@ module GHI::CLI #:nodoc:
         when :close         then close
         when :reopen        then reopen
         when :comment       then comment
-        when :label, :claim then add_label
-        when :unlabel       then remove_label
-
+        when :label, :claim
+          @tag ||= (body || @args * " ")
+          label
+        when :unlabel
+          @tag ||= (body || @args * " ")
+          unlabel
         when :url           then url
       end
     rescue GHI::API::InvalidConnection
@@ -218,7 +222,7 @@ module GHI::CLI #:nodoc:
             @action = :list
             @state = :open
           when /^m$/
-            @title = ARGV * " "
+            @title = @args * " "
           when /^u$/
             @action = :url
           else
@@ -248,7 +252,6 @@ module GHI::CLI #:nodoc:
           case v
           when /^\d+$/
             @action = :edit
-            @state = :closed
             @number = v.to_i
           when nil
             raise OptionParser::MissingArgument
@@ -258,9 +261,14 @@ module GHI::CLI #:nodoc:
         end
 
         opts.on("-r", "--repo", "--repository [name]") do |v|
-          repo = v.split "/"
-          repo.unshift GHI.login if repo.length == 1
-          @user, @repo = repo
+          case v
+          when nil
+            raise OptionParser::MissingArgument
+          else
+            repo = v.split "/"
+            repo.unshift GHI.login if repo.length == 1
+            @user, @repo = repo
+          end
         end
 
         opts.on("-m", "--comment [number|comment]") do |v|
@@ -284,7 +292,7 @@ module GHI::CLI #:nodoc:
           raise OptionParser::MissingArgument if v.nil?
           @action = :claim
           @number = v.to_i
-          @label = GHI.login
+          @tag = GHI.login
         end
 
         opts.on("-d", "--unlabel [number] [label]") do |v|
@@ -293,7 +301,7 @@ module GHI::CLI #:nodoc:
           when /^\d+$/
             @number = v.to_i
           when /^\w+$/
-            @label = v
+            @tag = v
           end
         end
 
@@ -378,16 +386,14 @@ module GHI::CLI #:nodoc:
       puts "(comment #{comment["status"]})" if comment
     end
 
-    def add_label
-      new_label = label || body || @args * " "
-      labels = api.add_label new_label, number
+    def label
+      labels = api.add_label tag, number
       puts action_format
       puts indent(labels.join(", "))
     end
 
-    def remove_label
-      new_label = label || body || @args * " "
-      labels = api.remove_label new_label, number
+    def unlabel
+      labels = api.remove_label tag, number
       puts action_format
       puts indent(labels.empty? ? "no labels" : labels.join(", "))
     end

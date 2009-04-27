@@ -84,7 +84,6 @@ describe GHI do
     GHI.should_receive(:gets).and_return "invalid\n", "#{token}\n"
     Net::HTTP.should_receive(:get).and_return LOGGED_OUT_YAML, LOGGED_IN_YAML
     GHI.should_receive(:warn).once
-    # FIXME: Passes on its own...but failing for `spec spec`.
     GHI.should_receive(:`).with("git config --global github.token #{token}").
       and_return "\n"
     GHI.token.should == token
