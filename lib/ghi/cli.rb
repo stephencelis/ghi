@@ -138,14 +138,21 @@ module GHI::CLI #:nodoc:
     attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
       :number, :title, :body, :tag, :args
 
-    def initialize(*args)
-      @args = args
+    def parse!(*argv)
+      @args = argv
       option_parser.parse!(*args)
 
       if action.nil?
         puts option_parser
         exit
       end
+
+      run!
+    rescue OptionParser::InvalidOption, OptionParser::MissingArgument,
+        OptionParser::AmbiguousOption => e
+      warn "#{File.basename $0}: #{e.message}"
+      puts option_parser
+      exit 1
     end
 
     def run!
@@ -162,13 +169,9 @@ module GHI::CLI #:nodoc:
         when :edit          then edit
         when :close         then close
         when :reopen        then reopen
-        when :comment       then comment
-        when :label, :claim
-          @tag ||= (body || @args * " ")
-          label
-        when :unlabel
-          @tag ||= (body || @args * " ")
-          unlabel
+        when :comment       then prepare_comment && comment
+        when :label, :claim then prepare_label   && label
+        when :unlabel       then prepare_label   && unlabel
         when :url           then url
       end
     rescue GHI::API::InvalidConnection
@@ -181,10 +184,10 @@ module GHI::CLI #:nodoc:
     rescue GHI::API::ResponseError => e
       warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
       exit 1
-    rescue OptionParser::InvalidOption, OptionParser::MissingArgument,
-        OptionParser::AmbiguousOption => e
-      warn "#{File.basename $0}: #{e.message}"
-      exit 1
+    end
+
+    def commenting?
+      @commenting
     end
 
     private
@@ -222,7 +225,7 @@ module GHI::CLI #:nodoc:
             @action = :list
             @state = :open
           when /^m$/
-            @title = @args * " "
+            @title = args * " "
           when /^u$/
             @action = :url
           else
@@ -233,16 +236,16 @@ module GHI::CLI #:nodoc:
         opts.on("-c", "--closed", "--close [number]") do |v|
           case v
           when /^\d+$/
-            @action ||= :close
+            @action = :close
             @number = v.to_i unless v.nil?
-          when /^l$/, nil
+          when /^l$/
             @action = :list
             @state = :closed
-          when /^u$/, nil
+          when /^u$/
             @action = :url
             @state = :closed
           when nil
-            raise OptionParser::MissingArgument
+            @action = :close
           else
             raise OptionParser::InvalidOption
           end
@@ -275,8 +278,8 @@ module GHI::CLI #:nodoc:
           case v
           when /^\d+$/, nil
             @action ||= :comment
-            @number ||= v
-            @comment = true
+            @number ||= v.to_i unless v.nil?
+            @commenting = true
           else
             @body = v
           end
@@ -305,13 +308,15 @@ module GHI::CLI #:nodoc:
           end
         end
 
-        opts.on("-u", "--url [number]") do |v|
+        opts.on("-u", "--url [state|number]") do |v|
           @action = :url
           case v
           when /^\d+$/
             @number = v.to_i
-          when /^c/
+          when /^c(?:losed)?$/
             @state = :closed
+          when /^u(?:nread)?$/
+            @state = :unread
           end
         end
 
@@ -345,7 +350,7 @@ module GHI::CLI #:nodoc:
     def open
       if title.nil?
         new_title, new_body = gets_from_editor GHI::Issue.new("title" => body)
-      elsif @comment && body.nil?
+      elsif @commenting && body.nil?
         new_title, new_body = gets_from_editor GHI::Issue.new("title" => title)
       end
       new_title ||= title
@@ -367,8 +372,9 @@ module GHI::CLI #:nodoc:
     end
 
     def close
+      raise GHI::API::InvalidRequest, "need a number" if number.nil?
       issue = api.close number
-      if @comment || new_body = body
+      if @commenting || new_body = body
         new_body ||= gets_from_editor issue
         comment = api.comment number, new_body
       end
@@ -378,12 +384,18 @@ module GHI::CLI #:nodoc:
 
     def reopen
       issue = api.reopen number
-      if @comment || new_body = body
+      if @commenting || new_body = body
         new_body ||= gets_from_editor issue
         comment = api.comment number, new_body
       end
       puts action_format(issue.title)
       puts "(comment #{comment["status"]})" if comment
+    end
+
+    def prepare_label
+      @tag ||= (body || args * " ")
+      raise GHI::API::InvalidRequest, "need a label" if @tag.empty?
+      true
     end
 
     def label
@@ -398,8 +410,14 @@ module GHI::CLI #:nodoc:
       puts indent(labels.empty? ? "no labels" : labels.join(", "))
     end
 
+    def prepare_comment
+      @body = args.flatten.first
+      @commenting = false unless body.nil?
+      true
+    end
+
     def comment
-      body = gets_from_editor api.show(number)
+      @body ||= gets_from_editor api.show(number)
       comment = api.comment(number, body)
       delete_message
       puts "(comment #{comment["status"]})"
