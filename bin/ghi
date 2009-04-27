@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 
 require "ghi/cli"
-GHI::CLI::Executable.new
+GHI::CLI::Executable.new(ARGV).run!

@@ -138,8 +138,8 @@ module GHI::CLI #:nodoc:
     attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
       :number, :title, :body, :label, :args
 
-    def initialize
-      @args = option_parser.parse!(ARGV)
+    def initialize(*args)
+      @args = option_parser.parse!(*args)
 
       if action.nil?
         puts option_parser
@@ -150,7 +150,9 @@ module GHI::CLI #:nodoc:
       @user ||= $1
       @repo ||= $2
       @api = GHI::API.new user, repo
+    end
 
+    def run!
       case action
         when :search        then search
         when :list          then list
