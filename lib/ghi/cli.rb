@@ -114,13 +114,13 @@ module GHI::CLI #:nodoc:
     end
 
     def truncate(string, length)
-      result = string.scan(/.{0,#{length}}(?:\s|\Z)/).first.strip
+      result = string.scan(/.{0,#{length - 3}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
     end
 
     def indent(string, level = 4)
-      string.scan(/.{0,#{78 - level}}(?:\s|\Z)/).map { |line|
+      string.scan(/.{0,#{79 - level}}(?:\s|\Z)/).map { |line|
         " " * level + line
       }
     end
@@ -133,6 +133,8 @@ module GHI::CLI #:nodoc:
 
     def puts(*args)
       args = args.flatten.each { |arg|
+        arg.gsub!(/\B\*(.+)\*\B/) { "\e[1m#$1\e[0m" } # Bold
+        arg.gsub!(/\B_(.+)_\B/) { "\e[4m#$1\e[0m" } # Underline
         arg.gsub!(/(state:)?(# Open.*|  open)$/) { "#$1\e[32m#$2\e[0m" }
         arg.gsub!(/(state:)?(# Closed.*|  closed)$/) { "#$1\e[31m#$2\e[0m" }
         marked = [GHI.login, search_term, tag, "(?:#|gh)-\d+"].compact * "|"
@@ -147,9 +149,12 @@ module GHI::CLI #:nodoc:
     end
 
     def colorize?
-      return false unless $stdout.isatty
       return @colorize if defined? @colorize
-      @colorize = !`git config --get-regexp color`.chomp.empty?
+      @colorize = if $stdout.isatty
+        !`git config --get-regexp color`.chomp.empty?
+      else
+        false
+      end
     end
   end
 
