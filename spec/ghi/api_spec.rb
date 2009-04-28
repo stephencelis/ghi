@@ -1,10 +1,12 @@
+$: << File.expand_path(File.dirname(__FILE__) + "/../lib")
 require "ghi"
 require "ghi/api"
 require "ghi/issue"
+include GHI
 
 ISSUES_YAML = <<-YAML
 ---
-issues: 
+issues:
 - number: 1
   votes: 0
   created_at: 2009-04-17 14:55:33 -07:00
@@ -24,8 +26,8 @@ issues:
 YAML
 
 ISSUE_YAML = <<-YAML
---- 
-issue: 
+---
+issue:
   number: 1
   votes: 0
   created_at: 2009-04-17 14:55:33 -07:00
@@ -37,8 +39,8 @@ issue:
 YAML
 
 LABELS_YAML = <<-YAML
---- 
-labels: 
+---
+labels:
 - testing
 - test_label
 YAML
@@ -52,15 +54,15 @@ YAML
 
 describe GHI::API do
   it "should require user and repo" do
-    proc { GHI::API.new(nil, nil) }.should raise_error(GHI::API::InvalidConnection)
-    proc { GHI::API.new("u", nil) }.should raise_error(GHI::API::InvalidConnection)
-    proc { GHI::API.new(nil, "r") }.should raise_error(GHI::API::InvalidConnection)
-    proc { GHI::API.new("u", "r") }.should_not raise_error(GHI::API::InvalidConnection)
+    proc { API.new(nil, nil) }.should raise_error(API::InvalidConnection)
+    proc { API.new("u", nil) }.should raise_error(API::InvalidConnection)
+    proc { API.new(nil, "r") }.should raise_error(API::InvalidConnection)
+    proc { API.new("u", "r") }.should_not raise_error(API::InvalidConnection)
   end
 
   describe "requests" do
-    before :all do
-      @api = GHI::API.new "stephencelis", "ghi"
+    before :each do
+      @api = API.new "stephencelis", "ghi"
       GHI.stub!(:login).and_return "stephencelis"
       GHI.stub!(:token).and_return "token"
     end
@@ -78,7 +80,7 @@ describe GHI::API do
 
     it "should process gets" do
       url   = "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
-      query = "?login=stephencelis&token=d1cd249db48d51c9847cbf2b291f5ae9"
+      query = "?login=stephencelis&token=token"
       @api.stub!(:url).and_return url
       URI.should_receive(:parse).once.with(url + query).and_return("mock")
       Net::HTTP.should_receive(:get).once.with("mock").and_return ISSUES_YAML
@@ -88,7 +90,7 @@ describe GHI::API do
     it "should process posts" do
       url   = "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
       query = { :login => "stephencelis",
-                :token => "d1cd249db48d51c9847cbf2b291f5ae9",
+                :token => "token",
                 :title => "Title",
                 :body  => "Body" }
       @api.stub!(:url).and_return url
@@ -104,7 +106,7 @@ describe GHI::API do
       Net::HTTP.stub!(:get).and_return ISSUES_YAML
       issues = @api.search "me"
       issues.should be_an_instance_of(Array)
-      issues.each { |issue| issue.should be_an_instance_of(GHI::Issue) }
+      issues.each { |issue| issue.should be_an_instance_of(Issue) }
     end
 
     it "should search closed" do
@@ -118,7 +120,7 @@ describe GHI::API do
       Net::HTTP.stub!(:get).and_return ISSUES_YAML
       issues = @api.list
       issues.should be_an_instance_of(Array)
-      issues.each { |issue| issue.should be_an_instance_of(GHI::Issue) }
+      issues.each { |issue| issue.should be_an_instance_of(Issue) }
     end
 
     it "should list closed" do
@@ -130,7 +132,7 @@ describe GHI::API do
     it "should show" do
       @api.should_receive(:url).with(:show, 1).and_return "u"
       Net::HTTP.stub!(:get).and_return ISSUE_YAML
-      @api.show(1).should be_an_instance_of(GHI::Issue)
+      @api.show(1).should be_an_instance_of(Issue)
     end
 
     it "should open" do
@@ -138,7 +140,7 @@ describe GHI::API do
       response = mock(Net::HTTPRequest)
       response.stub!(:body).and_return ISSUE_YAML
       Net::HTTP.stub!(:post_form).and_return response
-      @api.open("Title", "Body").should be_an_instance_of(GHI::Issue)
+      @api.open("Title", "Body").should be_an_instance_of(Issue)
     end
 
     it "should edit" do
@@ -146,7 +148,7 @@ describe GHI::API do
       response = mock(Net::HTTPRequest)
       response.stub!(:body).and_return ISSUE_YAML
       Net::HTTP.stub!(:post_form).and_return response
-      @api.edit(1, "Title", "Body").should be_an_instance_of(GHI::Issue)
+      @api.edit(1, "Title", "Body").should be_an_instance_of(Issue)
     end
 
     it "should close" do
@@ -154,7 +156,7 @@ describe GHI::API do
       response = mock(Net::HTTPRequest)
       response.stub!(:body).and_return ISSUE_YAML
       Net::HTTP.stub!(:post_form).and_return response
-      @api.close(1).should be_an_instance_of(GHI::Issue)
+      @api.close(1).should be_an_instance_of(Issue)
     end
 
     it "should reopen" do
@@ -162,7 +164,7 @@ describe GHI::API do
       response = mock(Net::HTTPRequest)
       response.stub!(:body).and_return ISSUE_YAML
       Net::HTTP.stub!(:post_form).and_return response
-      @api.reopen(1).should be_an_instance_of(GHI::Issue)
+      @api.reopen(1).should be_an_instance_of(Issue)
     end
 
     it "should add labels" do
