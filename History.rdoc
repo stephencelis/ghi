@@ -1,8 +1,22 @@
+=== 0.1.0 / 2009-04-27
+
+* 2 major enhancements
+
+  * Use tempfiles when we should, the gitdir otherwise.
+  * Now a minor!
+
+
+* 2 minor enhancement
+
+  * Small ANSI tweaks.
+  * Truncation fix.
+
+
 === 0.0.9 / 2009-04-27
 
 * 1 major enhancement
 
-  * ANSI colors (honors your .gitconfig)
+  * ANSI colors (honors your .gitconfig).
 
 
 * 1 minor enhancement
