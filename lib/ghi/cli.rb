@@ -11,10 +11,10 @@ module GHI::CLI #:nodoc:
     end
 
     def gets_from_editor(issue)
-      if gitdir
-        File.open message_path, "a+", &file_proc(issue)
+      unless in_repo?
+        Tempfile.open message_filename, &file_proc(issue)
       else
-        Tempfile.new message_filename, &file_proc(issue)
+        File.open message_path, "a+", &file_proc(issue)
       end
       return @message if comment?
       return @message.shift.strip, @message.join.sub(/\b\n\b/, " ").strip
@@ -37,7 +37,7 @@ module GHI::CLI #:nodoc:
     end
 
     def gitdir
-      @gitdir ||= `git rev-parse --git-dir`.chomp
+      @gitdir ||= `git rev-parse --git-dir 2>/dev/null`.chomp
     end
 
     def message_filename
@@ -46,7 +46,7 @@ module GHI::CLI #:nodoc:
 
     def file_proc(issue)
       lambda do |file|
-        file << edit_format(issue).join("\n") if File.zero? message_path
+        file << edit_format(issue).join("\n") if File.zero? file.path
         file.rewind
         launch_editor file
         @message = File.readlines(file.path).find_all { |l| !l.match(/^#/) }
@@ -56,6 +56,10 @@ module GHI::CLI #:nodoc:
         end
         raise GHI::API::InvalidRequest, "no change" if issue == message
       end
+    end
+
+    def in_repo?
+      !gitdir.empty? && user == local_user && repo == local_repo
     end
   end
 
@@ -161,8 +165,8 @@ module GHI::CLI #:nodoc:
   class Executable
     include FileHelper, FormattingHelper
 
-    attr_reader :message, :user, :repo, :api, :action, :state, :search_term,
-      :number, :title, :body, :tag, :args
+    attr_reader :message, :local_user, :local_repo, :user, :repo, :api,
+      :action, :state, :search_term, :number, :title, :body, :tag, :args
 
     def parse!(*argv)
       @args = argv
@@ -183,8 +187,9 @@ module GHI::CLI #:nodoc:
 
     def run!
       `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
-      @user ||= $1
-      @repo ||= $2
+      @local_user, @local_repo = $1, $2
+      @user ||= @local_user
+      @repo ||= @local_repo
       @api = GHI::API.new user, repo
 
       case action
