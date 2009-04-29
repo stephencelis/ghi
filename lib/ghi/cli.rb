@@ -4,6 +4,12 @@ require "ghi"
 require "ghi/api"
 require "ghi/issue"
 
+begin
+  require "launchy"
+rescue LoadError
+  # No launchy!
+end
+
 module GHI::CLI #:nodoc:
   module FileHelper
     def launch_editor(file)
@@ -64,17 +70,19 @@ module GHI::CLI #:nodoc:
   end
 
   module FormattingHelper
-    def list_format(issues, term = nil)
-      l = if term
-        ["# #{state.to_s.capitalize} #{term.inspect} issues on #{user}/#{repo}"]
+    def list_header(term = nil)
+      if term
+        "# #{state.to_s.capitalize} #{term.inspect} issues on #{user}/#{repo}"
       else
-        ["# #{state.to_s.capitalize} issues on #{user}/#{repo}"]
+        "# #{state.to_s.capitalize} issues on #{user}/#{repo}"
       end
+    end
 
-      l += unless issues.empty?
+    def list_format(issues)
+      unless issues.empty?
         issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate i.title, 72}" }
       else
-        ["none"]
+        "none"
       end
     end
 
@@ -368,11 +376,13 @@ module GHI::CLI #:nodoc:
     end
 
     def search
+      puts list_header(search_term)
       issues = api.search search_term, state
-      puts list_format(issues, search_term)
+      puts list_format(issues)
     end
 
     def list
+      puts list_header
       issues = api.list state
       puts list_format(issues)
     end
@@ -462,7 +472,7 @@ module GHI::CLI #:nodoc:
       url = "http://github.com/#{user}/#{repo}/issues"
       url << "/#{state}"       unless state.nil?
       url << "/#{number}/find" unless number.nil?
-      puts url
+      defined?(Launchy) ? Launchy.open(url) : puts(url)
     end
   end
 end
