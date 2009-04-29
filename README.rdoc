@@ -70,6 +70,7 @@ ghi uses ANSI colors if you use them in git.
 == CONTRIBUTORS
 
 * Jamie Macey (http://blog.tracefunc.com)
+* Hiroshi Nakamura (http://github.com/nahi)
 
 
 === CONTRIBUTE?
