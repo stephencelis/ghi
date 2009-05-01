@@ -18,6 +18,7 @@ Go:
   Usage: ghi [options]
       -l, --list [state|term|number]
           --search, --show
+      -v, --verbose
       -o, --open [title|number]
           --reopen
       -c, --closed, --close [number]
@@ -27,8 +28,9 @@ Go:
       -t, --label [number] [label]
           --claim [number]
       -d, --unlabel [number] [label]
-      -u, --url [number]
-          --[no-]colors
+      -u, --url [state|number]
+          --[no-]color
+          --[no-]pager
       -V, --version
       -h, --help
 
