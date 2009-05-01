@@ -71,6 +71,8 @@ ghi also works anywhere:
 
 ghi uses ANSI colors if you use them in git.
 
+ghi looks for a <tt>$GHI_PAGER</tt> variable for paging.
+
 
 == CONTRIBUTORS
 
