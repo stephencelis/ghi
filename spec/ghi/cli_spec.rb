@@ -6,6 +6,8 @@ describe GHI::CLI::Executable do
   before :each do
     @cli = GHI::CLI::Executable.new
     @cli.stub!(:api).and_return(mock(GHI::API))
+    $stdout.stub! :close_write
+    IO.stub!(:popen).and_return $stdout
   end
 
   describe "parsing" do
@@ -21,7 +23,7 @@ describe GHI::CLI::Executable do
         @cli.should_receive(@action)
         @cli.parse! @args
         @cli.action.should == @action
-        @cli.state.should  == @state
+        @cli.state.should  == (@state || :open)
         @cli.number.should == @number
         @cli.search_term.should == @term
         @cli.title.should == @title

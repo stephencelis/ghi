@@ -39,7 +39,7 @@ module GHI::CLI #:nodoc:
     private
 
     def editor
-      ENV["VISUAL"] || ENV["EDITOR"] || "vi"
+      ENV["GHI_EDITOR"] || ENV["VISUAL"] || ENV["EDITOR"] || "vi"
     end
 
     def gitdir
@@ -78,9 +78,13 @@ module GHI::CLI #:nodoc:
       end
     end
 
-    def list_format(issues)
+    def list_format(issues, verbosity = nil)
       unless issues.empty?
-        issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate i.title, 72}" }
+        if verbosity
+          issues.map { |i| ["=" * 79] + show_format(i) }
+        else
+          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate i.title, 72}" }
+        end
       else
         "none"
       end
@@ -157,7 +161,7 @@ module GHI::CLI #:nodoc:
     rescue NoMethodError
       # Do nothing.
     ensure
-      Kernel.puts(*args)
+      $stdout.puts(*args)
     end
 
     def colorize?
@@ -168,36 +172,53 @@ module GHI::CLI #:nodoc:
         false
       end
     end
+
+    def prepare_stdout
+      return if @prepared || @no_pager || !$stdout.isatty
+      colorize? # Check for colorization.
+      $stdout = IO.popen pager, "w"
+      @prepared = true
+    end
+
+    def pager
+      ENV["GHI_PAGER"] || "more -EMR"
+    end
   end
 
   class Executable
     include FileHelper, FormattingHelper
 
     attr_reader :message, :local_user, :local_repo, :user, :repo, :api,
-      :action, :state, :search_term, :number, :title, :body, :tag, :args
+      :action, :search_term, :number, :title, :body, :tag, :args, :verbosity
 
     def parse!(*argv)
       @args = argv
+
+      `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
+      @user, @repo = $1, $2
+
       option_parser.parse!(*args)
 
-      if action.nil?
+      if action.nil? && fallback_parsing(*args).nil?
         puts option_parser
         exit
       end
-
-      run!
-    rescue OptionParser::InvalidOption, OptionParser::MissingArgument,
-        OptionParser::AmbiguousOption => e
+    rescue OptionParser::InvalidOption => e
+      if fallback_parsing(*e.args).nil?
+        warn "#{File.basename $0}: #{e.message}"
+        puts option_parser
+        exit 1
+      end
+    rescue OptionParser::MissingArgument, OptionParser::AmbiguousOption => e
       warn "#{File.basename $0}: #{e.message}"
       puts option_parser
       exit 1
+    ensure
+      run!
+      $stdout.close_write
     end
 
     def run!
-      `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
-      @local_user, @local_repo = $1, $2
-      @user ||= @local_user
-      @repo ||= @local_repo
       @api = GHI::API.new user, repo
 
       case action
@@ -229,6 +250,10 @@ module GHI::CLI #:nodoc:
       @commenting
     end
 
+    def state
+      @state || :open
+    end
+
     private
 
     def option_parser
@@ -239,7 +264,7 @@ module GHI::CLI #:nodoc:
           @action = :list
           case v
           when nil, /^o(?:pen)?$/
-            @state = :open
+            # Defaults.
           when /^\d+$/
             @action = :show
             @number = v.to_i
@@ -247,10 +272,18 @@ module GHI::CLI #:nodoc:
             @state = :closed
           when /^u$/
             @action = :url
+          when /^v$/
+            @verbosity = true
           else
             @action = :search
-            @state ||= :open
             @search_term = v
+          end
+        end
+
+        opts.on("-v", "--verbose") do |v|
+          if v
+            @action ||= :list
+            @verbosity = true
           end
         end
 
@@ -262,7 +295,6 @@ module GHI::CLI #:nodoc:
             @number = v.to_i
           when /^l$/
             @action = :list
-            @state = :open
           when /^m$/
             @title = args * " "
           when /^u$/
@@ -284,7 +316,11 @@ module GHI::CLI #:nodoc:
             @action = :url
             @state = :closed
           when nil
-            @action = :close
+            if @action.nil? || @number
+              @action = :close
+            else
+              @state = :closed
+            end
           else
             raise OptionParser::InvalidOption
           end
@@ -363,6 +399,10 @@ module GHI::CLI #:nodoc:
           @colorize = v
         end
 
+        opts.on("--[no-]pager") do |v|
+          @no_pager = (v == false)
+        end
+
         opts.on_tail("-V", "--version") do
           puts "#{File.basename($0)}: v#{GHI::VERSION}"
           exit
@@ -376,18 +416,21 @@ module GHI::CLI #:nodoc:
     end
 
     def search
+      prepare_stdout
       puts list_header(search_term)
       issues = api.search search_term, state
-      puts list_format(issues)
+      puts list_format(issues, verbosity)
     end
 
     def list
+      prepare_stdout
       puts list_header
-      issues = api.list state
-      puts list_format(issues)
+      issues = api.list(state)
+      puts list_format(issues, verbosity)
     end
 
     def show
+      prepare_stdout
       issue = api.show number
       puts show_format(issue)
     end
@@ -470,9 +513,23 @@ module GHI::CLI #:nodoc:
 
     def url
       url = "http://github.com/#{user}/#{repo}/issues"
-      url << "/#{state}"       unless state.nil?
-      url << "/#{number}/find" unless number.nil?
+      if number.nil?
+        url << "/#{state}" unless state == :open
+      else
+        url << "#issue/#{number}"
+      end
       defined?(Launchy) ? Launchy.open(url) : puts(url)
+    end
+
+    def fallback_parsing(*arguments)
+      if user && repo
+        if arguments.to_s.empty?
+          @action = :list
+        elsif arguments.to_s =~ /^-?(\d+)$/
+          @action = :show
+          @number = $1
+        end
+      end
     end
   end
 end

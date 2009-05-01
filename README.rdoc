@@ -38,9 +38,14 @@ Go:
 ghi works simply from within a repository. Some short examples:
 
   ghi -l                    # Lists all open issues
+  ghi                       # Shorter shorthand for "ghi -l"
+  ghi -v                    # Lists all open issues, verbosely (includes body)
   ghi -lc                   # Lists all closed issues
   ghi -l "doesn't work"     # Searches for open issues matching "doesn't work"
   ghi -l invalid -c         # Searches for closed issues matching "invalid"
+  ghi -l1                   # Shows issue 1
+  ghi -1                    # Shorter shorthand for "ghi -l1"
+  ghi 1                     # Shorter shorthand still
   ghi -o                    # Opens a new issue (in your $EDITOR)
   ghi -o "New issue"        # Opens a new issue with the title "New issue"
   ghi -o "Title" -m "Body"  # Opens a new issue with specified title and body
@@ -54,8 +59,8 @@ ghi works simply from within a repository. Some short examples:
   ghi -t1 "tag"             # Labels issue 1 with "tag"
   ghi -d1 "tag"             # Removes the label, "tag"
   ghi --claim 1             # Tags issue 1 with your GitHub username
-  open `ghi -u`             # Loads issues in your browser.
-  open `ghi -u1`            # Loads an issue in your browser.
+  ghi -u                    # Loads issues in your browser.
+  ghi -u1                   # Loads an issue in your browser.
 
 
 ghi also works anywhere:
