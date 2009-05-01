@@ -1,3 +1,17 @@
+=== 0.1.1 / 2009-05/01
+
+* 3 major enhancements
+
+  * Use `more' (or $GHI_PAGER) to accommodate lengthy output.
+  * Default to "-l" if Dir.pwd is a git repo.
+  * Accept numbered args/flags to shortcut "show" (e.g., "ghi -2", "ghi 2")
+
+
+* 1 minor enhancement
+
+  * Update --url flag to GitHub's new convention.
+
+
 === 0.1.0 / 2009-04-27
 
 * 2 major enhancements
