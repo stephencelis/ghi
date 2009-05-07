@@ -1,4 +1,13 @@
-=== 0.1.1 / 2009-05/01
+=== 0.1.2 / 2009-05-07
+
+* 1 major enhancement
+
+  * Better fallbacks. Enter `ghi open`, `ghi list closed`, `ghi search term`,
+    `ghi show 2`, `ghi user/repo`, etc., it will try to work. Fallbacks do not
+    accept options, though.
+
+
+=== 0.1.1 / 2009-05-01
 
 * 3 major enhancements
 

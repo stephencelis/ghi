@@ -67,8 +67,9 @@ ghi works simply from within a repository. Some short examples:
 
 ghi also works anywhere:
 
-  ghi -rghi -l              # Your fork of "ghi"
-  ghi -rstephencelis/ghi -l # Mine: "stephencelis/ghi"
+  ghi -rghi                 # Your fork of "ghi"
+  ghi -rstephencelis/ghi    # Mine: "stephencelis/ghi"
+  ghi stephencelis/ghi      # Shorthand to merely list open.
 
 
 ghi uses ANSI colors if you use them in git.
