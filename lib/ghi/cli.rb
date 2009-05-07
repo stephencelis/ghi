@@ -521,13 +521,61 @@ module GHI::CLI #:nodoc:
       defined?(Launchy) ? Launchy.open(url) : puts(url)
     end
 
+    #-
+    # Because these are mere fallbacks, any options used earlier will muddle
+    # things: `ghi list` will work, `ghi list -c` will not.
+    #
+    # Argument parsing will have to better integrate with option parsing to
+    # overcome this.
+    #+
     def fallback_parsing(*arguments)
       if user && repo
-        if arguments.to_s.empty?
+        arguments = arguments.flatten
+        case command = arguments.shift
+        when nil, "list"
           @action = :list
-        elsif arguments.to_s =~ /^-?(\d+)$/
+          if arg = arguments.shift
+            @state ||= arg.to_sym if %w(open closed).include? arg
+            @user, @repo = arg.split "/" if arg.count("/") == 1
+          end
+        when "search"
+          @action = :search
+          @search_term ||= arguments.shift
+        when "show", /^-?(\d+)$/
           @action = :show
-          @number = $1
+          @number ||= ($1 || arguments.shift[/\d+/].to_i)
+        when "open"
+          @action = :open
+        when "edit"
+          @action = :edit
+          @number ||= arguments.shift[/\d+/].to_i
+        when "close"
+          @action = :close
+          @number ||= arguments.shift[/\d+/].to_i
+        when "reopen"
+          @action = :reopen
+          @number ||= arguments.shift[/\d+/].to_i
+        when "label"
+          @action = :label
+          @number ||= arguments.shift[/\d+/].to_i
+          @label ||= arguments.shift
+        when "unlabel"
+          @action = :unlabel
+          @number ||= arguments.shift[/\d+/].to_i
+          @label ||= arguments.shift
+        when "comment"
+          @action = :comment
+          @number ||= arguments.shift[/\d+/].to_i
+        when "claim"
+          @action = :claim
+          @number ||= arguments.shift[/\d+/].to_i
+        when %r{^([^/]+)/([^/]+)$}
+          @action = :list
+          @user, @repo = $1, $2
+        end
+        return true if @action
+        unless command.start_with? "-"
+          warn "#{File.basename $0}: what do you mean, '#{command}'?"
         end
       end
     end
