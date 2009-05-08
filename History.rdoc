@@ -1,3 +1,12 @@
+=== 0.1.3 / 2009-05-08
+
+* 1 minor enhancement
+
+  * Fix bug where `more' was being passed `less' options.
+  * Fix scoping of commands so `ghi user/repo` can run outside of a repo
+    directory.
+
+
 === 0.1.2 / 2009-05-07
 
 * 1 major enhancement
