@@ -17,11 +17,17 @@ module GHI::CLI #:nodoc:
     end
 
     def gets_from_editor(issue)
-      unless in_repo?
-        Tempfile.open message_filename, &file_proc(issue)
-      else
-        File.open message_path, "a+", &file_proc(issue)
+      if windows?
+        warn "Please supply the message by using the -m option"
+        exit 1
       end
+
+      if in_repo?
+        File.open message_path, "a+", &file_proc(issue)
+      else
+        Tempfile.open message_filename, &file_proc(issue)
+      end
+
       return @message if comment?
       return @message.shift.strip, @message.join.sub(/\b\n\b/, " ").strip
     end
@@ -166,7 +172,7 @@ module GHI::CLI #:nodoc:
 
     def colorize?
       return @colorize if defined? @colorize
-      @colorize = if $stdout.isatty
+      @colorize = if $stdout.isatty && !windows?
         !`git config --get-regexp color`.chomp.empty?
       else
         false
@@ -185,6 +191,10 @@ module GHI::CLI #:nodoc:
       pagers = [ENV["GHI_PAGER"], "less -EMRX", "pager", "more"].compact.uniq
       pagers.each { |pager| return @pager = IO.popen(pager, "w") rescue nil }
     end
+
+    def windows?
+      RUBY_PLATFORM.include?("mswin")
+    end
   end
 
   class Executable
@@ -196,7 +206,8 @@ module GHI::CLI #:nodoc:
     def parse!(*argv)
       @args = argv
 
-      `git config --get remote.origin.url`.match %r{([^:/]+)/([^/]+).git$}
+      repo_expression = %r{([^:/]+)/([^/\.\s]+)(?:\.git)?$}
+      `git config --get remote.origin.url`.match repo_expression
       @user, @repo = $1, $2
 
       option_parser.parse!(*args)
