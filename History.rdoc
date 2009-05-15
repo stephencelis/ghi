@@ -1,3 +1,10 @@
+=== 0.1.4 / 2009-05-15
+
+* 1 minor enhancement
+
+  * Minor Windows support.
+
+
 === 0.1.3 / 2009-05-08
 
 * 1 minor enhancement
