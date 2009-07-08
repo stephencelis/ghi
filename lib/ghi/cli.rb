@@ -118,13 +118,13 @@ module GHI::CLI #:nodoc:
 
     def show_format(issue, verbose = true)
       l = []
-      l << "      number:  #{issue.number}"     if issue.number
-      l << "       state:  #{issue.state}"      if issue.state
-      l << "       title:  #{issue.title}"      if issue.title
+      l << "      number:  #{issue.number}"               if issue.number
+      l << "       state:  #{issue.state}"                if issue.state
+      l << "       title:  #{indent(issue.title, 15, 0)}" if issue.title
       l << "        user:  #{issue.user || GHI.login}"
-      l << "       votes:  #{issue.votes}"      if issue.votes
-      l << "  created at:  #{issue.created_at}" if issue.created_at
-      l << "  updated at:  #{issue.updated_at}" if issue.updated_at
+      l << "       votes:  #{issue.votes}"                if issue.votes
+      l << "  created at:  #{issue.created_at}"           if issue.created_at
+      l << "  updated at:  #{issue.updated_at}"           if issue.updated_at
       return l unless verbose
       l << ""
       l += indent(issue.body)[0..-2]
@@ -141,10 +141,12 @@ module GHI::CLI #:nodoc:
       result
     end
 
-    def indent(string, level = 4)
-      string.scan(/.{0,#{79 - level}}(?:\s|\Z)/).map { |line|
+    def indent(string, level = 4, first = level)
+      lines = string.scan(/.{0,#{79 - level}}(?:\s|\Z)/).map { |line|
         " " * level + line
       }
+      lines.first.sub!(/^\s+/) {} if first != level
+      lines
     end
 
     private
@@ -204,7 +206,7 @@ module GHI::CLI #:nodoc:
       :action, :search_term, :number, :title, :body, :tag, :args, :verbosity
 
     def parse!(*argv)
-      @args = argv
+      @args, @argv = argv, argv.dup
 
       repo_expression = %r{([^:/]+)/([^/\.\s]+)(?:\.git)?$}
       `git config --get remote.origin.url`.match repo_expression
@@ -555,7 +557,7 @@ module GHI::CLI #:nodoc:
         @search_term ||= arguments.shift
       when "show", /^-?(\d+)$/
         @action = :show
-        @number ||= ($1 || arguments.shift[/\d+/].to_i)
+        @number ||= ($1 || arguments.shift[/\d+/]).to_i
       when "open"
         @action = :open
       when "edit"
@@ -585,7 +587,12 @@ module GHI::CLI #:nodoc:
         @action = :list
         @user, @repo = $1, $2
       end
-      return true if @action
+      if @action
+        @args = @argv.dup
+        args.delete_if { |arg| arg == command }
+        option_parser.parse!(*args)
+        return true
+      end
       unless command.start_with? "-"
         warn "#{File.basename $0}: what do you mean, '#{command}'?"
       end

@@ -159,6 +159,11 @@ describe GHI::CLI::Executable do
         @action, @state, @user, @repo = :list, :open, "remoteuser", "remoterepo"
       end
 
+      it "should parse -rremoteuser/remoterepo as a later argument" do
+        @args = ["-1", "-rremoteuser/remoterepo"]
+        @action, @number, @user, @repo = :show, 1, "remoteuser", "remoterepo"
+      end
+
       it "should parse -t2 'tag' as label issue 2 with 'tag'" do
         @args = ["-t2", "tag"]
         @action, @number, @tag = :label, 2, "tag"
