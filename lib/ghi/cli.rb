@@ -18,7 +18,7 @@ module GHI::CLI #:nodoc:
 
     def gets_from_editor(issue)
       if windows?
-        warn "Please supply the message by using the -m option"
+        warn "Please supply the message with the -m option"
         exit 1
       end
 
@@ -195,7 +195,7 @@ module GHI::CLI #:nodoc:
     end
 
     def windows?
-      RUBY_PLATFORM.include?("mswin")
+      RUBY_PLATFORM.include? "mswin"
     end
   end
 
