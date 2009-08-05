@@ -2,7 +2,7 @@ require "ghi"
 
 LOGGED_OUT_YAML = <<-YAML
 ---
-user: 
+user:
   id: 23
   login: defunkt
   name: Kristopher Walken Wanstrath
@@ -18,7 +18,7 @@ YAML
 
 LOGGED_IN_YAML = <<-YAML
 ---
-user: 
+user:
   id: 23
   login: defunkt
   name: Kristopher Walken Wanstrath
@@ -35,7 +35,7 @@ user:
   disk_usage: 50384
   owned_private_repo_count: 1
   private_gist_count: 0
-  plan: 
+  plan:
     name: mega
     collaborators: 60
     space: 20971520
@@ -54,7 +54,7 @@ describe GHI do
     GHI.should_receive(:`).once.and_return "stephencelis\n"
     GHI.login.should == "stephencelis"
   end
-  
+
   it "should return token" do
     GHI.should_receive(:`).once.and_return "da39a3ee5e6b4b0d3255bfef95601890\n"
     GHI.token.should == "da39a3ee5e6b4b0d3255bfef95601890"
