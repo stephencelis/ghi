@@ -208,8 +208,9 @@ module GHI::CLI #:nodoc:
     def parse!(*argv)
       @args, @argv = argv, argv.dup
 
+      remotes = `git config --get-regexp remote\..+\.url`.split /\n/
       repo_expression = %r{([^:/]+)/([^/\.\s]+)(?:\.git)?$}
-      `git config --get remote.origin.url`.match repo_expression
+      remotes.find { |r| r.include? "github.com" }.match repo_expression
       @user, @repo = $1, $2
 
       option_parser.parse!(*args)
