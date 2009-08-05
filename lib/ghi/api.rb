@@ -69,6 +69,8 @@ class GHI::API
     res
   rescue ArgumentError, URI::InvalidURIError
     raise ResponseError, "GitHub hiccuped on your request"
+  rescue SocketError
+    raise ResponseError, "couldn't find the internet"
   end
 
   def post(*args)
@@ -79,6 +81,8 @@ class GHI::API
     res
   rescue ArgumentError, URI::InvalidURIError
     raise ResponseError, "GitHub hiccuped on your request"
+  rescue SocketError
+    raise ResponseError, "couldn't find the internet"
   end
 
   def errors(response)
