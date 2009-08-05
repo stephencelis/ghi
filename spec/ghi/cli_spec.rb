@@ -19,7 +19,7 @@ describe GHI::CLI::Executable do
       end
 
       after :each do
-        @cli.stub!(:`).and_return "stub:localuser/ghi.git"
+        @cli.stub!(:`).and_return "stub@github.com:localuser/ghi.git"
         @cli.should_receive(@action)
         @cli.parse! @args
         @cli.action.should == @action
