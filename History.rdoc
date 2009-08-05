@@ -1,4 +1,16 @@
-=== 0.1.5 / 2009-05-15
+=== 0.1.6 / 2009-08-05
+
+* 1 minor enhancement
+
+  * Support for non-"origin" remotes.
+
+
+* 1 bugfix
+
+  * Graceful offline error.
+
+
+=== 0.1.5 / 2009-07-08
 
 * 2 bugfixes
 
