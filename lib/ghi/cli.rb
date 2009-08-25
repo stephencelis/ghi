@@ -209,7 +209,7 @@ module GHI::CLI #:nodoc:
       @args, @argv = argv, argv.dup
 
       remotes = `git config --get-regexp remote\..+\.url`.split /\n/
-      repo_expression = %r{([^:/]+)/([^/\.\s]+)(?:\.git)?$}
+      repo_expression = %r{([^:/]+)/([^/\s]+)(?:\.git)$}
       remotes.find { |r| r.include? "github.com" }.match repo_expression
       @user, @repo = $1, $2
 
