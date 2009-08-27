@@ -1,3 +1,11 @@
+=== 0.1.7 / 2009-08-26
+
+* 2 bugfixes
+
+  * Allow dots in repo names.
+  * Fix bug preventing invocation from non-GitHub repo directories.
+
+
 === 0.1.6 / 2009-08-05
 
 * 1 minor enhancement
