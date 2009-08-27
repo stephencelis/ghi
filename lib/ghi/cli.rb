@@ -210,8 +210,10 @@ module GHI::CLI #:nodoc:
 
       remotes = `git config --get-regexp remote\..+\.url`.split /\n/
       repo_expression = %r{([^:/]+)/([^/\s]+)(?:\.git)$}
-      remotes.find { |r| r.include? "github.com" }.match repo_expression
-      @user, @repo = $1, $2
+      if remote = remotes.find { |r| r.include? "github.com" }
+        remote.match repo_expression
+        @user, @repo = $1, $2
+      end
 
       option_parser.parse!(*args)
 
