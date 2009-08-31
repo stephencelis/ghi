@@ -221,7 +221,7 @@ module GHI::CLI #:nodoc:
         puts option_parser
         exit
       end
-    rescue OptionParser::InvalidOption => e
+    rescue OptionParser::InvalidOption, OptionParser::InvalidArgument => e
       if fallback_parsing(*e.args).nil?
         warn "#{File.basename $0}: #{e.message}"
         puts option_parser
@@ -253,8 +253,12 @@ module GHI::CLI #:nodoc:
         when :url           then url
       end
     rescue GHI::API::InvalidConnection
-      warn "#{File.basename $0}: not a GitHub repo"
-      exit 1
+      if action
+        code = 1
+        warn "#{File.basename $0}: not a GitHub repo"
+        puts option_parser if args.flatten.empty?
+        exit 1
+      end
     rescue GHI::API::InvalidRequest => e
       warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
       delete_message
@@ -340,7 +344,7 @@ module GHI::CLI #:nodoc:
               @state = :closed
             end
           else
-            raise OptionParser::InvalidOption
+            raise OptionParser::InvalidArgument
           end
         end
 
@@ -352,7 +356,7 @@ module GHI::CLI #:nodoc:
           when nil
             raise OptionParser::MissingArgument
           else
-            raise OptionParser::InvalidOption
+            raise OptionParser::InvalidArgument
           end
         end
 
