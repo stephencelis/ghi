@@ -10,7 +10,7 @@ browser.
 
 Get:
 
-  % gem install stephencelis-ghi --source=http://gems.github.com
+  % gem install ghi -s http://gemcutter.org
 
 
 Go:
