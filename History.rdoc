@@ -1,3 +1,10 @@
+=== 0.2.0 / 2009-11-03
+
+* Major-minor release!
+
+  * Cleanup! (Better help, warnings and errors.)
+
+
 === 0.1.7 / 2009-08-26
 
 * 2 bugfixes
