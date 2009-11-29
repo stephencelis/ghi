@@ -10,7 +10,7 @@ browser.
 
 Get:
 
-  % gem install ghi -s http://gemcutter.org
+  % gem install ghi
 
 
 Go:
