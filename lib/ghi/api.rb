@@ -33,11 +33,11 @@ class GHI::API
   end
 
   def open(title, body)
-    GHI::Issue.new post(:open, :title => title, :body => body)["issue"]
+    GHI::Issue.new post(:open, "title" => title, "body" => body)["issue"]
   end
 
   def edit(number, title, body)
-    res = post :edit, number, :title => title, :body => body
+    res = post :edit, number, "title" => title, "body" => body
     GHI::Issue.new res["issue"]
   end
 
@@ -58,7 +58,7 @@ class GHI::API
   end
 
   def comment(number, comment)
-    post(:comment, number, :comment => comment)["comment"]
+    post(:comment, number, "comment" => comment)["comment"]
   end
 
   private
@@ -93,7 +93,7 @@ class GHI::API
     if query
       "?login=#{GHI.login}&token=#{GHI.token}"
     else
-      { :login => GHI.login, :token => GHI.token }
+      { "login" => GHI.login, "token" => GHI.token }
     end
   end
 

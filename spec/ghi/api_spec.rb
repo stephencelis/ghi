@@ -4,7 +4,7 @@ require "ghi/issue"
 
 ISSUES_YAML = <<-YAML
 ---
-issues: 
+issues:
 - number: 1
   votes: 0
   created_at: 2009-04-17 14:55:33 -07:00
@@ -24,8 +24,8 @@ issues:
 YAML
 
 ISSUE_YAML = <<-YAML
---- 
-issue: 
+---
+issue:
   number: 1
   votes: 0
   created_at: 2009-04-17 14:55:33 -07:00
@@ -37,8 +37,8 @@ issue:
 YAML
 
 LABELS_YAML = <<-YAML
---- 
-labels: 
+---
+labels:
 - testing
 - test_label
 YAML
@@ -87,10 +87,10 @@ describe GHI::API do
 
     it "should process posts" do
       url   = "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
-      query = { :login => "stephencelis",
-                :token => "d1cd249db48d51c9847cbf2b291f5ae9",
-                :title => "Title",
-                :body  => "Body" }
+      query = { "login" => "stephencelis",
+                "token" => "d1cd249db48d51c9847cbf2b291f5ae9",
+                "title" => "Title",
+                "body"  => "Body" }
       @api.stub!(:url).and_return url
       r = mock(Net::HTTPRequest)
       r.should_receive(:body).once.and_return ISSUE_YAML
@@ -187,7 +187,7 @@ describe GHI::API do
       response = mock(Net::HTTPRequest)
       response.stub!(:body).and_return COMMENT_YAML
       Net::HTTP.should_receive(:post_form).with("u",
-        hash_including(:comment => "Comment")).and_return response
+        hash_including("comment" => "Comment")).and_return response
       @api.comment(1, "Comment").should be_an_instance_of(Hash)
     end
   end
