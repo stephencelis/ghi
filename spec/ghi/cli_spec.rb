@@ -13,14 +13,14 @@ describe GHI::CLI::Executable do
   describe "parsing" do
     describe "with well-formed arguments" do
       before :each do
-        @user, @repo = "localuser", "ghi"
+        @user, @repo = "local_user_host", "ghi"
         @action = @state = @number = @term =
           @title = @body = @tag = @comment = nil
       end
 
       after :each do
         @cli.should_receive(@action)
-        @cli.parse! @args
+        @cli.parse! Array(@args)
         @cli.action.should == @action
         @cli.state.should  == (@state || :open)
         @cli.number.should == @number
@@ -44,7 +44,16 @@ describe GHI::CLI::Executable do
 
       describe "inside a repository" do
         after :each do
-          @cli.stub!(:`).and_return "stub@github.com:localuser/ghi.git"
+          @cli.stub!(:`).and_return "stub@github.com:#@user/#@repo.git"
+        end
+
+        it "should parse empty as list open" do
+          @action, @state = :list, :open
+        end
+
+        it "should parse -l as list open" do
+          @args = ["-l"]
+          @action, @state = :list, :open
         end
 
         it "should parse -l as list open" do

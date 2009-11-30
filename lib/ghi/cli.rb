@@ -157,8 +157,8 @@ module GHI::CLI #:nodoc:
 
     def puts(*args)
       args = args.flatten.each { |arg|
-        arg.gsub!(/\B\*(.+)\*\B/) { "\e[1m#$1\e[0m" } # Bold
-        arg.gsub!(/\B_(.+)_\B/) { "\e[4m#$1\e[0m" } # Underline
+        arg.gsub!(/\b\*(.+)\*\b/) { "\e[1m#$1\e[0m" } # Bold
+        arg.gsub!(/\b_(.+)_\b/) { "\e[4m#$1\e[0m" } # Underline
         arg.gsub!(/(state:)?(# Open.*|  open)$/) { "#$1\e[32m#$2\e[0m" }
         arg.gsub!(/(state:)?(# Closed.*|  closed)$/) { "#$1\e[31m#$2\e[0m" }
         marked = [GHI.login, search_term, tag, "(?:#|gh)-\d+"].compact * "|"
