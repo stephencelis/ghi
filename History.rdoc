@@ -1,3 +1,10 @@
+=== 0.2.1 / 2009-11-29
+
+* 1 bugfix
+
+  * ANSI format by word break.
+
+
 === 0.2.0 / 2009-11-03
 
 * Major-minor release!
