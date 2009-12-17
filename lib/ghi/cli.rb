@@ -45,7 +45,8 @@ module GHI::CLI #:nodoc:
     private
 
     def editor
-      ENV["GHI_EDITOR"] || ENV["VISUAL"] || ENV["EDITOR"] || "vi"
+      ENV["GHI_EDITOR"] || ENV["GIT_EDITOR"] ||
+        `git config --get-all core.editor`.split.first || ENV["EDITOR"] || "vi"
     end
 
     def gitdir
@@ -190,8 +191,11 @@ module GHI::CLI #:nodoc:
 
     def pager
       return @pager if defined? @pager
-      pagers = [ENV["GHI_PAGER"], "less -EMRX", "pager", "more"].compact.uniq
-      pagers.each { |pager| return @pager = IO.popen(pager, "w") rescue nil }
+      pager = ENV["GHI_PAGER"] || ENV["GIT_PAGER"] ||
+        `git config --get-all core.pager`.split.first || ENV["PAGER"] ||
+        "less -EMRX"
+
+      @pager = IO.popen(pager, "w")
     end
 
     def windows?
@@ -292,7 +296,7 @@ module GHI::CLI #:nodoc:
             @number = v.to_i
           when /^c(?:losed)?$/
             @state = :closed
-          when /^u$/
+          when /^[uw]$/
             @action = :url
           when /^v$/
             @verbosity = true
@@ -319,7 +323,7 @@ module GHI::CLI #:nodoc:
             @action = :list
           when /^m$/
             @title = args * " "
-          when /^u$/
+          when /^[uw]$/
             @action = :url
           else
             @title = v
@@ -334,7 +338,7 @@ module GHI::CLI #:nodoc:
           when /^l$/
             @action = :list
             @state = :closed
-          when /^u$/
+          when /^[uw]$/
             @action = :url
             @state = :closed
           when nil
@@ -405,7 +409,7 @@ module GHI::CLI #:nodoc:
           end
         end
 
-        opts.on("-u", "--url [state|number]") do |v|
+        opts.on("-u", "-w", "--url", "--web [state|number]") do |v|
           @action = :url
           case v
           when /^\d+$/
@@ -593,6 +597,9 @@ module GHI::CLI #:nodoc:
       when %r{^([^/]+)/([^/]+)$}
         @action = :list
         @user, @repo = $1, $2
+      when "url", "web"
+        @action = :url
+        @number ||= arguments.shift[/\d+/].to_i
       end
       if @action
         @args = @argv.dup
