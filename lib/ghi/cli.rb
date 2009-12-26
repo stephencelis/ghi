@@ -90,7 +90,7 @@ module GHI::CLI #:nodoc:
         if verbosity
           issues.map { |i| ["=" * 79] + show_format(i) }
         else
-          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate i.title, 72}" }
+          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate(i.title, 72).join}" }
         end
       else
         "none"
@@ -119,13 +119,13 @@ module GHI::CLI #:nodoc:
 
     def show_format(issue, verbose = true)
       l = []
-      l << "      number:  #{issue.number}"               if issue.number
-      l << "       state:  #{issue.state}"                if issue.state
-      l << "       title:  #{indent(issue.title, 15, 0)}" if issue.title
+      l << "      number:  #{issue.number}"                    if issue.number
+      l << "       state:  #{issue.state}"                     if issue.state
+      l << "       title:  #{indent(issue.title, 15, 0).join}" if issue.title
       l << "        user:  #{issue.user || GHI.login}"
-      l << "       votes:  #{issue.votes}"                if issue.votes
-      l << "  created at:  #{issue.created_at}"           if issue.created_at
-      l << "  updated at:  #{issue.updated_at}"           if issue.updated_at
+      l << "       votes:  #{issue.votes}"                     if issue.votes
+      l << "  created at:  #{issue.created_at}"                if issue.created_at
+      l << "  updated at:  #{issue.updated_at}"                if issue.updated_at
       return l unless verbose
       l << ""
       l += indent(issue.body)[0..-2]
@@ -133,7 +133,7 @@ module GHI::CLI #:nodoc:
 
     def action_format(value = nil)
       key = "#{action.to_s.capitalize.sub(/e?$/, "ed")} issue #{number}"
-      "#{key}: #{truncate value.to_s, 78 - key.length}"
+      "#{key}: #{truncate(value.to_s, 78 - key.length).join}"
     end
 
     def truncate(string, length)
