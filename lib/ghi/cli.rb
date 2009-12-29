@@ -90,7 +90,7 @@ module GHI::CLI #:nodoc:
         if verbosity
           issues.map { |i| ["=" * 79] + show_format(i) }
         else
-          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate(i.title, 72).join}" }
+          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate(i.title, 72)}" }
         end
       else
         "none"
@@ -133,7 +133,7 @@ module GHI::CLI #:nodoc:
 
     def action_format(value = nil)
       key = "#{action.to_s.capitalize.sub(/e?$/, "ed")} issue #{number}"
-      "#{key}: #{truncate(value.to_s, 78 - key.length).join}"
+      "#{key}: #{truncate(value.to_s, 78 - key.length)}"
     end
 
     def truncate(string, length)
@@ -370,7 +370,13 @@ module GHI::CLI #:nodoc:
             raise OptionParser::MissingArgument
           else
             repo = v.split "/"
-            repo.unshift GHI.login if repo.length == 1
+            if repo.length == 1
+              if @repo && `git remote 2>/dev/null`[/^#{repo}$/]
+                repo << @repo
+              else
+                repo.unshift(GHI.login)
+              end
+            end
             @user, @repo = repo
           end
         end
