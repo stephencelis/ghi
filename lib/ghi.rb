@@ -2,7 +2,7 @@ require "net/http"
 require "yaml"
 
 module GHI
-  VERSION = "0.2.3"
+  VERSION = "0.2.4"
 
   class << self
     def login

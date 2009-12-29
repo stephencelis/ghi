@@ -1,4 +1,9 @@
-=== HEAD
+=== 0.2.4
+
+* 1 enhancement
+
+  * Detect remotes and prefer them with the "-r" flag.
+
 
 * 1 bugfix
 
