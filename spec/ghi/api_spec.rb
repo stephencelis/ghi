@@ -65,132 +65,154 @@ describe GHI::API do
       @api = API.new "stephencelis", "ghi"
       GHI.stub!(:login).and_return "stephencelis"
       GHI.stub!(:token).and_return "token"
+
+      @http = mock(Net::HTTP)
+      @http.stub(:start) { |l| l.call }
     end
 
     it "should substitute url tokens" do
-      @api.send(:url, :open).should ==
-        "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
-      @api.send(:url, :show, 1).should ==
-        "http://github.com/api/v2/yaml/issues/show/stephencelis/ghi/1"
-      @api.send(:url, :search, :open, "me").should ==
-        "http://github.com/api/v2/yaml/issues/search/stephencelis/ghi/open/me"
-      @api.send(:url, "label/add", "me").should ==
-        "http://github.com/api/v2/yaml/issues/label/add/stephencelis/ghi/me"
+      @api.send(:path, :open).should ==
+        "/api/v2/yaml/issues/open/stephencelis/ghi"
+      @api.send(:path, :show, 1).should ==
+        "/api/v2/yaml/issues/show/stephencelis/ghi/1"
+      @api.send(:path, :search, :open, "me").should ==
+        "/api/v2/yaml/issues/search/stephencelis/ghi/open/me"
+      @api.send(:path, "label/add", "me").should ==
+        "/api/v2/yaml/issues/label/add/stephencelis/ghi/me"
     end
 
     it "should process gets" do
-      url   = "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
+      path  = "/api/v2/yaml/issues/open/stephencelis/ghi"
       query = "?login=stephencelis&token=token"
-      @api.stub!(:url).and_return url
-      URI.should_receive(:parse).once.with(url + query).and_return("mock")
-      Net::HTTP.should_receive(:get).once.with("mock").and_return ISSUES_YAML
+      @api.stub!(:path).and_return path
+      req = mock(Net::HTTPRequest)
+      res = mock(Net::HTTPResponse)
+      Net::HTTP.should_receive(:new).once.and_return @http
+      Net::HTTP::Get.should_receive(:new).once.with(path + query).
+        and_return req
+      @http.should_receive(:request).once.with(req).and_return res
+      res.should_receive(:body).once.and_return ISSUES_YAML
       @api.list
     end
 
     it "should process posts" do
-      url   = "http://github.com/api/v2/yaml/issues/open/stephencelis/ghi"
+      path  = "/api/v2/yaml/issues/open/stephencelis/ghi"
       query = { "login" => "stephencelis",
                 "token" => "token",
                 "title" => "Title",
                 "body"  => "Body" }
-      @api.stub!(:url).and_return url
-      r = mock(Net::HTTPRequest)
-      r.should_receive(:body).once.and_return ISSUE_YAML
-      URI.should_receive(:parse).once.with(url).and_return "u"
-      Net::HTTP.should_receive(:post_form).once.with("u", query).and_return r
+      @api.stub!(:path).and_return path
+      req = mock(Net::HTTPRequest)
+      res = mock(Net::HTTPResponse)
+      Net::HTTP.should_receive(:new).once.and_return @http
+      Net::HTTP::Post.should_receive(:new).once.with(path).and_return req
+      req.should_receive(:set_form_data).once
+      @http.should_receive(:request).once.with(req).and_return res
+      res.should_receive(:body).once.and_return ISSUE_YAML
       @api.open "Title", "Body"
     end
 
+    def expect_get_response(body)
+      req = mock(Net::HTTPRequest)
+      res = mock(Net::HTTPResponse)
+      Net::HTTP.should_receive(:new).once.and_return @http
+      Net::HTTP::Get.should_receive(:new).once.and_return req
+      @http.should_receive(:request).once.with(req).and_return res
+      res.should_receive(:body).once.and_return body
+    end
+
+    def expect_post_response(body)
+      req = mock(Net::HTTPRequest)
+      res = mock(Net::HTTPResponse)
+      Net::HTTP.should_receive(:new).once.and_return @http
+      Net::HTTP::Post.should_receive(:new).once.and_return req
+      req.should_receive(:set_form_data).once
+      @http.should_receive(:request).once.with(req).and_return res
+      res.should_receive(:body).once.and_return body
+    end
+
     it "should search open by default" do
-      @api.should_receive(:url).with(:search, :open, "me").and_return "u"
-      Net::HTTP.stub!(:get).and_return ISSUES_YAML
+      @api.should_receive(:path).with(:search, :open, "me").and_return "u"
+      expect_get_response ISSUES_YAML
       issues = @api.search "me"
       issues.should be_an_instance_of(Array)
       issues.each { |issue| issue.should be_an_instance_of(Issue) }
     end
 
     it "should search closed" do
-      @api.should_receive(:url).with(:search, :closed, "me").and_return "u"
-      Net::HTTP.stub!(:get).and_return ISSUES_YAML
+      @api.should_receive(:path).with(:search, :closed, "me").and_return "u"
+      expect_get_response ISSUES_YAML
       @api.search "me", :closed
     end
 
     it "should list open by default" do
-      @api.should_receive(:url).with(:list, :open).and_return "u"
-      Net::HTTP.stub!(:get).and_return ISSUES_YAML
+      @api.should_receive(:path).with(:list, :open).and_return "u"
+      expect_get_response ISSUES_YAML
       issues = @api.list
       issues.should be_an_instance_of(Array)
       issues.each { |issue| issue.should be_an_instance_of(Issue) }
     end
 
     it "should list closed" do
-      @api.should_receive(:url).with(:list, :closed).and_return "u"
-      Net::HTTP.stub!(:get).and_return ISSUES_YAML
+      @api.should_receive(:path).with(:list, :closed).and_return "u"
+      expect_get_response ISSUES_YAML
       @api.list :closed
     end
 
     it "should show" do
-      @api.should_receive(:url).with(:show, 1).and_return "u"
-      Net::HTTP.stub!(:get).and_return ISSUE_YAML
+      @api.should_receive(:path).with(:show, 1).and_return "u"
+      expect_get_response ISSUE_YAML
       @api.show(1).should be_an_instance_of(Issue)
     end
 
     it "should open" do
-      @api.should_receive(:url).with(:open).and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return ISSUE_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with(:open).and_return "u"
+      expect_post_response ISSUE_YAML
       @api.open("Title", "Body").should be_an_instance_of(Issue)
     end
 
     it "should edit" do
-      @api.should_receive(:url).with(:edit, 1).and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return ISSUE_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with(:edit, 1).and_return "u"
+      expect_post_response ISSUE_YAML
       @api.edit(1, "Title", "Body").should be_an_instance_of(Issue)
     end
 
     it "should close" do
-      @api.should_receive(:url).with(:close, 1).and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return ISSUE_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with(:close, 1).and_return "u"
+      expect_post_response ISSUE_YAML
       @api.close(1).should be_an_instance_of(Issue)
     end
 
     it "should reopen" do
-      @api.should_receive(:url).with(:reopen, 1).and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return ISSUE_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with(:reopen, 1).and_return "u"
+      expect_post_response ISSUE_YAML
       @api.reopen(1).should be_an_instance_of(Issue)
     end
 
     it "should add labels" do
-      @api.should_receive(:url).with("label/add", 1, "l").and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return LABELS_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with("label/add", 1, "l").and_return "u"
+      expect_post_response LABELS_YAML
       @api.add_label(1, "l").should be_an_instance_of(Array)
     end
 
     it "should remove labels" do
-      @api.should_receive(:url).with("label/remove", 1, "l").and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return LABELS_YAML
-      Net::HTTP.stub!(:post_form).and_return response
+      @api.should_receive(:path).with("label/remove", 1, "l").and_return "u"
+      expect_post_response LABELS_YAML
       @api.remove_label(1, "l").should be_an_instance_of(Array)
     end
 
-    it "should comment" do
-      @api.should_receive(:url).with(:comment, 1).and_return "u"
-      URI.stub!(:parse).and_return "u"
-      response = mock(Net::HTTPRequest)
-      response.stub!(:body).and_return COMMENT_YAML
-      Net::HTTP.should_receive(:post_form).with("u",
-        hash_including("comment" => "Comment")).and_return response
-      @api.comment(1, "Comment").should be_an_instance_of(Hash)
+    it "should comment, and escape values" do
+      @api.should_receive(:path).with(:comment, 1).and_return "u"
+
+      req = mock(Net::HTTPRequest)
+      res = mock(Net::HTTPResponse)
+      Net::HTTP.should_receive(:new).once.and_return @http
+      Net::HTTP::Post.should_receive(:new).once.and_return req
+      req.should_receive(:set_form_data).once
+      @http.should_receive(:request).once.with(req).and_return res
+      res.should_receive(:body).once.and_return COMMENT_YAML
+
+      @api.comment(1, "Comment&so").should be_an_instance_of(Hash)
     end
   end
 end

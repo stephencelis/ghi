@@ -207,7 +207,8 @@ module GHI::CLI #:nodoc:
     include FileHelper, FormattingHelper
 
     attr_reader :message, :local_user, :local_repo, :user, :repo, :api,
-      :action, :search_term, :number, :title, :body, :tag, :args, :verbosity
+      :action, :search_term, :number, :title, :body, :tag, :args, :verbosity,
+      :use_ssl
 
     def parse!(*argv)
       @args, @argv = argv, argv.dup
@@ -241,7 +242,7 @@ module GHI::CLI #:nodoc:
     end
 
     def run!
-      @api = GHI::API.new user, repo
+      @api = GHI::API.new user, repo, use_ssl
 
       case action
         when :search        then search
@@ -311,6 +312,10 @@ module GHI::CLI #:nodoc:
             @action ||= :list
             @verbosity = true
           end
+        end
+
+        opts.on("--ssl") do |ssl|
+          @use_ssl = true
         end
 
         opts.on("-o", "--open", "--reopen [title|number]") do |v|
@@ -607,6 +612,9 @@ module GHI::CLI #:nodoc:
         @action = :url
         @number ||= arguments.shift[/\d+/].to_i
       end
+
+      @use_ssl ||= `git config github.ssl`.chomp == 'true'
+
       if @action
         @args = @argv.dup
         args.delete_if { |arg| arg == command }
