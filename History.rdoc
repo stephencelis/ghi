@@ -1,3 +1,10 @@
+=== 0.2.5
+
+* 1 enhancement
+
+  * Support for SSL with the "--ssl" flag (and "github.ssl" configuration).
+
+
 === 0.2.4
 
 * 1 enhancement

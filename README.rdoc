@@ -19,6 +19,7 @@ Go:
       -l, --list [state|term|number]
           --search, --show
       -v, --verbose
+          --ssl
       -o, --open [title|number]
           --reopen
       -c, --closed, --close [number]
@@ -76,11 +77,16 @@ ghi uses ANSI colors if you use them in git.
 
 ghi looks for a <tt>$GHI_PAGER</tt> variable for paging.
 
+Always favor SSL by setting it:
+
+  git config --global github.ssl true
+
 
 == CONTRIBUTORS
 
 * Jamie Macey (http://blog.tracefunc.com)
 * Hiroshi Nakamura (http://github.com/nahi)
+* David J. Hamilton
 
 
 === CONTRIBUTE?
