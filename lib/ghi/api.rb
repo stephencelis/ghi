@@ -34,6 +34,10 @@ class GHI::API
     GHI::Issue.new get(:show, number)["issue"]
   end
 
+  def comments(number)
+    get(:comments, number)["comments"]
+  end
+
   def open(title, body)
     GHI::Issue.new post(:open, "title" => title, "body" => body)["issue"]
   end

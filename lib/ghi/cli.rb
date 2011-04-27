@@ -129,6 +129,19 @@ module GHI::CLI #:nodoc:
       return l unless verbose
       l << ""
       l += indent(issue.body)[0..-2]
+
+      comments = api.comments(issue.number)
+      unless comments.empty?
+        l << "=" * 79
+        comments.each do |c|
+          l << "#{c["user"]} commented:"
+          l << ""
+          l += indent(c["body"])
+          l << "-" * 79
+        end
+      end
+
+      l
     end
 
     def action_format(value = nil)
@@ -143,6 +156,7 @@ module GHI::CLI #:nodoc:
     end
 
     def indent(string, level = 4, first = level)
+      string = string.gsub(/\n{3,}/, "\n\n")
       lines = string.scan(/.{0,#{79 - level}}(?:\s|\Z)/).map { |line|
         " " * level + line
       }
