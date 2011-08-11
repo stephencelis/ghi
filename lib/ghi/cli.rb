@@ -572,7 +572,7 @@ module GHI::CLI #:nodoc:
       if number.nil?
         url << "/#{state}" unless state == :open
       else
-        url << "#issue/#{number}"
+        url << "/#{number}"
       end
       defined?(Launchy) ? Launchy.open(url) : puts(url)
     end
