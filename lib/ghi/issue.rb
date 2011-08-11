@@ -1,6 +1,6 @@
 class GHI::Issue
   attr_reader :number, :title, :body, :votes, :state, :user, :created_at,
-    :updated_at
+    :updated_at, :labels
 
   def initialize(options = {})
     @number     = options["number"]
@@ -11,6 +11,7 @@ class GHI::Issue
     @user       = options["user"]
     @created_at = options["created_at"]
     @updated_at = options["updated_at"]
+    @labels     = options["labels"]
   end
 
   #-
