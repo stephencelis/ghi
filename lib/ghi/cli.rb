@@ -90,11 +90,15 @@ module GHI::CLI #:nodoc:
         if verbosity
           issues.map { |i| ["=" * 79] + show_format(i) }
         else
-          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate(i.title, 72)}" }
+          issues.map { |i| "  #{i.number.to_s.rjust 3}: #{truncate(i.title, 72)} #{label_format(i.labels)}" }
         end
       else
         "none"
       end
+    end
+    
+    def label_format(labels)
+      labels.map {|l| "[#{l}]"}.join(' ')
     end
 
     def edit_format(issue)
@@ -122,6 +126,7 @@ module GHI::CLI #:nodoc:
       l << "      number:  #{issue.number}"                    if issue.number
       l << "       state:  #{issue.state}"                     if issue.state
       l << "       title:  #{indent(issue.title, 15, 0).join}" if issue.title
+      l << "      labels:  #{label_format(issue.labels)}"      unless issue.labels.empty?
       l << "        user:  #{issue.user || GHI.login}"
       l << "       votes:  #{issue.votes}"                     if issue.votes
       l << "  created at:  #{issue.created_at}"                if issue.created_at
