@@ -1,5 +1,6 @@
 require "net/http"
 require "yaml"
+YAML::ENGINE.yamler = "syck"
 
 module GHI
   VERSION = "0.2.4"
