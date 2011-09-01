@@ -98,7 +98,7 @@ module GHI::CLI #:nodoc:
     end
     
     def label_format(labels)
-      labels.map {|l| "[#{l}]"}.join(' ')
+      labels and labels.map {|l| "[#{l}]"}.join(' ')
     end
 
     def edit_format(issue)
@@ -126,7 +126,7 @@ module GHI::CLI #:nodoc:
       l << "      number:  #{issue.number}"                    if issue.number
       l << "       state:  #{issue.state}"                     if issue.state
       l << "       title:  #{indent(issue.title, 15, 0).join}" if issue.title
-      l << "      labels:  #{label_format(issue.labels)}"      unless issue.labels.empty?
+      l << "      labels:  #{label_format(issue.labels)}"      unless issue.labels.nil? || issue.labels.empty?
       l << "        user:  #{issue.user || GHI.login}"
       l << "       votes:  #{issue.votes}"                     if issue.votes
       l << "  created at:  #{issue.created_at}"                if issue.created_at
@@ -523,7 +523,7 @@ module GHI::CLI #:nodoc:
         comment = api.comment number, new_body
       end
       puts action_format(issue.title)
-      puts "(comment #{comment["status"]})" if comment
+      puts "(commented)" if comment
     end
 
     def reopen
@@ -533,7 +533,7 @@ module GHI::CLI #:nodoc:
         comment = api.comment number, new_body
       end
       puts action_format(issue.title)
-      puts "(comment #{comment["status"]})" if comment
+      puts "(commented)" if comment
     end
 
     def prepare_label
@@ -564,7 +564,7 @@ module GHI::CLI #:nodoc:
       @body ||= gets_from_editor api.show(number)
       comment = api.comment(number, body)
       delete_message
-      puts "(comment #{comment["status"]})"
+      puts "(commented)"
     end
 
     def url
