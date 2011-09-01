@@ -91,6 +91,9 @@ Always favor SSL by setting it:
 
 === CONTRIBUTE?
 
+Running the tests should be as simple as a `bundle` and
+`bundle exec spec spec`.
+
 ghi is not under currently under the control of any gem packaging system. To
 build, use RubyGems:
 
