@@ -1,6 +1,6 @@
 require "net/http"
 require "yaml"
-YAML::ENGINE.yamler = "syck"
+YAML::ENGINE.yamler = "syck" if YAML.const_defined? :ENGINE
 
 module GHI
   VERSION = "0.2.4"
