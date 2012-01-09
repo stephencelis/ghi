@@ -233,7 +233,7 @@ module GHI::CLI #:nodoc:
       @args, @argv = argv, argv.dup
 
       remotes = `git config --get-regexp remote\..+\.url`.split /\n/
-      repo_expression = %r{([^:/]+)/([^/\s]+)(?:\.git)?$}
+      repo_expression = %r{([^:/]+)/([^/\s]+?)(?:\.git)?$}
       if remote = remotes.find { |r| r.include? "github.com" }
         remote.match repo_expression
         @user, @repo = $1, $2
@@ -564,7 +564,7 @@ module GHI::CLI #:nodoc:
       @body ||= gets_from_editor api.show(number)
       comment = api.comment(number, body)
       delete_message
-      puts "(commented)"
+      puts "(comment})"
     end
 
     def url
