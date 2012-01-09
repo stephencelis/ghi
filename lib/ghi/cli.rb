@@ -571,7 +571,7 @@ module GHI::CLI #:nodoc:
     end
 
     def url
-      url = "http://github.com/#{user}/#{repo}/issues"
+      url = "https://github.com/#{user}/#{repo}/issues"
       if number.nil?
         url << "/#{state}" unless state == :open
       else
