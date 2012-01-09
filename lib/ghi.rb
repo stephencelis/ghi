@@ -10,13 +10,10 @@ module GHI
       return @login if defined? @login
       @login = `git config --get github.user`.chomp
       if @login.empty?
-        begin
-          print "Please enter your GitHub username: "
-          @login = gets.chomp
-          valid = user? @login
-          warn "invalid username" unless valid
-        end until valid
-        `git config --global github.user #@login`
+        warn "Please configure your GitHub username."
+        puts
+        puts "E.g., git config --global github.user [your username]"
+        abort
       end
       @login
     end
@@ -25,13 +22,14 @@ module GHI
       return @token if defined? @token
       @token = `git config --get github.token`.chomp
       if @token.empty?
-        begin
-          print "GitHub token (https://github.com/account): "
-          @token = gets.chomp
-          valid = token? @token
-          warn "invalid token for #{login}" unless valid
-        end until valid
-        `git config --global github.token #@token`
+        warn "Please configure your GitHub token."
+        puts
+        puts "E.g., git config --global github.user [your token]"
+        puts
+        puts "Find your token here: https://github.com/account/admin"
+        abort
+      elsif @token.sub!(/^!/, '')
+        @token = `#@token`
       end
       @token
     end
