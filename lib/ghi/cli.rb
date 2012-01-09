@@ -290,6 +290,9 @@ module GHI::CLI #:nodoc:
     rescue GHI::API::ResponseError => e
       warn "#{File.basename $0}: #{e.message} (#{user}/#{repo})"
       exit 1
+    rescue GHI::API::GHIError => e
+      warn e.message
+      exit 1
     end
 
     def commenting?
@@ -600,7 +603,13 @@ module GHI::CLI #:nodoc:
         @action = :show
         @number ||= ($1 || arguments.shift[/\d+/]).to_i
       when "open"
-        @action = :open
+        if arguments.first =~ /^\d+$/
+          @action = :reopen
+          @number ||= arguments.shift[/\d+/].to_i
+        else
+          @action = :open
+          @title = arguments.join(' ')
+        end
       when "edit"
         @action = :edit
         @number ||= arguments.shift[/\d+/].to_i

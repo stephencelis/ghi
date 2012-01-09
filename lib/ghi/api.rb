@@ -3,17 +3,20 @@ require "yaml"
 require "cgi"
 
 class GHI::API
-  class InvalidRequest < StandardError
+  class GHIError < StandardError
   end
 
-  class InvalidConnection < StandardError
+  class InvalidRequest < GHIError
   end
 
-  class ResponseError < StandardError
+  class InvalidConnection < GHIError
   end
 
-  API_HOST  = "github.com"
-  API_PATH  = "/api/v2/yaml/issues/:action/:user/:repo"
+  class ResponseError < GHIError
+  end
+
+  API_HOST = "github.com"
+  API_PATH = "/api/v2/yaml/issues/:action/:user/:repo"
 
   attr_reader :user, :repo
 
@@ -39,10 +42,16 @@ class GHI::API
   end
 
   def open(title, body)
+    if title.empty? && body.empty?
+      raise GHIError, "Aborting request due to empty issue."
+    end
     GHI::Issue.new post(:open, "title" => title, "body" => body)["issue"]
   end
 
   def edit(number, title, body)
+    if title.empty? && body.empty?
+      raise GHIError, "Aborting request due to empty issue."
+    end
     res = post :edit, number, "title" => title, "body" => body
     GHI::Issue.new res["issue"]
   end
@@ -64,6 +73,9 @@ class GHI::API
   end
 
   def comment(number, comment)
+    if comment.empty?
+      raise GHIError, "Aborting request due to empty comment."
+    end
     post(:comment, number, "comment" => comment)["comment"]
   end
 
@@ -83,7 +95,7 @@ class GHI::API
       res = YAML.load http.request(req).body
     end
 
-    raise ResponseError, errors(res) if res["error"]
+    raise ResponseError, errors(res) if res["error"] || res[:error]
     res
   rescue ArgumentError, URI::InvalidURIError
     raise ResponseError, "GitHub hiccuped on your request"
@@ -103,7 +115,7 @@ class GHI::API
       res = YAML.load http.request(req).body
     end
 
-    raise ResponseError, errors(res) if res["error"]
+    raise ResponseError, errors(res) if res["error"] || res[:error]
     res
   rescue ArgumentError, URI::InvalidURIError
     raise ResponseError, "GitHub hiccuped on your request"
@@ -112,6 +124,7 @@ class GHI::API
   end
 
   def errors(response)
+    return response[:error] if response.key? :error
     [*response["error"]].map { |e| e["error"] } * ", "
   end
 
