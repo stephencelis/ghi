@@ -3,7 +3,7 @@ require "yaml"
 YAML::ENGINE.yamler = "syck" if YAML.const_defined? :ENGINE
 
 module GHI
-  VERSION = "0.3.0"
+  VERSION = "0.3.1"
 
   class << self
     def login
