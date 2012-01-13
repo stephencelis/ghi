@@ -8,11 +8,12 @@ module GHI
   class << self
     def login
       return @login if defined? @login
-      @login = `git config --get github.user`.chomp
+      @login = ENV["GITHUB_USER"] || `git config --get github.user`.chomp
       if @login.empty?
         warn "Please configure your GitHub username."
         puts
         puts "E.g., git config --global github.user [your username]"
+        puts "Or set the environment variable GITHUB_USER"
         abort
       end
       @login
@@ -20,11 +21,13 @@ module GHI
 
     def token
       return @token if defined? @token
-      @token = `git config --get github.token`.chomp
+      # env values are frozen
+      @token = (ENV["GITHUB_TOKEN"] || `git config --get github.token`.chomp).dup
       if @token.empty?
         warn "Please configure your GitHub token."
         puts
-        puts "E.g., git config --global github.user [your token]"
+        puts "E.g., git config --global github.token [your token]"
+        puts "Or set the environment variable GITHUB_TOKEN"
         puts
         puts "Find your token here: https://github.com/account/admin"
         abort
