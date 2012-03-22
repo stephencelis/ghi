@@ -232,10 +232,13 @@ module GHI::CLI #:nodoc:
     def parse!(*argv)
       @args, @argv = argv, argv.dup
 
-      remotes = `git config --get-regexp remote\..+\.url`.split /\n/
+      local_branch = `git name-rev --name-only HEAD`.strip
+      tracking_remote = `git config branch.#{local_branch}.remote`.strip
+      remote_url = `git config remote.#{tracking_remote}.url`.strip
       repo_expression = %r{([^:/]+)/([^/\s]+?)(?:\.git)?$}
-      if remote = remotes.find { |r| r.include? "github.com" }
-        remote.match repo_expression
+
+      if remote_url.include? "github.com"
+        remote_url.match repo_expression
         @user, @repo = $1, $2
       end
 
