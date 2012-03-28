@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ghi (0.3.1)
+    ghi (0.3.2)
 
 GEM
   remote: http://rubygems.org/
