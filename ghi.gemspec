@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "ghi"
-  s.version = "0.3.1"
+  s.version = "0.3.2"
   s.summary = "GitHub Issues command line interface"
   s.description = "GitHub Issues on the command line. Use your `$EDITOR`, not your browser."
 
