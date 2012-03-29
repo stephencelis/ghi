@@ -30,7 +30,7 @@ class GHI::API
   end
 
   def list(state = :open)
-    get(:list, state)["issues"].map { |attrs| GHI::Issue.new(attrs) }
+    get(:list, state)["issues"].reverse.map { |attrs| GHI::Issue.new(attrs) }
   end
 
   def show(number)
