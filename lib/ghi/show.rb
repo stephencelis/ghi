@@ -2,7 +2,7 @@ module GHI
   class Show
     def self.options
       OptionParser.new do |opts|
-        opts.banner = 'usage: ghi show <issueno>'
+        opts.banner = 'usage: ghi show <issueno> [[<user>/]<repo>]'
         opts.separator ''
       end
     end

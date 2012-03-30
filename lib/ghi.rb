@@ -1,6 +1,8 @@
 require 'optparse'
 
 module GHI
+  autoload :Command,   'ghi/command'
+
   autoload :List,      'ghi/list'
   autoload :Show,      'ghi/show'
   autoload :Open,      'ghi/open'
@@ -10,6 +12,10 @@ module GHI
   autoload :Label,     'ghi/label'
   autoload :Assign,    'ghi/assign'
   autoload :Milestone, 'ghi/milestone'
+
+  autoload :Reopen,    'ghi/reopen'
+  autoload :Unassign,  'ghi/unassign'
+
   autoload :Help,      'ghi/help'
   autoload :Version,   'ghi/version'
 
@@ -22,22 +28,21 @@ module GHI
     end
     command_args ||= []
 
-    # Rre-command option parsing.
     option_parser = OptionParser.new do |opts|
       opts.banner = 'usage: ghi [--version] [-h|--help] <command> [<args>]'
-
       opts.on('-h', '--help') {
         command_args.unshift command_name, *args
         args.clear
         command_name = 'help'
       }
       opts.on('--version') { command_name = 'version' }
+      opts.on('-v')        { raise OptionParser::InvalidOption }
     end
 
     begin
       option_parser.parse! args
     rescue OptionParser::InvalidOption => e
-      warn e.message.capitalize
+      warn "#{e.message.capitalize}\n"
       abort option_parser.banner
     end
 
@@ -57,8 +62,8 @@ module GHI
       begin
         command.execute command_args
       rescue OptionParser::ParseError => e
-        warn e.message.capitalize
-        abort command.option_parser.to_s
+        warn "#{e.message.capitalize}\n"
+        abort command.options.to_s
       end
     end
   end

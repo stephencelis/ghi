@@ -1,35 +1,58 @@
+require 'date'
+
 module GHI
-  class List
+  class List < Command
+    #   usage: ghi list [<options>] [<[user/]repo>]
+    #
+    #       -g, --global                     all of your issues on GitHub
+    #       -s, --state <in>                 open or closed
+    #       -L, --label <labelname>...       by label(s)
+    #           --sort <on>                  created, updated, or comments
+    #           --reverse                    reverse (ascending) sort order
+    #           --since <date>               issues more recent than
+    #
+    #   Global options
+    #       -f, --filter <by>                assigned, created, mentioned, or
+    #                                        subscribed
+    #
+    #   Project options
+    #       -M, --milestone <n>
+    #       -u, --[no-]assignee <user>
+    #       -U, --mentioned <user>
     def self.options
       OptionParser.new do |opts|
         opts.banner = 'usage: ghi list [<options>] [<[user/]repo>]'
         opts.separator ''
         opts.on '-g', '--global', 'all of your issues on GitHub' do
-
+          assigns[:global] = true
         end
         opts.on(
           '-s', '--state <in>', %w(open closed), {'o'=>'open','c'=>'closed'},
           'open or closed'
         ) do |state|
-          puts "State: #{state}"
+          assigns[:state] = state
         end
         opts.on(
-          '-l', '--label <labelname>...', Array, 'by label(s)'
+          '-L', '--label <labelname>...', Array, 'by label(s)'
         ) do |labels|
-          puts "Labels: #{labels.inspect}"
+          assigns[:labels] = labels
         end
         opts.on(
           '--sort <on>', %w(created updated comments),
           {'c'=>'created','u'=>'updated','m'=>'comments'},
           'created, updated, or comments'
         ) do |sort|
-          puts "Sort: #{sort}"
+          assigns[:sort] = sort
         end
         opts.on '--reverse', 'reverse (ascending) sort order' do
-          puts "Reversing..."
+          assigns[:reverse] = !assigns[:reverse]
         end
         opts.on '--since <date>', 'issues more recent than' do |date|
-          puts "Date: #{date}"
+          begin
+            assigns[:date] = Date.parse date # TODO: Better parsing.
+          rescue ArgumentError => e
+            raise OptionParser::InvalidArgument, e.message
+          end
         end
         opts.separator ''
         opts.separator 'Global options'
@@ -39,18 +62,18 @@ module GHI
           {'a'=>'assigned','c'=>'created','m'=>'mentioned','s'=>'subscribed'},
           'assigned, created, mentioned, or subscribed'
         ) do |filter|
-          puts "Filter: #{filter}"
+          assigns[:filter] = filter
         end
         opts.separator ''
         opts.separator 'Project options'
-        opts.on '-m', '--milestone <n>', Integer do |milestone|
-          puts "Milestone: #{milestone}"
+        opts.on '-M', '--milestone <n>', Integer do |milestone|
+          assigns[:milestone] = milestone
         end
         opts.on '-u', '--[no-]assignee <user>' do |assignee|
-          puts "Assignee: #{assignee.inspect}"
+          assigns[:assignee] = assignee
         end
-        opts.on '--mentioned <user>' do |mentioned|
-          puts "Mentioned: #{mentioned}"
+        opts.on '-U', '--mentioned <user>' do |mentioned|
+          assigns[:mentioned] = mentioned
         end
         opts.separator ''
       end
