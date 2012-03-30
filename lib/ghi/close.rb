@@ -1,6 +1,6 @@
 module GHI
-  class Close
-    #   usage: ghi close [<options>] <issueno> [[<user>/]<repo>]
+  class Close < Command
+    #   usage: ghi close [options] <issueno> [[<user>/]<repo>]
     #   
     #       -l, --list                       list closed issues
     #
@@ -9,7 +9,7 @@ module GHI
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi close [<options>] <issueno> [[<user>/]<repo>]
+usage: ghi close [options] <issueno> [[<user>/]<repo>]
 EOF
         opts.separator ''
         opts.on '-l', '--list', 'list closed issues'

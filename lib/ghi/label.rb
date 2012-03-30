@@ -1,5 +1,5 @@
 module GHI
-  class Label
+  class Label < Command
     #   usage: ghi label <labelname> [-c <color>] [-r <newname>]
     #          [[<user>/]<repo>]
     #      or: ghi label -D <labelname> [[<user>/]<repo>]

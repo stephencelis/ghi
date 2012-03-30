@@ -2,7 +2,7 @@ require 'date'
 
 module GHI
   class List < Command
-    #   usage: ghi list [<options>] [<[user/]repo>]
+    #   usage: ghi list [options] [[<user>/]<repo>]
     #
     #       -g, --global                     all of your issues on GitHub
     #       -s, --state <in>                 open or closed
@@ -21,7 +21,7 @@ module GHI
     #       -U, --mentioned <user>
     def self.options
       OptionParser.new do |opts|
-        opts.banner = 'usage: ghi list [<options>] [<[user/]repo>]'
+        opts.banner = 'usage: ghi list [options] [[<user>/]<repo>]'
         opts.separator ''
         opts.on '-g', '--global', 'all of your issues on GitHub' do
           assigns[:global] = true

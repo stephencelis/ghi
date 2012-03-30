@@ -1,7 +1,7 @@
 module GHI
   class Assign < Command
-    #   usage: ghi assign [<options>] [<issueno> [<[user/]repo>]]
-    #      or: ghi unassign <issueno> [<[user/]repo>]]
+    #   usage: ghi assign [options] [<issueno> [[<user>/]<repo>]]
+    #      or: ghi unassign <issueno> [[<user>/]<repo>]]
     #   
     #       -l, --list                       list assigned issues
     #       -d, --no-assignee                assign this issue to no one
@@ -9,8 +9,8 @@ module GHI
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi assign [<options>] <issueno>
-   or: ghi unassign <issueno>
+usage: ghi assign [options] [<issueno> [[<user>/]<repo>]]
+   or: ghi unassign <issueno> [[<user>/]<repo>]]
 EOF
         opts.separator ''
         opts.on '-l', '--list', 'list assigned issues' do

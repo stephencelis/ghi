@@ -1,6 +1,6 @@
 module GHI
-  class Edit
-    #   usage: ghi edit [<options>] <issueno> [[<user>]/<repo>]
+  class Edit < Command
+    #   usage: ghi edit [options] <issueno> [[<user>]/<repo>]
     #   
     #       -m, --message <text>             change issue description
     #       -u, --[no-]assign <user>         assign to specified user
@@ -10,7 +10,7 @@ module GHI
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi edit [<options>] <issueno> [[<user>]/<repo>]
+usage: ghi edit [options] <issueno> [[<user>]/<repo>]
 EOF
         opts.separator ''
         opts.on '-m', '--message <text>', 'change issue description'

@@ -1,5 +1,5 @@
 module GHI
-  class Help
+  class Help < Command
     def self.options
       OptionParser.new do |opts|
         opts.banner = 'usage: ghi help [--all] [--man|--web] <command>'

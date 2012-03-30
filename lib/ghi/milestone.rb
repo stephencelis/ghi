@@ -1,5 +1,5 @@
 module GHI
-  class Milestone
+  class Milestone < Command
     #   usage: ghi milestone [<modification options>] [<milestoneno>]
     #          [[<user>]/<repo>]
     #      or: ghi milestone -D <milestoneno> [[<user>/]<repo>]

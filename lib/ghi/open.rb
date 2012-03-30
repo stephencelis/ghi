@@ -1,7 +1,7 @@
 module GHI
-  class Open
-    #   usage: ghi open [<options>] [[<user>/]repo]
-    #      or: ghi reopen [<options>] <issueno> [[<user>/]repo]
+  class Open < Command
+    #   usage: ghi open [options] [[<user>/]<repo>]
+    #      or: ghi reopen [options] <issueno> [[<user>/]<repo>]
     #   
     #       -l, --list                       list open tickets
     #   
@@ -13,8 +13,8 @@ module GHI
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi open [<options>] [[<user>/]repo]
-   or: ghi reopen [<options>] <issueno> [[<user>/]repo]
+usage: ghi open [options] [[<user>/]<repo>]
+   or: ghi reopen [options] <issueno> [[<user>/]<repo>]
 EOF
         opts.separator ''
         opts.on('-l', '--list', 'list open tickets')

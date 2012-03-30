@@ -1,6 +1,6 @@
 module GHI
-  class Comment
-    #   usage: ghi comment [<options>] <issueno> [[<user>/]<repo>]
+  class Comment < Command
+    #   usage: ghi comment [options] <issueno> [[<user>/]<repo>]
     #   
     #       -l, --list                       list comments
     #       -v, --verbose                    list events, too
@@ -9,7 +9,7 @@ module GHI
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi comment [<options>] <issueno> [[<user>/]<repo>]
+usage: ghi comment [options] <issueno> [[<user>/]<repo>]
 EOF
         opts.separator ''
         opts.on '-l', '--list', 'list comments'
