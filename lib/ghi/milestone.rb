@@ -6,15 +6,16 @@ module GHI
     #      or: ghi milestone -l [-c]
     #   
     #       -l, --list                       list milestones
-    #       -c, --closed                     show closed milestones
-    #           --sort <on>                  due_date or completeness
+    #       -c, --[no-]closed                show closed milestones
+    #           --sort <on>                  due_date completeness
+    #                                        due_date or completeness
     #           --reverse                    reverse (ascending) sort order
     #   
     #   Milestone modification options
     #       -m, --message <text>             change milestone description
     #       -s, --state <in>                 open or closed
     #           --due <on>                   when milestone should be complete
-    #       -D, --delete <n>                 delete milestone
+    #       -D, --delete <milestoneno>       delete milestone
     def self.options
       OptionParser.new do |opts|
         opts.banner = <<EOF
@@ -24,8 +25,12 @@ usage: ghi milestone [<modification options>] [<milestoneno>] [[<user>]/<repo>]
 EOF
         opts.separator ''
         opts.on '-l', '--list', 'list milestones'
-        opts.on '-c', '--closed', 'show closed milestones'
-        opts.on '--sort <on>', 'due_date or completeness'
+        opts.on '-c', '--[no-]closed', 'show closed milestones'
+        opts.on(
+          '--sort <on>', %(due_date completeness),
+          {'d'=>'due_date','due'=>'due_date','c'=>'completeness'},
+          'due_date or completeness'
+        )
         opts.on '--reverse', 'reverse (ascending) sort order'
         opts.separator ''
         opts.separator 'Milestone modification options'
@@ -37,7 +42,7 @@ EOF
           assigns[:state] = state
         end
         opts.on '--due <on>', 'when milestone should be complete'
-        opts.on '-D', '--delete <n>', 'delete milestone'
+        opts.on '-D', '--delete <milestoneno>', 'delete milestone'
         opts.separator ''
       end
     end
