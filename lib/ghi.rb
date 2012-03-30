@@ -1,57 +1,65 @@
-require "net/http"
-require "yaml"
-YAML::ENGINE.yamler = "syck" if YAML.const_defined? :ENGINE
+require 'optparse'
 
 module GHI
-  VERSION = "0.3.1"
+  autoload :List,      'ghi/list'
+  autoload :Show,      'ghi/show'
+  autoload :Open,      'ghi/open'
+  autoload :Close,     'ghi/close'
+  autoload :Edit,      'ghi/edit'
+  autoload :Comment,   'ghi/comment'
+  autoload :Label,     'ghi/label'
+  autoload :Assign,    'ghi/assign'
+  autoload :Milestone, 'ghi/milestone'
+  autoload :Help,      'ghi/help'
+  autoload :Version,   'ghi/version'
 
-  class << self
-    def login
-      return @login if defined? @login
-      @login = ENV["GITHUB_USER"] || `git config --get github.user`.chomp
-      if @login.empty?
-        warn "Please configure your GitHub username."
-        puts
-        puts "E.g., git config --global github.user [your username]"
-        puts "Or set the environment variable GITHUB_USER"
-        abort
+  def self.execute args
+    STDOUT.sync = true
+
+    if index = args.index { |arg| arg !~ /^-/ }
+      command_name = args.delete_at index
+      command_args = args.slice! index, args.length
+    end
+    command_args ||= []
+
+    # Rre-command option parsing.
+    option_parser = OptionParser.new do |opts|
+      opts.banner = 'usage: ghi [--version] [-h|--help] <command> [<args>]'
+
+      opts.on('-h', '--help') {
+        command_args.unshift command_name, *args
+        args.clear
+        command_name = 'help'
+      }
+      opts.on('--version') { command_name = 'version' }
+    end
+
+    begin
+      option_parser.parse! args
+    rescue OptionParser::InvalidOption => e
+      warn e.message.capitalize
+      abort option_parser.banner
+    end
+
+    if command_name.nil? || command_name == 'help'
+      Help.execute command_args, option_parser.banner
+    else
+      begin
+        command = const_get command_name.capitalize
+        raise NameError unless command.respond_to? :execute
+      rescue NameError
+        abort "ghi: '#{command_name}' is not a ghi command. See 'ghi --help'."
       end
-      @login
-    end
 
-    def token
-      return @token if defined? @token
-      # env values are frozen
-      @token = (ENV["GITHUB_TOKEN"] || `git config --get github.token`.chomp).dup
-      if @token.empty?
-        warn "Please configure your GitHub token."
-        puts
-        puts "E.g., git config --global github.token [your token]"
-        puts "Or set the environment variable GITHUB_TOKEN"
-        puts
-        puts "Find your token here: https://github.com/account/admin"
-        abort
-      elsif @token.sub!(/^!/, '')
-        @token = `#@token`
+      # Post-command help option parsing.
+      Help.execute [command_name] if command_args.first == '--help'
+
+      begin
+        command.execute command_args
+      rescue OptionParser::ParseError => e
+        warn e.message.capitalize
+        abort command.option_parser.to_s
       end
-      @token
-    end
-
-    private
-
-    def user?(username)
-      url = "http://github.com/api/v2/yaml/user/show/#{username}"
-      !YAML.load(Net::HTTP.get(URI.parse(url)))["user"].nil?
-    rescue ArgumentError, URI::InvalidURIError
-      false
-    end
-
-    def token?(token)
-      url  = "http://github.com/api/v2/yaml/user/show/#{login}"
-      url += "?login=#{login}&token=#{token}"
-      !YAML.load(Net::HTTP.get(URI.parse(url)))["user"]["plan"].nil?
-    rescue ArgumentError, NoMethodError, URI::InvalidURIError
-      false
     end
   end
 end
