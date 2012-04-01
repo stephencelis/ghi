@@ -1,0 +1,161 @@
+require 'date'
+
+module GHI
+  module Commands
+    class List < Command
+      attr_accessor :reverse
+
+      #   usage: ghi list [options] [[<user>/]<repo>]
+      #   
+      #       -g, --global                     all of your issues on GitHub
+      #       -s, --state <in>                 open or closed
+      #       -L, --label <labelname>,...      by label(s)
+      #       -S, --sort <by>                  created, updated, or comments
+      #           --reverse                    reverse (ascending) sort order
+      #           --since <date>               issues more recent than
+      #   
+      #   Global options
+      #       -f, --filter <by>                assigned, created, mentioned, or
+      #                                        subscribed
+      #   
+      #   Project options
+      #       -M, --[no-]milestone [<n>]       with (specified) milestone
+      #       -u, --[no-]assignee [<user>]     assigned to specified user
+      #           --mine                       assigned to you
+      #       -U, --mentioned [<user>]         mentioning you or specified user
+      def options
+        OptionParser.new do |opts|
+          opts.banner = 'usage: ghi list [options] [[<user>/]<repo>]'
+          opts.separator ''
+          opts.on '-g', '--global', 'all of your issues on GitHub' do
+            @repo = nil
+          end
+          opts.on(
+            '-s', '--state <in>', %w(open closed),
+            {'o'=>'open', 'c'=>'closed'}, 'open or closed'
+          ) do |state|
+            assigns[:state] = state
+          end
+          opts.on(
+            '-L', '--label <labelname>,...', Array, 'by label(s)'
+          ) do |labels|
+            assigns[:labels] = labels.join ','
+          end
+          opts.on(
+            '-S', '--sort <by>', %w(created updated comments),
+            {'c'=>'created','u'=>'updated','m'=>'comments'},
+            'created, updated, or comments'
+          ) do |sort|
+            assigns[:sort] = sort
+          end
+          opts.on '--reverse', 'reverse (ascending) sort order' do
+            self.reverse = !reverse
+          end
+          opts.on '--since <date>', 'issues more recent than' do |date|
+            begin
+              assigns[:since] = Date.parse date # TODO: Better parsing.
+            rescue ArgumentError => e
+              raise OptionParser::InvalidArgument, e.message
+            end
+          end
+          opts.separator ''
+          opts.separator 'Global options'
+          opts.on(
+            '-f', '--filter <by>',
+            filters = %w(assigned created mentioned subscribed),
+            Hash[filters.map { |f| [f[0, 1], f] }],
+            'assigned, created, mentioned, or', 'subscribed'
+          ) do |filter|
+            assigns[:filter] = filter
+          end
+          opts.separator ''
+          opts.separator 'Project options'
+          opts.on(
+            '-M', '--[no-]milestone [<n>]', Integer,
+            'with (specified) milestone'
+          ) do |milestone|
+            assigns[:milestone] = any_or_none_or milestone
+          end
+          opts.on(
+            '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
+          ) do |assignee|
+            assigns[:assignee] = any_or_none_or assignee
+          end
+          opts.on '--mine', 'assigned to you' do
+            assigns[:assignee] = Authorization.username
+          end
+          opts.on(
+            '-U', '--mentioned [<user>]', 'mentioning you or specified user' 
+          ) do |mentioned|
+            assigns[:mentioned] = mentioned || Authorization.username
+          end
+          opts.separator ''
+        end
+      end
+
+      def execute
+        options.parse! args
+
+        if reverse
+          assigns[:sort] ||= 'created'
+          assigns[:direction] = 'asc'
+        end
+
+        puts fg(assigns[:state] == 'closed' ? :red : :green) { header }
+        issues = Client.new.get uri, assigns
+        return puts 'none' if issues.empty?
+        max = (reverse ? issues.last : issues.first)['number'].to_s.length
+        puts issues.map { |i|
+          n, title, labels = i['number'], i['title'], i['labels']
+          length = 8 + max + no_color { format_labels labels }.to_s.length
+          if i['assignee']
+            if assigned = i['assignee']['login'] == Authorization.username
+              length += 2
+            end
+          end
+          [
+            "  #{bright { n.to_s.rjust max }}:",
+            truncate(title, length),
+            format_labels(labels),
+            (bright { fg(:yellow) { '@' } } if assigned)
+          ].compact.join ' '
+        }
+      end
+
+      private
+
+      def header
+        header = %(#)
+        header = "# #{repo || 'global'} #{assigns[:state] || 'open'} issues"
+        if repo
+          if assignee = assigns[:assignee]
+            header << case assignee
+              when '*'    then ', assigned'
+              when 'none' then ', unassigned'
+            else
+              assignee = 'you' if Authorization.username == assignee
+              ", assigned to #{assignee}"
+            end
+          end
+          if mentioned = assigns[:mentioned]
+            mentioned = 'you' if Authorization.username == mentioned
+            header << ", mentioning #{mentioned}"
+          end
+        else
+
+        end
+        if labels = assigns[:labels]
+          header << ", labeled #{assigns[:labels].gsub ',', ', '}"
+        end
+        if sort = assigns[:sort]
+          header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
+        end
+        header
+      end
+
+      def uri
+        repo ? "/repos/#{repo}/issues" : '/issues'
+      end
+    end
+  end
+end
