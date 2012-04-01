@@ -30,12 +30,9 @@ EOF
       end
 
       def execute
-        options.parse! args.empty? ? %w(-h) : args
-
-        if args.empty? && assigns.key?(:assignee)
-          warn "You must specify an issue number.\n"
-          abort options.to_s
-        end
+        require_issue
+        require_repo
+        options.parse! args
       end
     end
   end

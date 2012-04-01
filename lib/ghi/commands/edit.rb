@@ -31,7 +31,9 @@ EOF
       end
 
       def execute args
-        options.parse! args.empty? ? %w(-h) : args
+        require_issue
+        require_repo
+        options.parse! args
       end
     end
   end

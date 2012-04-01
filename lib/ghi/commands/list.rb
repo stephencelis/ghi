@@ -94,6 +94,7 @@ module GHI
       end
 
       def execute
+        require_repo
         options.parse! args
 
         if reverse

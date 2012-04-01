@@ -65,7 +65,7 @@ EOF
       def execute
         extract_issue
         options.parse! args.empty? ? %w(-l) : args
-        repo
+        require_repo
 
         if issue
           self.action ||= 'add'

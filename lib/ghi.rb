@@ -46,6 +46,7 @@ EOF
       if command_name.nil? || command_name == 'help'
         Commands::Help.execute command_args, option_parser.banner
       else
+        command_name = fetch_alias command_name, command_args
         begin
           command = Commands.const_get command_name.capitalize
         rescue NameError
@@ -80,5 +81,30 @@ EOF
 
     attr_accessor :v
     alias v? v
+
+    private
+
+    ALIASES = {
+      'c'        => %w(close),
+      'claim'    => %w(assign),
+      'e'        => %w(edit),
+      'l'        => %w(list),
+      'L'        => %w(label),
+      'm'        => %w(comment),
+      'o'        => %w(open),
+      'reopen'   => %w(open),
+      'rm'       => %w(close),
+      's'        => %w(show),
+      'st'       => %w(list),
+      'tag'      => %w(label),
+      'unassign' => %w(assign -d)
+    }
+
+    def fetch_alias command, args
+      return command unless fetched = ALIASES[command]
+      command = fetched.shift
+      args.unshift(*fetched)
+      command
+    end
   end
 end

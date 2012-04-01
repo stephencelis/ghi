@@ -42,6 +42,7 @@ module GHI
       def require_repo
         return true if repo
         warn 'Not a GitHub repo.'
+        warn ''
         abort options.to_s
       end
 
@@ -54,7 +55,8 @@ module GHI
 
       def require_issue
         return true if issue
-        warn 'Specify an issue number.'
+        warn 'You must specify an issue number.'
+        warn ''
         abort options.to_s
       end
 
