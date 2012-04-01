@@ -7,7 +7,7 @@ module GHI
 
       #   usage: ghi list [options] [[<user>/]<repo>]
       #   
-      #       -g, --global                     all of your issues on GitHub
+      #       -a, --all                        all of your issues on GitHub
       #       -s, --state <in>                 open or closed
       #       -L, --label <labelname>,...      by label(s)
       #       -S, --sort <by>                  created, updated, or comments
@@ -27,7 +27,7 @@ module GHI
         OptionParser.new do |opts|
           opts.banner = 'usage: ghi list [options] [[<user>/]<repo>]'
           opts.separator ''
-          opts.on '-g', '--global', 'all of your issues on GitHub' do
+          opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
             @repo = nil
           end
           opts.on(
@@ -101,57 +101,12 @@ module GHI
           assigns[:direction] = 'asc'
         end
 
-        puts fg(assigns[:state] == 'closed' ? :red : :green) { header }
+        puts format_issues_header
         issues = Client.new.get uri, assigns
-        return puts 'none' if issues.empty?
-        max = (reverse ? issues.last : issues.first)['number'].to_s.length
-        puts issues.map { |i|
-          n, title, labels = i['number'], i['title'], i['labels']
-          length = 8 + max + no_color { format_labels labels }.to_s.length
-          if i['assignee']
-            if assigned = i['assignee']['login'] == Authorization.username
-              length += 2
-            end
-          end
-          [
-            "  #{bright { n.to_s.rjust max }}:",
-            truncate(title, length),
-            format_labels(labels),
-            (bright { fg(:yellow) { '@' } } if assigned)
-          ].compact.join ' '
-        }
+        puts issues.empty? ? 'none' : format_issues(issues, repo.nil?)
       end
 
       private
-
-      def header
-        header = %(#)
-        header = "# #{repo || 'global'} #{assigns[:state] || 'open'} issues"
-        if repo
-          if assignee = assigns[:assignee]
-            header << case assignee
-              when '*'    then ', assigned'
-              when 'none' then ', unassigned'
-            else
-              assignee = 'you' if Authorization.username == assignee
-              ", assigned to #{assignee}"
-            end
-          end
-          if mentioned = assigns[:mentioned]
-            mentioned = 'you' if Authorization.username == mentioned
-            header << ", mentioning #{mentioned}"
-          end
-        else
-
-        end
-        if labels = assigns[:labels]
-          header << ", labeled #{assigns[:labels].gsub ',', ', '}"
-        end
-        if sort = assigns[:sort]
-          header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
-        end
-        header
-      end
 
       def uri
         repo ? "/repos/#{repo}/issues" : '/issues'
