@@ -9,7 +9,7 @@ EOF
           opts.separator ''
           opts.on '--auth [<username>:<password>]' do |credentials|
             self.action = 'auth'
-            username, password = credentials.split ':' if credentials
+            username, password = credentials.split ':', 2 if credentials
             assigns[:username] = username
             assigns[:password] = password
           end

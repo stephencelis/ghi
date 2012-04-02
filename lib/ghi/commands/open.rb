@@ -67,7 +67,12 @@ EOF
           end
           i = throb { api.post "/repos/#{repo}/issues", assigns }
         end
-      rescue Client::Error
+      rescue Client::Error => e
+        if e.is_a?(Net::HTTPNotFound) && Authorization.username.nil?
+          raise Authorization::Required
+        end
+
+        abort e.message
       end
     end
   end
