@@ -25,7 +25,8 @@ EOF
           
         end
         opts.on '--help' do
-          command_args.unshift command_name, *args
+          command_args.unshift(*args)
+          command_args.unshift command_name if command_name
           args.clear
           command_name = 'help'
         end
