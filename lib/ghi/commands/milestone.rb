@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Milestone < Command
+      attr_accessor :reverse
+
       #   usage: ghi milestone [modification options] [<milestoneno>]
       #          [[<user>]/<repo>]
       #      or: ghi milestone -D <milestoneno> [[<user>/]<repo>]
@@ -25,31 +27,100 @@ usage: ghi milestone [<modification options>] [<milestoneno>] [[<user>]/<repo>]
    or: ghi milestone -l [-c] [[<user>/]<repo>]
 EOF
           opts.separator ''
-          opts.on '-l', '--list', 'list milestones'
-          opts.on '-c', '--[no-]closed', 'show closed milestones'
+          opts.on '-l', '--list', 'list milestones' do
+            extract_repo
+            self.action = 'index'
+          end
+          opts.on '-c', '--[no-]closed', 'show closed milestones' do |closed|
+            assigns[:state] = closed ? 'closed' : 'open'
+          end
           opts.on(
             '--sort <on>', %(due_date completeness),
             {'d'=>'due_date', 'due'=>'due_date', 'c'=>'completeness'},
             'due_date or completeness'
-          )
-          opts.on '--reverse', 'reverse (ascending) sort order'
+          ) do |sort|
+            assigns[:sort] = sort
+          end
+          opts.on '--reverse', 'reverse (ascending) sort order' do
+            self.reverse = !reverse
+          end
           opts.separator ''
           opts.separator 'Milestone modification options'
-          opts.on '-m', '--message <text>', 'change milestone description'
+          opts.on(
+            '-m', '--message <text>', 'change milestone description'
+          ) do |text|
+            self.action = 'create'
+            assigns[:title], assigns[:description] = text.split(/\n+/, 2)
+          end
           opts.on(
             '-s', '--state <in>', %w(open closed),
             {'o'=>'open', 'c'=>'closed'}, 'open or closed'
           ) do |state|
             assigns[:state] = state
           end
-          opts.on '--due <on>', 'when milestone should be complete'
-          opts.on '-D', '--delete <milestoneno>', 'delete milestone'
+          opts.on '--due <on>', 'when milestone should be complete' do
+            begin
+              assigns[:due] = Date.parse date # TODO: Better parsing.
+            rescue ArgumentError => e
+              raise OptionParser::InvalidArgument, e.message
+            end
+          end
+          opts.on '-D', '--delete', 'delete milestone' do
+            self.action = 'destroy'
+          end
           opts.separator ''
         end
       end
 
       def execute
-        options.parse! args.empty? ? %w(-h) : args
+        self.action = 'index'
+        extract_milestone
+        begin
+          options.parse! args
+        rescue OptionParser::AmbiguousOption => e
+          fallback.parse! e.args
+        end
+        self.action = 'update' if action == 'create' && milestone
+
+        if reverse
+          assigns[:sort] ||= 'created'
+          assigns[:direction] = 'asc'
+        end
+
+        case action
+        when 'index'
+          milestones = throb { api.get uri }
+          puts format_milestones(milestones)
+        when 'create'
+          m = throb { api.post uri, assigns }
+          puts 'Milestone #%d created.' % m['number']
+        when 'update'
+          throb { api.patch uri, assigns }
+          puts 'Milestone updated.'
+        when 'destroy'
+          throb { api.delete uri }
+          puts 'Milestone deleted.'
+        end
+      rescue Client::Error => e
+        abort e.message
+      end
+
+      private
+
+      def uri
+        if milestone
+          "/repos/#{repo}/milestones/#{milestone}"
+        else
+          "/repos/#{repo}/milestones"
+        end
+      end
+
+      def fallback
+        OptionParser.new do |opts|
+          opts.on '-d' do
+            self.action = 'destroy'
+          end
+        end
       end
     end
   end

@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Comment < Command
+      attr_accessor :comment
+
       #   usage: ghi comment [options] <issueno> [[<user>/]<repo>]
       #   
       #       -l, --list                       list comments
@@ -13,13 +15,21 @@ module GHI
 usage: ghi comment [options] <issueno> [[<user>/]<repo>]
 EOF
           opts.separator ''
-          opts.on '-l', '--list', 'list comments'
-          opts.on '-v', '--verbose', 'list events, too'
+          opts.on '-l', '--list', 'list comments' do
+            self.action = 'list'
+          end
+          # opts.on '-v', '--verbose', 'list events, too'
           opts.separator ''
           opts.separator 'Comment modification options'
-          opts.on '-m', '--message <text>', 'comment body'
-          opts.on '--amend', 'amend previous comment'
-          opts.on '-D', '--delete', 'delete previous comment'
+          opts.on '-m', '--message <text>', 'comment body' do |text|
+            assigns[:body] = text
+          end
+          opts.on '--amend', 'amend previous comment' do
+            self.action = 'update'
+          end
+          opts.on '-D', '--delete', 'delete previous comment' do
+            self.action = 'destroy'
+          end
           opts.separator ''
         end
       end
@@ -27,7 +37,54 @@ EOF
       def execute
         require_issue
         require_repo
+        self.action ||= 'create'
         options.parse! args
+        extract_repo args.pop
+
+        case action
+        when 'list'
+          comments = index
+          puts format_comments(comments)
+        when 'create'
+          abort "Missing argument: -m" if assigns[:body].nil?
+          throb { api.post uri, assigns }
+          puts 'Comment created.'
+        when 'update', 'destroy'
+          comments = index
+          self.comment = comments.find { |c|
+            c['user']['login'] == Authorization.username
+          }
+          if comment
+            send action
+          else
+            abort 'No recent comment found.'
+          end
+        end
+      rescue Client::Error => e
+        abort e.message
+      end
+
+      protected
+
+      def index
+        throb { api.get uri }
+      end
+
+      def update
+        abort "Missing argument: -m" if assigns[:body].nil?
+        throb { api.patch uri, assigns }
+        puts 'Comment updated.'
+      end
+
+      def destroy
+        throb { api.delete uri }
+        puts 'Comment deleted.'
+      end
+
+      private
+
+      def uri
+        comment ? comment['url'] : "/repos/#{repo}/issues/#{issue}/comments"
       end
     end
   end

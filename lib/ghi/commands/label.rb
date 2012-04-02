@@ -31,6 +31,7 @@ usage: ghi label <labelname> [-c <color>] [-r <newname>] [[<user>/]<repo>]
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list label names'  do
+            extract_repo
             self.action = 'index'
           end
           opts.on '-D', '--delete', 'delete label' do
@@ -63,6 +64,7 @@ EOF
 
       def execute
         extract_issue
+        require_repo
         options.parse! args.empty? ? %w(-l) : args
 
         if issue
@@ -73,7 +75,6 @@ EOF
           self.name ||= args.shift
         end
 
-        require_repo
         send action
       rescue Client::Error => e
         abort e.message
@@ -91,7 +92,7 @@ EOF
           api.post "/repos/#{repo}/labels", assigns.merge(:name => name)
         }
         return update if label.nil?
-        puts "%s created" % bg(label['color']) { " #{label['name']} "}
+        puts "%s created." % bg(label['color']) { " #{label['name']} "}
       rescue Client::Error => e
         if e.errors.find { |error| error['code'] == 'already_exists' }
           return update
@@ -101,12 +102,12 @@ EOF
 
       def update
         label = throb { api.patch "/repos/#{repo}/labels/#{name}", assigns }
-        puts "%s updated" % bg(label['color']) { " #{label['name']} "}
+        puts "%s updated." % bg(label['color']) { " #{label['name']} "}
       end
 
       def destroy
         throb { api.delete "/repos/#{repo}/labels/#{name}" }
-        puts " #{name}  deleted"
+        puts "[#{name}] deleted."
       end
 
       def add
@@ -114,17 +115,17 @@ EOF
           api.post "/repos/#{repo}/issues/#{issue}/labels", name
         }
         labels.delete_if { |l| !name.include?(l['name']) }
-        puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
+        puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
       end
 
       def remove
         case name.length
         when 0
           throb { api.delete base_uri }
-          puts "Labels removed"
+          puts "Labels removed."
         when 1
           labels = throb { api.delete "#{base_uri}/#{name.join}" }
-          puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
+          puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
         else
           labels = throb { api.get "/repos/#{repo}/issues/#{issue}/labels" }
           self.name = labels.map { |l| l['name'] } - name
@@ -134,7 +135,7 @@ EOF
 
       def replace
         labels = throb { api.put base_uri, name }
-        puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
+        puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
       end
 
       private

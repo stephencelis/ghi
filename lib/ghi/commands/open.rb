@@ -32,7 +32,13 @@ EOF
       end
 
       def execute
-        options.parse! args.empty? ? %w(-h) : args
+        if extract_issue
+          Edit.new(args.unshift('-so', issue)).execute
+          puts 'Reopened.'
+          exit
+        end
+
+        options.parse! args
       end
     end
   end

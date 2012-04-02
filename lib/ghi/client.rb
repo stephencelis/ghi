@@ -14,17 +14,12 @@ module GHI
     class Error < RuntimeError
       attr_reader :response
       def initialize response
-        @response = response
-        @json = JSON.parse response.body
+        @response, @json = response, JSON.parse(response.body)
       end
 
-      def message
-        @json['message']
-      end
-
-      def errors
-        [*@json['errors']]
-      end
+      def body()    @json             end
+      def message() body['message']   end
+      def errors()  [*body['errors']] end
     end
 
     CONTENT_TYPE = 'application/vnd.github+json'

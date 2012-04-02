@@ -81,6 +81,8 @@ module GHI
     end
 
     def format_issues issues, include_repo
+      return 'None.' if issues.empty?
+
       include_repo and issues.each do |i|
         %r{/repos/[^/]+/([^/]+)} === i['url'] and i['repo'] = $1
       end
@@ -104,7 +106,7 @@ module GHI
     end
 
     def format_issue i
-      ERB.new(<<EOF).result binding
+      ERB.new(<<EOF).result(binding).sub(/\n{2,}\Z/m, "\n\n")
 <%= bright { indent '#%s: %s' % i.values_at('number', 'title'), 0 } %>
 @<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>. \
 <%= format_state i['state'], format_tag(i['state']), :bg %>
@@ -118,6 +120,28 @@ module GHI
 <%= indent i['body'] %>\
 <% end %>
 EOF
+    end
+
+    def format_comments comments
+      return 'None.' if comments.empty?
+      comments.map { |comment| format_comment comment }
+    end
+
+    def format_comment c
+      <<EOF
+@#{c['user']['login']} commented #{c['created_at']}:
+
+#{indent c['body']}
+EOF
+    end
+
+    def format_milestones milestones
+      return 'None.' if milestones.empty?
+      milestones.map { |milestone| format_milestone milestone }
+    end
+
+    def format_milestone m
+      m
     end
 
     def format_state state, string = state, layer = :fg

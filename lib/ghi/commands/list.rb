@@ -94,24 +94,35 @@ module GHI
       end
 
       def execute
-        options.parse! args
+        begin
+          options.parse! args
+        rescue OptionParser::InvalidOption => e
+          fallback.parse! e.args
+        end
 
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
         end
 
+        extract_repo args.pop
         print format_issues_header
         issues = throb(0, format_state(assigns[:state], '#')) {
-          Client.new.get uri, assigns
+          api.get uri, assigns
         }
-        puts issues.empty? ? 'none' : format_issues(issues, repo.nil?)
+        puts format_issues(issues, repo.nil?)
       end
 
       private
 
       def uri
         repo ? "/repos/#{repo}/issues" : '/issues'
+      end
+
+      def fallback
+        OptionParser.new do |opts|
+          opts.on('-c', '--closed') { assigns[:state] = 'closed' }
+        end
       end
     end
   end

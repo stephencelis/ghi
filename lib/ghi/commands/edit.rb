@@ -47,13 +47,11 @@ EOF
       def execute
         require_issue
         require_repo
-
         options.parse! args
-
-        i = throb {
-          api.patch "/repos/#{repo}/issues/#{issue}", assigns
-        }
+        i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }
         puts format_issue(i)
+      rescue GHI::Client::Error => e
+        abort e.message
       end
     end
   end

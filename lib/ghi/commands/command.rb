@@ -24,16 +24,24 @@ module GHI
         @api ||= Client.new
       end
 
-      def repo
-        return @repo if defined? @repo
+      def repo repo = nil
+        return @repo if repo.nil? && defined? @repo
 
-        if @repo = args.pop
-          @repo.insert 0, "#{Authorization.username}/" if !@repo.include?('/')
+        if repo
+          @repo = repo
+        elsif %r{/} === args.last
+          @repo = args.pop
         else
           remotes = `git config --get-regexp remote\..+\.url`.split "\n"
           if remote = remotes.find { |r| r.include? 'github.com' }
             @repo = remote.scan(%r{([^:/]+)/([^/\s]+?)(?:\.git)?$}).join '/'
+          else
+            @repo = args.pop
           end
+        end
+
+        if @repo && !@repo.include?('/')
+          @repo.insert 0, "#{Authorization.username}/"
         end
 
         @repo
@@ -52,13 +60,19 @@ module GHI
         index = args.index { |arg| /^\d+$/ === arg }
         @issue = (args.delete_at index if index)
       end
-      alias extract_issue issue
+      alias extract_issue     issue
+      alias milestone         issue
+      alias extract_milestone issue
 
-      def require_issue
+      def require_issue type = 'issue'
         return true if issue
-        warn 'You must specify an issue number.'
+        warn "You must specify an #{type} number."
         warn ''
         abort options.to_s
+      end
+
+      def require_milestone
+        require_issue 'milestone'
       end
 
       # Handles, e.g. `--[no-]milestone [<n>]`.

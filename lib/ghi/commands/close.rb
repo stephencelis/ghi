@@ -15,7 +15,6 @@ EOF
           opts.separator ''
           opts.on '-l', '--list', 'list closed issues' do
             assigns[:command] = List
-            assigns[:args] = %w(--state closed)
           end
           opts.separator ''
           opts.separator 'Issue modification options'
@@ -27,12 +26,23 @@ EOF
       end
 
       def execute
-        require_issue
-        require_repo
-
         options.parse! args
 
-        (assigns[:command] || Edit).new(['-sc', issue, repo]).execute
+        if list?
+          require_repo
+          List.new(['-sc', repo]).execute
+        else
+          require_issue
+          require_repo
+          Edit.new(['-sc', issue, repo]).execute
+          puts 'Closed.'
+        end
+      end
+
+      private
+
+      def list?
+        assigns[:command] == List
       end
     end
   end
