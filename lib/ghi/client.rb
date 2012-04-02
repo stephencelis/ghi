@@ -77,7 +77,7 @@ module GHI
         req['Content-Type'] = CONTENT_TYPE
         req.body = options[:body] ? JSON.dump(options[:body]) : ''
       end
-      req.basic_auth username, password if username || password
+      req.basic_auth username, password if username && password
 
       http = Net::HTTP.new 'api.github.com', 443
       http.use_ssl = true
@@ -89,12 +89,14 @@ module GHI
 
       case res
       when Net::HTTPSuccess
-        JSON.parse res.body if res.body
+        return JSON.parse res.body if res.body
       when Net::HTTPUnauthorized
-        raise Authorization::Required, 'Authorization required'
-      else
-        raise Error, res
+        if password.nil?
+          raise Authorization::Required, 'Authorization required'
+        end
       end
+
+      raise Error, res
     end
   end
 end

@@ -14,12 +14,14 @@ module GHI
       def authorize! user = username, pass = password, global = true
         return false if user.nil? && pass.nil?
 
-        res = Client.new(user, pass).post(
-          '/authorizations',
-          :scopes   => %w(public_repo repo),
-          :note     => 'ghi',
-          :note_url => 'https://github.com/stephencelis/ghi'
-        )
+        res = throb {
+          Client.new(user, pass).post(
+            '/authorizations',
+            :scopes   => %w(public_repo repo),
+            :note     => 'ghi',
+            :note_url => 'https://github.com/stephencelis/ghi'
+          )
+        }
         @token = res['token']
         
         run = []
@@ -42,6 +44,8 @@ Alternatively, set the following env var in a private dotfile. E.g.,
   export GHI_TOKEN="#{token}"
 EOF
         end
+      rescue Client::Error => e
+        abort e.message
       end
 
       def username
