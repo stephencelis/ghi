@@ -37,7 +37,7 @@ EOF
             assigns[:state] = closed ? 'closed' : 'open'
           end
           opts.on(
-            '--sort <on>', %(due_date completeness),
+            '-S', '--sort <on>', %w(due_date completeness),
             {'d'=>'due_date', 'due'=>'due_date', 'c'=>'completeness'},
             'due_date or completeness'
           ) do |sort|
