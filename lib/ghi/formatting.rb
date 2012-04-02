@@ -1,3 +1,6 @@
+# encoding: utf-8
+require 'erb'
+
 module GHI
   module Formatting
     autoload :Colors, 'ghi/formatting/colors'
@@ -16,13 +19,13 @@ module GHI
       result
     end
 
-    def indent string, level = 4, first = level
+    def indent string, level = 4
       string = string.gsub(/\n{3,}/, "\n\n")
       lines = string.scan(/.{0,#{columns - level - 1}}(?:\s|\Z)/).map { |line|
         " " * level + line
       }
-      lines.first.sub!(/^\s+/) {} if first != level
-      lines
+      lines.pop if lines.last.empty?
+      lines.join "\n"
     end
 
     def columns
@@ -38,7 +41,7 @@ module GHI
     #++
 
     def format_issues_header
-      header = "# #{repo || 'Global'} #{assigns[:state] || 'open'} issues"
+      header = "# #{repo || 'Global,'} #{assigns[:state] || 'open'} issues"
       if repo
         if assignee = assigns[:assignee]
           header << case assignee
@@ -54,7 +57,13 @@ module GHI
           header << ", mentioning #{mentioned}"
         end
       else
-
+        header << case assigns[:filter]
+          when 'created'    then ' you created'
+          when 'mentioned'  then ' that mention you'
+          when 'subscribed' then " you're subscribed to"
+        else
+          ' assigned to you'
+        end
       end
       if labels = assigns[:labels]
         header << ", labeled #{assigns[:labels].gsub ',', ', '}"
@@ -89,27 +98,17 @@ module GHI
     end
 
     def format_issue i
-      assignee = i['assignee'] && "@#{i['assignee']['login']}"
-      none = fg(:white) { '(none)' }
-      template = {
-        :number   => i['number'],
-        :opened   => i['created_at'],
-        :user     => "@#{i['user']['login']}",
-        :title    => i['title'],
-        :assignee => assignee || none,
-        :state    => format_state(i['state']),
-        :labels   => format_labels(i['labels']) || none
-      }
-      puts <<EOF % template
-  number: %{number}
-  opened: %{opened} by %{user}
-   title: %{title}
-assignee: %{assignee}
-   state: %{state}
-  labels: %{labels}
-
+      ERB.new(<<EOF).result binding
+<%= bright { indent '#%s: %s' % i.values_at('number', 'title'), 0 } %>
+@<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>.
+<% if i['assignee'] %>\
+@<%= i['assignee']['login'] %> is assigned. \
+<% end %>\
+<%= format_labels(i['labels']) %>
+<% unless i['body'].empty? %>
+<%= indent i['body'] %>\
+<% end %>
 EOF
-      indent(i['body']) unless i['body'].empty?
     end
 
     def format_state state, string = state
@@ -120,6 +119,25 @@ EOF
       return if labels.empty?
       format = colorize? ? ' %s ' : '[%s]'
       [*labels].map { |l| bg(l['color']) { format % l['name'] } }.join ' '
+    end
+
+    def loader position = columns, redraw = ' '
+      throb = %w(⠂ ⠃ ⠋ ⠛ ⠻ ⢻ ⣻ ⣿ ⣽ ⣼ ⣴ ⣤ ⣄ ⡄ ⠄)
+      # throb = %w(䷀ ䷪ ䷍ ䷈ ䷉ ䷌ ䷫ )
+      i = 0
+      thread = Thread.new do
+        dot = lambda do
+          print(
+            "\r\e[#{position}G#{throb[i = (i + 1) % throb.length]}\e[?25l"
+          )
+          sleep 0.1 and dot.call
+        end
+        dot.call
+      end
+      yield
+    ensure
+      thread.kill
+      puts "\r\e[#{position}G#{redraw}\e[?25h"
     end
   end
 end

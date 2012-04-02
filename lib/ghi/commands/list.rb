@@ -94,7 +94,6 @@ module GHI
       end
 
       def execute
-        require_repo
         options.parse! args
 
         if reverse
@@ -102,8 +101,10 @@ module GHI
           assigns[:direction] = 'asc'
         end
 
-        puts format_issues_header
-        issues = Client.new.get uri, assigns
+        print format_issues_header
+        issues = loader(0, format_state(assigns[:state], '#')) {
+          Client.new.get uri, assigns
+        }
         puts issues.empty? ? 'none' : format_issues(issues, repo.nil?)
       end
 

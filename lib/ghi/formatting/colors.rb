@@ -13,16 +13,16 @@ module GHI
         Colors.colorize?
       end
 
-      def fg color
-        [escape(color, 3), yield, escape].join
+      def fg color, &block
+        escape color, 3, &block
       end
 
-      def bg color
-        fg(offset(color)) { [escape(color, 4), yield].join }
+      def bg color, &block
+        fg(offset(color)) { escape color, 4, &block }
       end
 
-      def bright
-        [escape(:bright), yield, escape].join
+      def bright &block
+        escape :bright, &block
       end
 
       def highlight string, token
@@ -206,8 +206,14 @@ module GHI
       private
 
       def escape color = :black, layer = nil
-        return unless colorize?
-        "\e[#{layer}#{ANSI[color] || "8;5;#{to_256(*to_rgb(color))}"}m"
+        return yield unless colorize?
+        previous_escape = Thread.current[:escape] || "\e[0m"
+        escape = Thread.current[:escape] = "\e[%s%sm" % [
+          layer, ANSI[color] || "8;5;#{to_256(*to_rgb(color))}"
+        ]
+        [escape, yield, previous_escape].join
+      ensure
+        Thread.current[:escape] = previous_escape
       end
 
       def to_256 r, g, b
