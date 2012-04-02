@@ -1,38 +1,62 @@
 module GHI
   module Authorization
+    extend Formatting
+
     class Required < RuntimeError
     end
 
     class << self
       def token
         return @token if defined? @token
-        value = `git config ghi.token`.chomp
-        @token = value unless value.empty?
+        @token = config 'ghi.token'
       end
 
-      def authorize! username = username, password = password, global = true
-        res = Client.new(username, password).post(
+      def authorize! user = username, pass = password, global = true
+        res = Client.new(user, pass).post(
           '/authorizations',
           :scopes   => %w(public_repo repo),
           :note     => 'ghi',
           :note_url => 'https://github.com/stephencelis/ghi'
         )
         @token = res['token']
-        `git config #{'--global ' if global} ghi.token #@token`
+        
+        run = []
+        unless username
+          run << "git config #{'--global ' if global} github.user #{user}"
+        end
+        run << "git config #{'--global ' if global} ghi.token #{token}"
+
+        system run.join('; ')
+
+        global and at_exit do
+          warn <<EOF
+Your ~/.gitconfig has been modified by way of:
+
+  #{run.join "\n  "}
+
+#{bright { blink { 'Do not check this change into public source control!' } }}
+Alternatively, set the following env var in a private dotfile. E.g.,
+
+  export GHI_TOKEN="#{token}"
+EOF
+        end
       end
 
       def username
-        config 'user'
+        return @username if defined? @username
+        @username = config 'github.user'
       end
 
       def password
-        config 'password'
+        return @password if defined? @password
+        @password = config 'github.password'
       end
 
       private
 
       def config key
-        ENV["GITHUB_#{key.upcase}"] || `git config github.#{key}`.chomp
+        value = ENV["#{key.upcase.gsub '.', '_'}"] || `git config #{key}`.chomp
+        value unless value.empty?
       end
     end
   end

@@ -1,7 +1,6 @@
 module GHI
   module Commands
     class Label < Command
-      attr_accessor :action
       attr_accessor :name
 
       #   usage: ghi label <labelname> [-c <color>] [-r <newname>]
@@ -65,7 +64,6 @@ EOF
       def execute
         extract_issue
         options.parse! args.empty? ? %w(-l) : args
-        require_repo
 
         if issue
           self.action ||= 'add'
@@ -75,6 +73,7 @@ EOF
           self.name ||= args.shift
         end
 
+        require_repo
         send action
       rescue Client::Error => e
         abort e.message
@@ -83,15 +82,14 @@ EOF
       protected
 
       def index
-        puts api.get("/repos/#{repo}/labels").map { |label|
-          bg(label['color']) { " #{label['name']} " }
-        }
+        labels = throb { api.get "/repos/#{repo}/labels" }
+        puts labels.map { |label| bg(label['color']) { " #{label['name']} " } }
       end
 
       def create
-        label = api.post(
-          "/repos/#{repo}/labels", assigns.merge(name: name)
-        )
+        label = throb {
+          api.post "/repos/#{repo}/labels", assigns.merge(:name => name)
+        }
         return update if label.nil?
         puts "%s created" % bg(label['color']) { " #{label['name']} "}
       rescue Client::Error => e
@@ -102,17 +100,19 @@ EOF
       end
 
       def update
-        label = api.patch "/repos/#{repo}/labels/#{name}", assigns
+        label = throb { api.patch "/repos/#{repo}/labels/#{name}", assigns }
         puts "%s updated" % bg(label['color']) { " #{label['name']} "}
       end
 
       def destroy
-        api.delete "/repos/#{repo}/labels/#{name}"
+        throb { api.delete "/repos/#{repo}/labels/#{name}" }
         puts " #{name}  deleted"
       end
 
       def add
-        labels = api.post "/repos/#{repo}/issues/#{issue}/labels", name
+        labels = throb {
+          api.post "/repos/#{repo}/issues/#{issue}/labels", name
+        }
         labels.delete_if { |l| !name.include?(l['name']) }
         puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
       end
@@ -120,20 +120,21 @@ EOF
       def remove
         case name.length
         when 0
-          api.delete base_uri
+          throb { api.delete base_uri }
           puts "Labels removed"
         when 1
-          labels = api.delete "#{base_uri}/#{name.join}"
+          labels = throb { api.delete "#{base_uri}/#{name.join}" }
           puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
         else
-          labels = api.get "/repos/#{repo}/issues/#{issue}/labels"
+          labels = throb { api.get "/repos/#{repo}/issues/#{issue}/labels" }
           self.name = labels.map { |l| l['name'] } - name
           replace
         end
       end
 
       def replace
-        api.put base_uri, name
+        labels = throb { api.put base_uri, name }
+        puts "Issue #%d labeled %s" % [issue, format_labels(labels)]
       end
 
       private

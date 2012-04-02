@@ -3,6 +3,11 @@ require 'erb'
 
 module GHI
   module Formatting
+    THROBBERS = [
+      %w(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏),
+      %w(⠋ ⠙ ⠚ ⠞ ⠖ ⠦ ⠴ ⠲ ⠳ ⠓)
+    ]
+
     autoload :Colors, 'ghi/formatting/colors'
     include Colors
 
@@ -76,7 +81,7 @@ module GHI
 
     def format_issues issues, include_repo
       include_repo and issues.each do |i|
-        i['repo'] = i['url'][%r{(?<=repos/).+(?=/issues)}].split('/').last
+        %r{/repos/[^/]+/([^/]+)} === i['url'] and i['repo'] = $1
       end
 
       nmax, rmax = %w(number repo).map { |f|
@@ -121,9 +126,9 @@ EOF
       [*labels].map { |l| bg(l['color']) { format % l['name'] } }.join ' '
     end
 
-    def loader position = columns, redraw = ' '
-      throb = %w(⠂ ⠃ ⠋ ⠛ ⠻ ⢻ ⣻ ⣿ ⣽ ⣼ ⣴ ⣤ ⣄ ⡄ ⠄)
-      # throb = %w(䷀ ䷪ ䷍ ䷈ ䷉ ䷌ ䷫ )
+    def throb position = 0, redraw = "\e[1A"
+      throb = THROBBERS[rand(THROBBERS.length)]
+
       i = 0
       thread = Thread.new do
         dot = lambda do

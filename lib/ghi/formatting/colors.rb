@@ -25,6 +25,14 @@ module GHI
         escape :bright, &block
       end
 
+      def blink &block
+        escape :blink, &block
+      end
+
+      def inverse &block
+        escape :inverse, &block
+      end
+
       def highlight string, token
         string.gsub(token) { |match| bright { fg(:yellow) { match } } }
       end
@@ -42,16 +50,19 @@ module GHI
       end
 
       ANSI = {
-        :bright  => 1,
+        :bright    => 1,
+        :underline => 4,
+        :blink     => 5,
+        :inverse   => 7,
 
-        :black   => 0,
-        :red     => 1,
-        :green   => 2,
-        :yellow  => 3,
-        :blue    => 4,
-        :magenta => 5,
-        :cyan    => 6,
-        :white   => 7
+        :black     => 0,
+        :red       => 1,
+        :green     => 2,
+        :yellow    => 3,
+        :blue      => 4,
+        :magenta   => 5,
+        :cyan      => 6,
+        :white     => 7
       }
 
       WEB = {

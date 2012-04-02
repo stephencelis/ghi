@@ -9,6 +9,7 @@ module GHI
 
       attr_reader :args
       attr_writer :issue
+      attr_accessor :action
       def initialize args
         @args = args.map { |a| a.dup }
       end
@@ -27,7 +28,7 @@ module GHI
         return @repo if defined? @repo
 
         if @repo = args.pop
-          @repo.prepend "#{Authorization.username}/" unless @repo.include? '/'
+          @repo.insert 0, "#{Authorization.username}/" if !@repo.include?('/')
         else
           remotes = `git config --get-regexp remote\..+\.url`.split "\n"
           if remote = remotes.find { |r| r.include? 'github.com' }

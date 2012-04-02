@@ -1,4 +1,11 @@
-require 'net/http'
+require 'cgi'
+require 'net/https'
+
+unless defined? Net::HTTP::Patch
+  Net::HTTP::Patch = Class.new Net::HTTP::Post do
+    METHOD = 'PATCH'
+  end
+end
 
 module GHI
   class Client
@@ -62,8 +69,9 @@ module GHI
     private
 
     def request method, path, options
-      if options[:params] && !options[:params].empty?
-        path += "?#{URI.encode_www_form options[:params]}"
+      if params = options[:params] and !params.empty?
+        q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
+        path += "?#{q.join '&'}"
       end
 
       req = METHODS[method].new path, 'Accept' => CONTENT_TYPE
@@ -78,6 +86,7 @@ module GHI
 
       http = Net::HTTP.new 'api.github.com', 443
       http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE # FIXME 1.8.7
 
       GHI.v? and puts "===> #{method.to_s.upcase} #{path} #{req.body}"
       res = http.start { http.request req }

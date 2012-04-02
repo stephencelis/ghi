@@ -102,7 +102,7 @@ module GHI
         end
 
         print format_issues_header
-        issues = loader(0, format_state(assigns[:state], '#')) {
+        issues = throb(0, format_state(assigns[:state], '#')) {
           Client.new.get uri, assigns
         }
         puts issues.empty? ? 'none' : format_issues(issues, repo.nil?)
