@@ -217,7 +217,7 @@ module GHI
       private
 
       def escape color = :black, layer = nil
-        return yield unless colorize?
+        return yield unless color && colorize?
         previous_escape = Thread.current[:escape] || "\e[0m"
         escape = Thread.current[:escape] = "\e[%s%sm" % [
           layer, ANSI[color] || "8;5;#{to_256(*to_rgb(color))}"

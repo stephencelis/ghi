@@ -1,4 +1,5 @@
 # encoding: utf-8
+require 'date'
 require 'erb'
 
 module GHI
@@ -97,7 +98,9 @@ module GHI
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
         [
-          "  #{i['repo'].to_s.rjust rmax} #{bright { n.to_s.rjust nmax }}:",
+          " ",
+          (i['repo'].to_s.rjust(rmax) if i['repo']),
+          "#{bright { n.to_s.rjust nmax }}:",
           truncate(title, l),
           format_labels(labels),
           (bright { fg(:yellow) { '@' } } if a)
@@ -116,7 +119,7 @@ module GHI
 <% unless i['labels'].empty? %>\
 <%= format_labels(i['labels']) %>
 <% end %>
-<% unless i['body'].empty? %>\
+<% if i['body'] && !i['body'].empty? %>\
 <%= indent i['body'] %>\
 <% end %>
 EOF
@@ -137,11 +140,35 @@ EOF
 
     def format_milestones milestones
       return 'None.' if milestones.empty?
-      milestones.map { |milestone| format_milestone milestone }
+
+      max = milestones.sort_by { |m|
+        m['number'].to_s.size
+      }.last['number'].to_s.size
+
+      milestones.map { |m|
+        due_on = m['due_on'] && DateTime.parse(m['due_on'])
+        [
+          "  #{bright { m['number'].to_s.rjust max }}:",
+          fg((:red if due_on && due_on <= DateTime.now)) {
+            truncate(m['title'], max + 4)
+          }
+        ].compact.join ' '
+      }
     end
 
     def format_milestone m
-      m
+      ERB.new(<<EOF).result(binding).sub(/\n{2,}\Z/m, "\n\n")
+<%= bright { indent '#%s: %s' % m.values_at('number', 'title'), 0 } %>
+@<%= m['creator']['login'] %> created this milestone <%= m['created_at'] %>. \
+<%= format_state m['state'], format_tag(m['state']), :bg %>
+<% if m['due_on'] %>\
+<% due_on = DateTime.parse m['due_on'] %>\
+Due on <%= fg((:red if due_on <= DateTime.now)) { due_on.to_date } %>.
+<% end %>\
+<% if m['description'] && !m['description'].empty? %>
+<%= indent m['description'] %>\
+<% end %>
+EOF
     end
 
     def format_state state, string = state, layer = :fg
@@ -159,6 +186,7 @@ EOF
 
     def throb position = 0, redraw = "\e[1A"
       throb = THROBBERS[rand(THROBBERS.length)]
+      throb.reverse! if rand > 0.5
 
       i = 0
       thread = Thread.new do

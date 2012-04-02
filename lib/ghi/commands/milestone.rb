@@ -1,3 +1,5 @@
+require 'date'
+
 module GHI
   module Commands
     class Milestone < Command
@@ -56,11 +58,14 @@ EOF
             '-s', '--state <in>', %w(open closed),
             {'o'=>'open', 'c'=>'closed'}, 'open or closed'
           ) do |state|
+            self.action = 'create'
             assigns[:state] = state
           end
-          opts.on '--due <on>', 'when milestone should be complete' do
+          opts.on '--due <on>', 'when milestone should be complete' do |date|
+            self.action = 'create'
             begin
-              assigns[:due] = Date.parse date # TODO: Better parsing.
+              # TODO: Better parsing.
+              assigns[:due_on] = DateTime.parse(date).iso8601
             rescue ArgumentError => e
               raise OptionParser::InvalidArgument, e.message
             end
@@ -80,7 +85,11 @@ EOF
         rescue OptionParser::AmbiguousOption => e
           fallback.parse! e.args
         end
-        self.action = 'update' if action == 'create' && milestone
+
+        milestone and self.action = case action
+          when 'create' then 'update'
+          when 'index'  then 'show'
+        end
 
         if reverse
           assigns[:sort] ||= 'created'
@@ -91,6 +100,9 @@ EOF
         when 'index'
           milestones = throb { api.get uri }
           puts format_milestones(milestones)
+        when 'show'
+          m = throb { api.get uri }
+          puts format_milestone(m)
         when 'create'
           m = throb { api.post uri, assigns }
           puts 'Milestone #%d created.' % m['number']

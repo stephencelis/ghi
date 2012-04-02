@@ -6,18 +6,18 @@ module GHI
       attr_accessor :reverse
 
       #   usage: ghi list [options] [[<user>/]<repo>]
-      #   
+      #
       #       -a, --all                        all of your issues on GitHub
       #       -s, --state <in>                 open or closed
       #       -L, --label <labelname>,...      by label(s)
       #       -S, --sort <by>                  created, updated, or comments
       #           --reverse                    reverse (ascending) sort order
       #           --since <date>               issues more recent than
-      #   
+      #
       #   Global options
       #       -f, --filter <by>                assigned, created, mentioned, or
       #                                        subscribed
-      #   
+      #
       #   Project options
       #       -M, --[no-]milestone [<n>]       with (specified) milestone
       #       -u, --[no-]assignee [<user>]     assigned to specified user
@@ -53,7 +53,7 @@ module GHI
           end
           opts.on '--since <date>', 'issues more recent than' do |date|
             begin
-              assigns[:since] = Date.parse date # TODO: Better parsing.
+              assigns[:since] = DateTime.parse date # TODO: Better parsing.
             rescue ArgumentError => e
               raise OptionParser::InvalidArgument, e.message
             end
@@ -111,6 +111,8 @@ module GHI
           api.get uri, assigns
         }
         puts format_issues(issues, repo.nil?)
+      rescue Client::Error => e
+        abort e.message
       end
 
       private
