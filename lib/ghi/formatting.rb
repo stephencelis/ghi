@@ -30,7 +30,8 @@ module GHI
         " " * level + line
       }
       lines.pop if lines.last.empty?
-      lines.join "\n"
+      string = lines.join("\n")
+      string.gsub(/\r/, '').gsub(/[\t ]+$/, '').gsub(/\n{2,}/, "\n\n")
     end
 
     def columns
@@ -105,25 +106,31 @@ module GHI
     def format_issue i
       ERB.new(<<EOF).result binding
 <%= bright { indent '#%s: %s' % i.values_at('number', 'title'), 0 } %>
-@<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>.
+@<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>. \
+<%= format_state i['state'], format_tag(i['state']), :bg %>
 <% if i['assignee'] %>\
 @<%= i['assignee']['login'] %> is assigned. \
 <% end %>\
+<% unless i['labels'].empty? %>\
 <%= format_labels(i['labels']) %>
-<% unless i['body'].empty? %>
+<% end %>
+<% unless i['body'].empty? %>\
 <%= indent i['body'] %>\
 <% end %>
 EOF
     end
 
-    def format_state state, string = state
-      fg(state == 'closed' ? :red : :green) { string }
+    def format_state state, string = state, layer = :fg
+      send(layer, state == 'closed' ? :red : :green) { string }
     end
 
     def format_labels labels
       return if labels.empty?
-      format = colorize? ? ' %s ' : '[%s]'
-      [*labels].map { |l| bg(l['color']) { format % l['name'] } }.join ' '
+      [*labels].map { |l| bg(l['color']) { format_tag l['name'] } }.join ' '
+    end
+
+    def format_tag tag
+      (colorize? ? ' %s ' : '[%s]') % tag
     end
 
     def throb position = 0, redraw = "\e[1A"

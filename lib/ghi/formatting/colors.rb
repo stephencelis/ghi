@@ -241,7 +241,7 @@ module GHI
       def offset hex
         h, s, l = rgb_to_hsl(to_rgb(WEB[hex.to_s] || hex))
         l < 55 && !(40..80).include?(h) ? l *= 1.75 : l /= 2
-        hsl_to_rgb([h, s, [l, 100.0].min]).map { |c| '%02x' % c }.join
+        hsl_to_rgb([h, s, l]).map { |c| '%02x' % c }.join
       end
 
       def rgb_to_hsl rgb

@@ -14,26 +14,46 @@ module GHI
 usage: ghi edit [options] <issueno> [[<user>]/<repo>]
 EOF
           opts.separator ''
-          opts.on '-m', '--message <text>', 'change issue description'
-          opts.on '-u', '--[no-]assign <user>', 'assign to specified user'
+          opts.on(
+            '-m', '--message <text>', 'change issue description'
+          ) do |text|
+            assigns[:title] = text
+          end
+          opts.on(
+            '-u', '--[no-]assign [<user>]', 'assign to specified user'
+          ) do |assignee|
+            assignee[:assignee] = assignee
+          end
           opts.on(
             '-s', '--state <in>', %w(open closed),
             {'o'=>'open', 'c'=>'closed'}, 'open or closed'
           ) do |state|
             assigns[:state] = state
           end
-          opts.on '-M', '--milestone <n>', 'associate with milestone'
           opts.on(
-            '-L', '--label <labelname>...', Array, 'associate with label(s)'
-          )
+            '-M', '--[no-]milestone [<n>]', Integer, 'associate with milestone'
+          ) do |milestone|
+            assigns[:milestone] = milestone
+          end
+          opts.on(
+            '-L', '--label <labelname>,...', Array, 'associate with label(s)'
+          ) do |labels|
+            assigns[:labels] = labels
+          end
           opts.separator ''
         end
       end
 
-      def execute args
+      def execute
         require_issue
         require_repo
+
         options.parse! args
+
+        i = throb {
+          api.patch "/repos/#{repo}/issues/#{issue}", assigns
+        }
+        puts format_issue(i)
       end
     end
   end

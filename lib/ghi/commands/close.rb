@@ -13,10 +13,15 @@ module GHI
 usage: ghi close [options] <issueno> [[<user>/]<repo>]
 EOF
           opts.separator ''
-          opts.on '-l', '--list', 'list closed issues'
+          opts.on '-l', '--list', 'list closed issues' do
+            assigns[:command] = List
+            assigns[:args] = %w(--state closed)
+          end
           opts.separator ''
           opts.separator 'Issue modification options'
-          opts.on '-m', '--message <text>', 'close with message'
+          opts.on '-m', '--message <text>', 'close with message' do |text|
+            assigns[:comment] = text
+          end
           opts.separator ''
         end
       end
@@ -24,7 +29,10 @@ EOF
       def execute
         require_issue
         require_repo
+
         options.parse! args
+
+        (assigns[:command] || Edit).new(['-sc', issue, repo]).execute
       end
     end
   end

@@ -21,7 +21,9 @@ EOF
         options.parse! args.empty? ? %w(-h) : args
 
         if self.action == 'auth'
-          Authorization.authorize! assigns[:username], assigns[:password]
+          throb {
+            Authorization.authorize! assigns[:username], assigns[:password]
+          }
         end
       end
     end
