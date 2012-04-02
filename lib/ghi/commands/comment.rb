@@ -49,7 +49,8 @@ EOF
           create
         when 'update', 'destroy'
           comments = index
-          self.comment = comments.find { |c|
+          # FIXME: FETCH LAST PAGE IF LINK HEADER.
+          self.comment = comments.reverse.find { |c|
             c['user']['login'] == Authorization.username
           }
           if comment
