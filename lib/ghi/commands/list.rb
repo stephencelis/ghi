@@ -112,6 +112,10 @@ module GHI
         }
         puts format_issues(issues, repo.nil?)
       rescue Client::Error => e
+        if e.response.is_a?(Net::HTTPNotFound) && Authorization.username.nil?
+          raise Authorization::Required, 'Authorization required.'
+        end
+
         abort e.message
       end
 
