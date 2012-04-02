@@ -39,7 +39,7 @@ Your ~/.gitconfig has been modified by way of:
   #{run.join "\n  "}
 
 #{bright { blink { 'Do not check this change into public source control!' } }}
-Alternatively, set the following env var in a private dotfile. E.g.,
+Alternatively, set the following env var in a private dotfile:
 
   export GHI_TOKEN="#{token}"
 EOF
