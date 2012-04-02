@@ -55,7 +55,7 @@ EOF
         end
 
         # Post-command help option parsing.
-        Help.execute [command_name] if command_args.first == '--help'
+        Commands::Help.execute [command_name] if command_args.first == '--help'
 
         begin
           command.execute command_args
