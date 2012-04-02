@@ -16,6 +16,8 @@ Get:
 
 Go:
 
+![Example](/stephencelis/ghi/raw/v3/images/example.png)
+
 ```
 usage: ghi [--version] [-h|--help] <command> [<args>]
 
