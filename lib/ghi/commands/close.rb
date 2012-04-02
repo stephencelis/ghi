@@ -33,6 +33,7 @@ EOF
           List.new(['-sc', repo]).execute
         else
           require_issue
+          extract_repo args.pop
           require_repo
           Edit.new(['-sc', issue, repo]).execute
           puts 'Closed.'

@@ -48,6 +48,7 @@ EOF
         require_issue
         require_repo
         options.parse! args
+        extract_repo args.pop
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }
         puts format_issue(i)
       rescue GHI::Client::Error => e

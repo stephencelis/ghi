@@ -46,9 +46,7 @@ EOF
           comments = index
           puts format_comments(comments)
         when 'create'
-          abort "Missing argument: -m" if assigns[:body].nil?
-          throb { api.post uri, assigns }
-          puts 'Comment created.'
+          create
         when 'update', 'destroy'
           comments = index
           self.comment = comments.find { |c|
@@ -70,8 +68,14 @@ EOF
         throb { api.get uri }
       end
 
+      def create
+        require_body
+        throb { api.post uri, assigns }
+        puts 'Comment created.'
+      end
+
       def update
-        abort "Missing argument: -m" if assigns[:body].nil?
+        require_body
         throb { api.patch uri, assigns }
         puts 'Comment updated.'
       end
@@ -85,6 +89,13 @@ EOF
 
       def uri
         comment ? comment['url'] : "/repos/#{repo}/issues/#{issue}/comments"
+      end
+
+      def require_body
+        if assigns[:body].nil?
+          warn 'Missing argument: -m'
+          abort options.to_s
+        end
       end
     end
   end
