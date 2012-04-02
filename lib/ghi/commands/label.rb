@@ -84,7 +84,13 @@ EOF
 
       def index
         labels = throb { api.get "/repos/#{repo}/labels" }
-        puts labels.map { |label| bg(label['color']) { " #{label['name']} " } }
+        if labels.empty?
+          puts 'None.'
+        else
+          puts labels.map { |label|
+            bg(label['color']) { " #{label['name']} " }
+          }
+        end
       end
 
       def create
