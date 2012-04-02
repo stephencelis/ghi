@@ -12,6 +12,8 @@ module GHI
       end
 
       def authorize! user = username, pass = password, global = true
+        return false if user.nil? && pass.nil?
+
         res = Client.new(user, pass).post(
           '/authorizations',
           :scopes   => %w(public_repo repo),

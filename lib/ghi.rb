@@ -75,9 +75,9 @@ EOF
       end
       warn <<EOF
 
-Please run 'ghi config --authorize'
+Please run 'ghi config --auth <username>:<password>'
 EOF
-      abort
+      exit 1
     end
 
     attr_accessor :v
