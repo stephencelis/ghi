@@ -1,21 +1,16 @@
 module GHI
   module Commands
     class Open < Command
-      #   usage: ghi open [options] [[<user>/]<repo>]
-      #      or: ghi reopen [options] <issueno> [[<user>/]<repo>]
-      #   
-      #       -l, --list                       list open tickets
-      #   
-      #   Issue modification options
-      #       -m, --message <text>             describe issue
-      #       -u, --[no-]assign <user>         assign to specified user
-      #       -M, --milestone <n>              associate with milestone
-      #       -L, --label <labelname>...       associate with label(s)
       def options
+        #--
+        # TODO: Support shortcuts, e.g,
+        #
+        #   ghi open "Issue Title"
+        #++
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi open [options] [[<user>/]<repo>]
-   or: ghi reopen [options] <issueno> [[<user>/]<repo>]
+usage: ghi open [options]
+   or: ghi reopen [options] <issueno>
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list open tickets' do
@@ -60,19 +55,14 @@ EOF
         when 'index'
           List.new(args).execute
         when 'create'
-          extract_repo args.pop
           if assigns[:title].nil? # FIXME: Open $EDITOR
             warn "Missing argument: -m"
             abort options.to_s
           end
           i = throb { api.post "/repos/#{repo}/issues", assigns }
+          puts format_issue(i)
+          puts 'Opened.'
         end
-      rescue Client::Error => e
-        if e.is_a?(Net::HTTPNotFound) && Authorization.username.nil?
-          raise Authorization::Required
-        end
-
-        abort e.message
       end
     end
   end

@@ -89,7 +89,7 @@ module GHI
 
       case res
       when Net::HTTPSuccess
-        return JSON.parse res.body if res.body
+        return res.body ? JSON.parse(res.body) : nil
       when Net::HTTPUnauthorized
         if password.nil?
           raise Authorization::Required, 'Authorization required'

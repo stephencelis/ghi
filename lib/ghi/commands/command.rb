@@ -1,20 +1,27 @@
 module GHI
   module Commands
+    class MissingArgument < RuntimeError
+    end
+
     class Command
       include Formatting
 
       def self.execute args
-        new(args).execute
+        command = new args
+        if i = args.index('--')
+          command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+        end
+        command.execute
       end
 
       attr_reader :args
       attr_writer :issue
       attr_accessor :action
-      def initialize args
-        @args = args.map { |a| a.dup }
-      end
+      attr_accessor :verbose
 
-      private
+      def initialize args
+        @args = args.map! { |a| a.dup }
+      end
 
       def assigns
         @assigns ||= {}
@@ -24,35 +31,46 @@ module GHI
         @api ||= Client.new
       end
 
-      def repo repo = nil
-        return @repo if repo.nil? && defined? @repo
-
-        if repo
-          @repo = repo
-        elsif %r{/} === args.last
-          @repo = args.pop
-        else
-          remotes = `git config --get-regexp remote\..+\.url`.split "\n"
-          if remote = remotes.find { |r| r.include? 'github.com' }
-            @repo = remote.scan(%r{([^:/]+)/([^/\s]+?)(?:\.git)?$}).join '/'
-          else
-            @repo = args.pop
-          end
-        end
-
-        if @repo && !@repo.include?('/')
-          @repo.insert 0, "#{Authorization.username}/"
-        end
-
+      def repo
+        return @repo if defined? @repo
+        @repo = `git config --local ghi.repo`.chomp
+        @repo = detect_repo if @repo.empty?
         @repo
       end
       alias extract_repo repo
+
+      def repo= repo
+        @repo = repo.dup
+        unless @repo.include? '/'
+          @repo.insert 0, "#{Authorization.username}/"
+        end
+        @repo
+      end
+
+      private
 
       def require_repo
         return true if repo
         warn 'Not a GitHub repo.'
         warn ''
         abort options.to_s
+      end
+
+      def detect_repo
+        remotes = `git config --get-regexp remote\..+\.url`.split "\n"
+        remotes.reject! { |r| !r.include? 'github.com'}
+
+        remotes.map! { |r|
+          remote, user, repo = r.scan(
+            %r{remote\.([^\.]+)\.url .*?([^:/]+)/([^/\s]+?)(?:\.git)?$}
+          ).flatten
+          { :remote => remote, :user => user, :repo => "#{user}/#{repo}" }
+        }
+
+        remote   = remotes.find { |r| r[:remote] == 'upstream' }
+        remote ||= remotes.find { |r| r[:remote] == 'origin' }
+        remote ||= remotes.find { |r| r[:user]   == Authorization.username }
+        remote[:repo] if remote
       end
 
       def issue
@@ -64,15 +82,12 @@ module GHI
       alias milestone         issue
       alias extract_milestone issue
 
-      def require_issue type = 'issue'
-        return true if issue
-        warn "You must specify an #{type} number."
-        warn ''
-        abort options.to_s
+      def require_issue
+        raise MissingArgument, 'Issue required.' unless issue
       end
 
       def require_milestone
-        require_issue 'milestone'
+        raise MissingArgument, 'Milestone required.' unless milestone
       end
 
       # Handles, e.g. `--[no-]milestone [<n>]`.

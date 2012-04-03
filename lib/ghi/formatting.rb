@@ -4,6 +4,16 @@ require 'erb'
 
 module GHI
   module Formatting
+    autoload :Colors, 'ghi/formatting/colors'
+    include Colors
+
+    CURSOR = {
+      :up     => lambda { |n| "\e[#{n}A" },
+      :column => lambda { |n| "\e[#{n}G" },
+      :hide   => "\e[?25l",
+      :show   => "\e[?25h"
+    }
+
     THROBBERS = [
       %w(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏),
       %w(⠋ ⠙ ⠚ ⠞ ⠖ ⠦ ⠴ ⠲ ⠳ ⠓),
@@ -13,9 +23,6 @@ module GHI
       %w(⠈ ⠉ ⠋ ⠓ ⠒ ⠐ ⠐ ⠒ ⠖ ⠦ ⠤ ⠠ ⠠ ⠤ ⠦ ⠖ ⠒ ⠐ ⠐ ⠒ ⠓ ⠋ ⠉ ⠈),
       %w(⠁ ⠁ ⠉ ⠙ ⠚ ⠒ ⠂ ⠂ ⠒ ⠲ ⠴ ⠤ ⠄ ⠄ ⠤ ⠠ ⠠ ⠤ ⠦ ⠖ ⠒ ⠐ ⠐ ⠒ ⠓ ⠋ ⠉ ⠈ ⠈ ⠉)
     ]
-
-    autoload :Colors, 'ghi/formatting/colors'
-    include Colors
 
     def puts *strings
       strings = strings.flatten.map { |s|
@@ -31,13 +38,15 @@ module GHI
     end
 
     def indent string, level = 4
-      string = string.gsub(/\n{3,}/, "\n\n")
-      lines = string.scan(/.{0,#{columns - level - 1}}(?:\s|\Z)/).map { |line|
-        " " * level + line
-      }
+      string = string.gsub(/\r/, '')
+      string.gsub!(/[\t ]+$/, '')
+      string.gsub!(/\n{3,}/, "\n\n")
+      width = columns - level - 1
+      lines = string.scan(
+        /.{0,#{width}}(?:\s|\Z)|[\S]{#{width},}/ # TODO: Test long lines.
+      ).map { |line| " " * level + line.chomp }
       lines.pop if lines.last.empty?
-      string = lines.join("\n")
-      string.gsub(/\r/, '').gsub(/[\t ]+$/, '').gsub(/\n{2,}/, "\n\n")
+      lines.join "\n"
     end
 
     def columns
@@ -86,6 +95,7 @@ module GHI
       format_state assigns[:state], header
     end
 
+    # TODO: Show milestones.
     def format_issues issues, include_repo
       return 'None.' if issues.empty?
 
@@ -102,30 +112,35 @@ module GHI
         l = 8 + nmax + rmax + no_color { format_labels labels }.to_s.length
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
+        p = i['pull_request']['html_url'] and l += 2
+        # c = i['comments'] if i['comments'] > 0 and l += 2
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           "#{bright { n.to_s.rjust nmax }}:",
           truncate(title, l),
           format_labels(labels),
-          (bright { fg(:yellow) { '@' } } if a)
+          # (fg('aaaaaa') { c } if c),
+          (fg('aaaaaa') { '↑' } if p),
+          (fg(:yellow) { '@' } if a)
         ].compact.join ' '
       }
     end
 
+    # TODO: Show milestone.
     def format_issue i
       ERB.new(<<EOF).result(binding).sub(/\n{2,}\Z/m, "\n\n")
 <%= bright { indent '#%s: %s' % i.values_at('number', 'title'), 0 } %>
 @<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>. \
-<%= format_state i['state'], format_tag(i['state']), :bg %>
-<% if i['assignee'] %>\
+<%= format_state i['state'], format_tag(i['state']), :bg %>\
+<% if i['assignee'] %>
 @<%= i['assignee']['login'] %> is assigned. \
 <% end %>\
 <% unless i['labels'].empty? %>\
-<%= format_labels(i['labels']) %>
+<%= format_labels(i['labels']) %>\
 <% end %>
 <% if i['body'] && !i['body'].empty? %>\
-<%= indent i['body'] %>\
+\n<%= indent i['body'] %>\
 <% end %>
 EOF
     end
@@ -168,7 +183,8 @@ EOF
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
 <% due_on = DateTime.parse m['due_on'] %>\
-Due on <%= fg((:red if due_on <= DateTime.now)) { due_on.to_date } %>.
+Due on <%= fg((:red if due_on <= DateTime.now)) { \
+due_on.strftime '%Y-%m-%d' } %>.
 <% end %>\
 <% if m['description'] && !m['description'].empty? %>
 <%= indent m['description'] %>\
@@ -189,24 +205,27 @@ EOF
       (colorize? ? ' %s ' : '[%s]') % tag
     end
 
-    def throb position = 0, redraw = "\e[1A"
+    def throb position = 0, redraw = CURSOR[:up][1]
+      return yield unless STDOUT.tty?
+
       throb = THROBBERS[rand(THROBBERS.length)]
       throb.reverse! if rand > 0.5
+      i = rand throb.length
 
-      i = 0
       thread = Thread.new do
         dot = lambda do
-          print(
-            "\r\e[#{position}G#{throb[i = (i + 1) % throb.length]}\e[?25l"
-          )
+          print("\r#{CURSOR[:column][position]}#{throb[i]}#{CURSOR[:hide]}")
+          i = (i + 1) % throb.length
           sleep 0.1 and dot.call
         end
         dot.call
       end
       yield
     ensure
-      thread.kill
-      puts "\r\e[#{position}G#{redraw}\e[?25h"
+      if thread
+        thread.kill
+        puts "\r#{CURSOR[:column][position]}#{redraw}#{CURSOR[:show]}"
+      end
     end
   end
 end

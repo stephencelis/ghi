@@ -5,7 +5,7 @@ module GHI
         attr_accessor :colorize
         def colorize?
           return @colorize if defined? @colorize
-          @colorize = STDOUT.isatty
+          @colorize = STDOUT.tty?
         end
       end
 
@@ -234,7 +234,7 @@ module GHI
       end
 
       def to_rgb hex
-        n = (WEB[hex] || hex).to_i(16)
+        n = (WEB[hex.to_s] || hex).to_i(16)
         [2, 1, 0].map { |m| n >> (m << 3) & 0xff }
       end
 

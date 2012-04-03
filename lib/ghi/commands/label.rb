@@ -3,43 +3,34 @@ module GHI
     class Label < Command
       attr_accessor :name
 
-      #   usage: ghi label <labelname> [-c <color>] [-r <newname>]
-      #          [[<user>/]<repo>]
-      #      or: ghi label -D <labelname> [[<user>/]<repo>]
-      #      or: ghi label <issueno> [-a] [-d] [-f] <labelname>,...
-      #          [[<user>/]<repo>]
-      #      or: ghi label -l [<issueno>] [[<user>/]<repo>]
+      #--
+      # FIXME: This does too much. Opt for a secondary command, e.g.,
       #
-      #       -l, --list                       list label names
-      #       -D                               delete label
-      #
-      #   Label modification options
-      #       -c, --color <color>              6 character hex code
-      #       -r, --rename <labelname>         new label name
-      #
-      #   Issue modification options
-      #       -a, --add                        add labels to issue
-      #       -d, --delete                     remove labels from issue
-      #       -f, --force                      replace existing labels
+      #   ghi label add <labelname>
+      #   ghi label rm <labelname>
+      #   ghi label <issueno> <labelname>...
+      #++
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi label <labelname> [-c <color>] [-r <newname>] [[<user>/]<repo>]
-   or: ghi label -D <labelname> [[<user>/]<repo>]
-   or: ghi label <issueno> [-a] [-d] [-f] <labelname>,... [[<user>/]<repo>]
-   or: ghi label -l [<issueno>] [[<user>/]<repo>]
+usage: ghi label <labelname> [-c <color>] [-r <newname>]
+   or: ghi label -D <labelname>
+   or: ghi label <issueno> [-a] [-d] [-f]
+   or: ghi label -l [<issueno>]
 EOF
           opts.separator ''
-          opts.on '-l', '--list', 'list label names'  do
-            extract_repo
+          opts.on '-l', '--list [<issueno>]', 'list label names' do |n|
             self.action = 'index'
+            @issue ||= n
           end
           opts.on '-D', '--delete', 'delete label' do
             self.action = 'destroy'
           end
           opts.separator ''
           opts.separator 'Label modification options'
-          opts.on '-c', '--color <color>', '6 character hex code' do |color|
+          opts.on(
+            '-c', '--color <color>', 'color name or 6-character hex code'
+          ) do |color|
             assigns[:color] = to_hex color
             self.action ||= 'create'
           end
@@ -76,19 +67,23 @@ EOF
         end
 
         send action
-      rescue Client::Error => e
-        abort e.message
       end
 
       protected
 
       def index
-        labels = throb { api.get "/repos/#{repo}/labels" }
+        if issue
+          uri = "/repos/#{repo}/issues/#{issue}/labels"
+        else
+          uri = "/repos/#{repo}/labels"  
+        end
+        labels = throb { api.get uri }
         if labels.empty?
           puts 'None.'
         else
           puts labels.map { |label|
-            bg(label['color']) { " #{label['name']} " }
+            name = label['name']
+            colorize? ? bg(label['color']) { " #{name} " } : name
           }
         end
       end

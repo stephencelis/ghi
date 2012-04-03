@@ -10,15 +10,10 @@ module GHI
     def execute args
       STDOUT.sync = true
 
-      if index = args.index { |arg| arg !~ /^-/ }
-        command_name = args.delete_at index
-        command_args = args.slice! index, args.length
-      end
-      command_args ||= []
-
       option_parser = OptionParser.new do |opts|
         opts.banner = <<EOF
 usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
+           [ -- [<user>/]<repo>]
 EOF
         opts.on('--version') { command_name = 'version' }
         opts.on '-p', '--paginate', '--[no-]pager' do |paginate|
@@ -36,6 +31,12 @@ EOF
         opts.on('-v') { self.v = true }
         opts.on('-h') { raise OptionParser::InvalidOption }
       end
+
+      if index = args.index { |arg| arg !~ /^-/ }
+        command_name = args.delete_at index
+        command_args = args.slice! index, args.length
+      end
+      command_args ||= []
 
       begin
         option_parser.parse! args
@@ -59,9 +60,21 @@ EOF
 
         begin
           command.execute command_args
-        rescue OptionParser::ParseError => e
+        rescue OptionParser::ParseError, Commands::MissingArgument => e
           warn "#{e.message.capitalize}\n"
           abort command.new([]).options.to_s
+        rescue Client::Error => e
+          if e.is_a?(Net::HTTPNotFound) && Authorization.token.nil?
+            raise Authorization::Required
+          else
+            abort e.message
+          end
+        rescue SocketError => e
+          abort "Couldn't find internet."
+        rescue Errno::ECONNREFUSED => e
+          abort "Couldn't connect to GitHub."
+        rescue Errno::ETIMEDOUT => e
+          abort 'Timed out looking for GitHub.'
         end
       end
     rescue Authorization::Required => e

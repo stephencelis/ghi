@@ -7,6 +7,9 @@ module GHI
 usage: ghi config [options]
 EOF
           opts.separator ''
+          opts.on '--local', 'set for local repo only' do
+            assigns[:local] = true
+          end
           opts.on '--auth [<username>:<password>]' do |credentials|
             self.action = 'auth'
             username, password = credentials.split ':', 2 if credentials
@@ -18,10 +21,13 @@ EOF
       end
 
       def execute
+        global = true
         options.parse! args.empty? ? %w(-h) : args
 
         if self.action == 'auth'
-          Authorization.authorize! assigns[:username], assigns[:password]
+          Authorization.authorize!(
+            assigns[:username], assigns[:password], assigns[:local]
+          )
         end
       end
     end

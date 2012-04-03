@@ -49,7 +49,9 @@ EOF
       end
 
       def man
-        exec "man #{['ghi', command].compact.join '-'}"
+        GHI.execute [command, '-h']
+        # TODO:
+        # exec "man #{['ghi', command].compact.join '-'}"
       end
 
       def web

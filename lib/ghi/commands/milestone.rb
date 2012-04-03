@@ -5,32 +5,22 @@ module GHI
     class Milestone < Command
       attr_accessor :reverse
 
-      #   usage: ghi milestone [modification options] [<milestoneno>]
-      #          [[<user>]/<repo>]
-      #      or: ghi milestone -D <milestoneno> [[<user>/]<repo>]
-      #      or: ghi milestone -l [-c]
+      #--
+      # FIXME: Opt for better interface, e.g.,
       #
-      #       -l, --list                       list milestones
-      #       -c, --[no-]closed                show closed milestones
-      #           --sort <on>                  due_date completeness
-      #                                        due_date or completeness
-      #           --reverse                    reverse (ascending) sort order
-      #
-      #   Milestone modification options
-      #       -m, --message <text>             change milestone description
-      #       -s, --state <in>                 open or closed
-      #           --due <on>                   when milestone should be complete
-      #       -D, --delete <milestoneno>       delete milestone
+      #   ghi milestone [-v | --verbose] [--[no-]closed]
+      #   ghi milestone add <name> <description>
+      #   ghi milestone rm <milestoneno>
+      #++
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi milestone [<modification options>] [<milestoneno>] [[<user>]/<repo>]
-   or: ghi milestone -D <milestoneno> [[<user>/]<repo>]
-   or: ghi milestone -l [-c] [[<user>/]<repo>]
+usage: ghi milestone [<modification options>] [<milestoneno>]
+   or: ghi milestone -D <milestoneno>
+   or: ghi milestone -l [-c]
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list milestones' do
-            extract_repo
             self.action = 'index'
           end
           opts.on '-c', '--[no-]closed', 'show closed milestones' do |closed|
@@ -39,7 +29,7 @@ EOF
           opts.on(
             '-S', '--sort <on>', %w(due_date completeness),
             {'d'=>'due_date', 'due'=>'due_date', 'c'=>'completeness'},
-            'due_date or completeness'
+            "'due_date' or 'completeness'"
           ) do |sort|
             assigns[:sort] = sort
           end
@@ -54,18 +44,22 @@ EOF
             self.action = 'create'
             assigns[:title], assigns[:description] = text.split(/\n+/, 2)
           end
+          # FIXME: We already describe --[no-]closed; describe this, too?
           opts.on(
             '-s', '--state <in>', %w(open closed),
-            {'o'=>'open', 'c'=>'closed'}, 'open or closed'
+            {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
           ) do |state|
             self.action = 'create'
             assigns[:state] = state
           end
-          opts.on '--due <on>', 'when milestone should be complete' do |date|
+          opts.on(
+            '--due <on>', 'when milestone should be complete',
+            "e.g., '2012-04-30'"
+          ) do |date|
             self.action = 'create'
             begin
               # TODO: Better parsing.
-              assigns[:due_on] = DateTime.parse(date).iso8601
+              assigns[:due_on] = DateTime.parse(date).strftime
             rescue ArgumentError => e
               raise OptionParser::InvalidArgument, e.message
             end
@@ -80,15 +74,16 @@ EOF
       def execute
         self.action = 'index'
         extract_milestone
+
         begin
           options.parse! args
         rescue OptionParser::AmbiguousOption => e
           fallback.parse! e.args
         end
 
-        milestone and self.action = case action
-          when 'create' then 'update'
-          when 'index'  then 'show'
+        milestone and case action
+          when 'create' then self.action = 'update'
+          when 'index'  then self.action = 'show'
         end
 
         if reverse
@@ -113,8 +108,6 @@ EOF
           throb { api.delete uri }
           puts 'Milestone deleted.'
         end
-      rescue Client::Error => e
-        abort e.message
       end
 
       private

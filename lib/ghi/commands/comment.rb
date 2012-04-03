@@ -3,16 +3,10 @@ module GHI
     class Comment < Command
       attr_accessor :comment
 
-      #   usage: ghi comment [options] <issueno> [[<user>/]<repo>]
-      #   
-      #       -l, --list                       list comments
-      #       -v, --verbose                    list events, too
-      #           --amend                      amend previous comment
-      #       -D, --delete                     delete previous comment
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi comment [options] <issueno> [[<user>/]<repo>]
+usage: ghi comment [options] <issueno>
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list comments' do
@@ -30,6 +24,9 @@ EOF
           opts.on '-D', '--delete', 'delete previous comment' do
             self.action = 'destroy'
           end
+          opts.on '--close', 'close associated issue' do
+            self.action = 'close'
+          end
           opts.separator ''
         end
       end
@@ -39,7 +36,6 @@ EOF
         require_repo
         self.action ||= 'create'
         options.parse! args
-        extract_repo args.pop
 
         case action
         when 'list'
@@ -58,9 +54,9 @@ EOF
           else
             abort 'No recent comment found.'
           end
+        when 'close'
+          Close.execute %W(-m #{assigns[:body]} #{issue} -- #{repo})
         end
-      rescue Client::Error => e
-        abort e.message
       end
 
       protected

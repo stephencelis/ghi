@@ -1,17 +1,10 @@
 module GHI
   module Commands
     class Edit < Command
-      #   usage: ghi edit [options] <issueno> [[<user>]/<repo>]
-      #   
-      #       -m, --message <text>             change issue description
-      #       -u, --[no-]assign <user>         assign to specified user
-      #       -s, --state <state>              open or closed
-      #       -M, --milestone <n>              associate with milestone
-      #       -L, --label <labelname>...       associate with label(s)
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi edit [options] <issueno> [[<user>]/<repo>]
+usage: ghi edit [options] <issueno>
 EOF
           opts.separator ''
           opts.on(
@@ -22,11 +15,11 @@ EOF
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
           ) do |assignee|
-            assignee[:assignee] = assignee
+            assigns[:assignee] = assignee
           end
           opts.on(
             '-s', '--state <in>', %w(open closed),
-            {'o'=>'open', 'c'=>'closed'}, 'open or closed'
+            {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
           ) do |state|
             assigns[:state] = state
           end
@@ -36,7 +29,7 @@ EOF
             assigns[:milestone] = milestone
           end
           opts.on(
-            '-L', '--label <labelname>,...', Array, 'associate with label(s)'
+            '-L', '--label <labelname>...', Array, 'associate with label(s)'
           ) do |labels|
             assigns[:labels] = labels
           end
@@ -48,11 +41,8 @@ EOF
         require_issue
         require_repo
         options.parse! args
-        extract_repo args.pop
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }
         puts format_issue(i)
-      rescue GHI::Client::Error => e
-        abort e.message
       end
     end
   end

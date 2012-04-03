@@ -11,8 +11,8 @@ module GHI
         @token = config 'ghi.token'
       end
 
-      def authorize! user = username, pass = password, global = true
-        return false if user.nil? && pass.nil?
+      def authorize! user = username, pass = password, local = true
+        return false unless user && pass
 
         res = throb {
           Client.new(user, pass).post(
@@ -26,14 +26,15 @@ module GHI
         
         run = []
         unless username
-          run << "git config #{'--global ' if global} github.user #{user}"
+          run << "git config#{' --global ' unless local} github.user #{user}"
         end
-        run << "git config #{'--global ' if global} ghi.token #{token}"
+        run << "git config#{' --global ' unless local} ghi.token #{token}"
 
         system run.join('; ')
 
-        global and at_exit do
-          warn <<EOF
+        unless local
+          at_exit do
+            warn <<EOF
 Your ~/.gitconfig has been modified by way of:
 
   #{run.join "\n  "}
@@ -43,6 +44,7 @@ Alternatively, set the following env var in a private dotfile:
 
   export GHI_TOKEN="#{token}"
 EOF
+          end
         end
       rescue Client::Error => e
         abort e.message

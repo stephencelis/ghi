@@ -1,16 +1,10 @@
 module GHI
   module Commands
     class Close < Command
-      #   usage: ghi close [options] <issueno> [[<user>/]<repo>]
-      #   
-      #       -l, --list                       list closed issues
-      #
-      #   Issue modification options
-      #       -m, --message <text>             close with message
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi close [options] <issueno> [[<user>/]<repo>]
+usage: ghi close [options] <issueno>
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list closed issues' do
@@ -27,16 +21,17 @@ EOF
 
       def execute
         options.parse! args
+        require_repo
 
         if list?
-          require_repo
-          List.new(['-sc', repo]).execute
+          List.execute %W(-sc -- #{repo})
         else
           require_issue
-          extract_repo args.pop
-          require_repo
-          Edit.new(['-sc', issue, repo]).execute
+          Edit.execute %W(-sc #{issue} -- #{repo})
           puts 'Closed.'
+          if assigns[:comment]
+            Comment.execute %W(#{issue} -m #{assigns[:comment]} -- #{repo})
+          end
         end
       end
 

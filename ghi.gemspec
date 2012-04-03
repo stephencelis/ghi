@@ -12,9 +12,9 @@ EOF
   s.files            = Dir['lib/**/*']
   s.executables      = %w(ghi)
 
-  s.has_rdoc         = true
-  s.extra_rdoc_files = %w(README.markdown)
-  s.rdoc_options     = %w(--main README.markdown)
+  s.has_rdoc         = false
+  # s.extra_rdoc_files = %w(README.markdown)
+  # s.rdoc_options     = %w(--main README.markdown)
 
   s.author           = 'Stephen Celis'
   s.email            = 'stephen@stephencelis.com'
