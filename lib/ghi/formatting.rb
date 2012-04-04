@@ -34,12 +34,13 @@ module GHI
           end
         }
       }
-      stdout, $stdout = $stdout, IO.popen('less -ErX', 'w')
+      $stdout = IO.popen('less -EKrX', 'w') if $stdout == STDOUT
       super strings
-    rescue Errno::EPIPE
-    ensure
+    end
+
+    def reclaim_stdout
       $stdout.close_write
-      $stdout = stdout
+      $stdout = STDOUT
       print CURSOR[:show]
     end
 
@@ -210,7 +211,7 @@ EOF
     end
 
     def format_state state, string = state, layer = :fg
-      send(layer, state == 'closed' ? :red : :green) { string }
+      send(layer, state == 'closed' ? 'ff0000' : '00ff00') { string }
     end
 
     def format_labels labels
@@ -276,7 +277,7 @@ EOF
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]
-      return yield unless STDOUT.tty?
+      return yield unless $stdout.tty?
 
       throb = THROBBERS[rand(THROBBERS.length)]
       throb.reverse! if rand > 0.5

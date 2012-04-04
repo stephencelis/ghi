@@ -98,13 +98,13 @@ module GHI
       def page? message = 'Load more?'
         return unless STDIN.tty?
 
-        STDOUT.print "#{message} [Yn] "
+        print "#{message} [Yn] "
         begin
           system 'stty raw -echo'
           # Continue on y, j, <ENTER>, <DOWN>...
           exit unless [?y, ?Y, ?j, 13, 27].include? STDIN.getc
-          STDOUT.print "\r" + ' ' * columns
-          STDOUT.print "\r  Loading..."
+          print "\r" + ' ' * columns
+          print "\r  Loading..."
         ensure
           system 'stty -raw echo'
         end

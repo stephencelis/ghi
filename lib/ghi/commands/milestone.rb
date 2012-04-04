@@ -102,10 +102,14 @@ EOF
           res = throb(0, format_state(state, '#')) { api.get uri }
           loop do
             milestones = res.body
-            if verbose
-              puts milestones.map { |m| format_milestone m }
-            else
-              puts format_milestones(milestones)
+            begin
+              if verbose
+                puts milestones.map { |m| format_milestone m }
+              else
+                puts format_milestones(milestones)
+              end
+            ensure
+              reclaim_stdout
             end
             break unless res.next_page
             page?

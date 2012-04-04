@@ -41,7 +41,11 @@ EOF
         when 'list'
           res = index
           loop do
-            puts format_comments(res.body)
+            begin
+              puts format_comments(res.body)
+            ensure
+              reclaim_stdout
+            end
             break unless res.next_page
             page?
             res = throb { api.get res.next_page }

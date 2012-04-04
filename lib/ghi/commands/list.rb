@@ -105,10 +105,14 @@ module GHI
         ) { api.get uri, assigns }
         loop do
           issues = res.body
-          if verbose
-            puts issues.map { |i| format_issue i }
-          else
-            puts format_issues(issues, repo.nil?)
+          begin
+            if verbose
+              puts issues.map { |i| format_issue i }
+            else
+              puts format_issues(issues, repo.nil?)
+            end
+          ensure
+            reclaim_stdout
           end
           break unless res.next_page
           page?
