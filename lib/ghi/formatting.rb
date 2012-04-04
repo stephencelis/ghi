@@ -37,8 +37,9 @@ module GHI
       super strings
     end
 
-    def page throttle = 1
+    def page header = nil, throttle = 1
       $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
+      puts header if header
       loop do
         yield
         sleep throttle
