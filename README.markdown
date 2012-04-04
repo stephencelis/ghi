@@ -17,7 +17,7 @@ $ gem install ghi --pre
 
 Go:
 
-![Example](/stephencelis/ghi/raw/v3/images/example.png)
+![Example](/stephencelis/ghi/raw/master/images/example.png)
 
 ```
 usage: ghi [--version] [-h|--help] <command> [<args>] [ -- [<user>/]<repo>]
