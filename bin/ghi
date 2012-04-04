@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
 
-$: << File.expand_path(File.join(File.dirname(__FILE__), "..", "lib"))
-require "ghi/cli"
-$stdout.sync = true
-GHI::CLI::Executable.new.parse!(ARGV)
+require 'ghi'
+GHI.execute ARGV

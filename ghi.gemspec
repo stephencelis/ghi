@@ -1,20 +1,22 @@
+$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+require 'ghi/commands/version'
+
 Gem::Specification.new do |s|
-  s.name = "ghi"
-  s.version = "0.3.1"
-  s.summary = "GitHub Issues command line interface"
-  s.description = "GitHub Issues on the command line. Use your `$EDITOR`, not your browser."
+  s.name             = 'ghi'
+  s.version          = GHI::Commands::Version::VERSION
+  s.summary          = 'GitHub Issues command line interface'
+  s.description      = <<EOF
+GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
+EOF
 
-  s.files = ["bin/ghi", "lib/ghi/api.rb", "lib/ghi/cli.rb", "lib/ghi/issue.rb", "lib/ghi.rb", "spec/ghi/api_spec.rb", "spec/ghi/cli_spec.rb", "spec/ghi/issue_spec.rb", "spec/ghi_spec.rb"]
-  s.executables = ["ghi"]
-  s.default_executable = "ghi"
+  s.files            = Dir['lib/**/*']
+  s.executables      = %w(ghi)
 
-  s.add_development_dependency "rspec", "< 2.0"
+  s.has_rdoc         = false
+  # s.extra_rdoc_files = %w(README.markdown)
+  # s.rdoc_options     = %w(--main README.markdown)
 
-  s.has_rdoc = true
-  s.extra_rdoc_files = %w(README.rdoc)
-  s.rdoc_options = %w(--main README.rdoc)
-
-  s.author = "Stephen Celis"
-  s.email = "stephen@stephencelis.com"
-  s.homepage = "http://github.com/stephencelis/ghi"
+  s.author           = 'Stephen Celis'
+  s.email            = 'stephen@stephencelis.com'
+  s.homepage         = 'https://github.com/stephencelis/ghi'
 end
