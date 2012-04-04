@@ -34,8 +34,10 @@ module GHI
           end
         }
       }
-      $stdout = IO.popen('less -EKrX', 'w') if $stdout == STDOUT
+      $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
       super strings
+    rescue Errno::EPIPE
+      exit
     end
 
     def reclaim_stdout
@@ -262,7 +264,9 @@ EOF
     def format_date date
       days = (interval = DateTime.now - date).to_i.abs
       string = if days.zero?
-        hours, minutes, seconds = DateTime.day_fraction_to_time interval.abs
+        seconds, _ = interval.divmod Rational(1, 86400)
+        hours, seconds = seconds.divmod 3600
+        minutes, seconds = seconds.divmod 60
         if hours > 0
           "#{hours} hour#{'s' unless hours == 1}"
         elsif minutes > 0

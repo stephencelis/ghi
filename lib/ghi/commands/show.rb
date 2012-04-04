@@ -14,9 +14,7 @@ module GHI
         i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
         puts format_issue(i)
         if i['comments'] > 0
-          # page? "Load #{i['comments']} comments?"
-          puts "#{i['comments']} Comments:"
-          print "\n"
+          puts "#{i['comments']} Comments:\n\n"
           Comment.execute %W(-l #{issue} -- #{repo})
         end
       ensure
