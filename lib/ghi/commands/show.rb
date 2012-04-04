@@ -13,6 +13,8 @@ module GHI
         require_repo
         i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
         puts format_issue(i)
+        page? 'Load comments?'
+        Comment.execute %W(-l #{issue} -- #{repo})
       end
     end
   end
