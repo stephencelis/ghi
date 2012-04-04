@@ -18,9 +18,12 @@ module GHI
 
       option_parser = OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
-           [ -- [<user>/]<repo>]
+usage: ghi [--version] [--help] <command> [<args>] [ -- [<user>/]<repo>]
 EOF
+#         opts.banner = <<EOF
+# usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
+#            [ -- [<user>/]<repo>]
+# EOF
         opts.on('--version') { command_name = 'version' }
         opts.on '-p', '--paginate', '--[no-]pager' do |paginate|
           
@@ -64,7 +67,7 @@ EOF
           warn "#{e.message.capitalize}\n"
           abort command.new([]).options.to_s
         rescue Client::Error => e
-          if e.is_a?(Net::HTTPNotFound) && Authorization.token.nil?
+          if e.response.is_a?(Net::HTTPNotFound) && Authorization.token.nil?
             raise Authorization::Required
           else
             abort e.message
