@@ -26,9 +26,21 @@ module GHI
 
     def puts *strings
       strings = strings.flatten.map { |s|
-        highlight s.to_s, /@#{Authorization.username}\b/
+        s.gsub(/@([^@\s]+)/) {
+          if $1 == Authorization.username
+            bright { fg(:yellow) { "@#$1" } }
+          else
+            bright { "@#$1" }
+          end
+        }
       }
-      Kernel.puts strings
+      stdout, $stdout = $stdout, IO.popen('less -ErX', 'w')
+      super strings
+    rescue Errno::EPIPE
+    ensure
+      $stdout.close_write
+      $stdout = stdout
+      print CURSOR[:show]
     end
 
     def truncate string, reserved
@@ -45,8 +57,7 @@ module GHI
       lines = string.scan(
         /.{0,#{width}}(?:\s|\Z)|[\S]{#{width},}/ # TODO: Test long lines.
       ).map { |line| " " * level + line.chomp }
-      lines.pop if lines.last.empty?
-      lines.join "\n"
+      format_markdown lines.join("\n").rstrip, level
     end
 
     def columns
@@ -62,8 +73,12 @@ module GHI
     #++
 
     def format_issues_header
-      header = "# #{repo || 'Global,'} #{assigns[:state] || 'open'} issues"
+      state = assigns[:state] || 'open'
+      header = "# #{repo || 'Global,'} #{state} issues"
       if repo
+        if milestone = assigns[:milestone]
+          header.sub! repo, "#{repo} milestone ##{milestone}"
+        end
         if assignee = assigns[:assignee]
           header << case assignee
             when '*'    then ', assigned'
@@ -113,35 +128,36 @@ module GHI
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
         p = i['pull_request']['html_url'] and l += 2
-        # c = i['comments'] if i['comments'] > 0 and l += 2
+        c = i['comments'] if i['comments'] > 0 and l += 2
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           "#{bright { n.to_s.rjust nmax }}:",
           truncate(title, l),
           format_labels(labels),
-          # (fg('aaaaaa') { c } if c),
+          (fg('aaaaaa') { c } if c),
           (fg('aaaaaa') { '↑' } if p),
           (fg(:yellow) { '@' } if a)
         ].compact.join ' '
       }
     end
 
-    # TODO: Show milestone.
+    # TODO: Show milestone, number of comments, pull request attached.
     def format_issue i
-      ERB.new(<<EOF).result(binding).sub(/\n{2,}\Z/m, "\n\n")
-<%= bright { indent '#%s: %s' % i.values_at('number', 'title'), 0 } %>
-@<%= i['user']['login'] %> opened this issue <%= i['created_at'] %>. \
+      ERB.new(<<EOF).result binding
+<% p = i['pull_request'].key? 'html_url' %>\
+<%= bright { \
+indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } %>
+@<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
+<%= format_date DateTime.parse(i['created_at']) %>. \
 <%= format_state i['state'], format_tag(i['state']), :bg %>\
-<% if i['assignee'] %>
-@<%= i['assignee']['login'] %> is assigned. \
-<% end %>\
-<% unless i['labels'].empty? %>\
-<%= format_labels(i['labels']) %>\
+<% if i['assignee'] || !i['labels'].empty? %>
+<% if i['assignee'] %>@<%= i['assignee']['login'] %> is assigned. <% end %>\
+<% unless i['labels'].empty? %><%= format_labels(i['labels']) %><% end %>\
 <% end %>
-<% if i['body'] && !i['body'].empty? %>\
-\n<%= indent i['body'] %>\
+<% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'] %>
 <% end %>
+
 EOF
     end
 
@@ -152,9 +168,11 @@ EOF
 
     def format_comment c
       <<EOF
-@#{c['user']['login']} commented #{c['created_at']}:
-
+@#{c['user']['login']} commented \
+#{format_date DateTime.parse(c['created_at'])}:
 #{indent c['body']}
+
+
 EOF
     end
 
@@ -177,14 +195,13 @@ EOF
     end
 
     def format_milestone m
-      ERB.new(<<EOF).result(binding).sub(/\n{2,}\Z/m, "\n\n")
+      ERB.new(<<EOF).result binding
 <%= bright { indent '#%s: %s' % m.values_at('number', 'title'), 0 } %>
 @<%= m['creator']['login'] %> created this milestone <%= m['created_at'] %>. \
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
 <% due_on = DateTime.parse m['due_on'] %>\
-Due on <%= fg((:red if due_on <= DateTime.now)) { \
-due_on.strftime '%Y-%m-%d' } %>.
+Due <%= fg((:red if due_on <= DateTime.now)) { format_date due_on } %>.
 <% end %>\
 <% if m['description'] && !m['description'].empty? %>
 <%= indent m['description'] %>\
@@ -203,6 +220,59 @@ EOF
 
     def format_tag tag
       (colorize? ? ' %s ' : '[%s]') % tag
+    end
+
+    def format_markdown string, indent = 4
+      # Headers.
+      string.gsub!(/^( {#{indent}}\#{1,6} .+)$/, bright{'\1'})
+      string.gsub!(
+        /(^ {#{indent}}.+$\n^ {#{indent}}[-=]+$)/, bright{'\1'}
+      )
+      # Emphasis.
+      string.gsub!(
+        /(^|\s)(\*\w(?:[^*]*\w)?\*)(\s|$)/m, '\1' + underline{'\2'} + '\3'
+      )
+      string.gsub!(
+        /(^|\s)(_\w(?:[^_]*\w)?_)(\s|$)/m, '\1' + underline{'\2'} + '\3'
+      )
+      # Strong.
+      string.gsub!(
+        /(^|\s)(\*{2}\w(?:[^*]*\w)?\*{2})(\s|$)/m, '\1' + bright{'\2'} + '\3'
+      )
+      string.gsub!(
+        /(^|\s)(_{2}\w(?:[^_]*\w)?_{2})(\s|$)/m, '\1' + bright {'\2'} + '\3'
+      )
+      # Code.
+      string.gsub!(
+        /
+          (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
+          (^|[^`])(`[^`]+`)([^`]|$)
+        /mx,
+        fg(c = '268bd2'){'\1'} + bg(c){'\2'} + '\3' + fg(c){'\4'} + '\5'
+      )
+      # URI.
+      string.gsub!(
+        %r{\b(<)?(https?://[\s]+|\w+@\w+)(>)?\b},
+        '\1' + underline{'\2'} + '\3'
+      )
+      string
+    end
+
+    def format_date date
+      days = (interval = DateTime.now - date).to_i.abs
+      string = if days.zero?
+        hours, minutes, seconds = DateTime.day_fraction_to_time interval.abs
+        if hours > 0
+          "#{hours} hour#{'s' unless hours == 1}"
+        elsif minutes > 0
+          "#{minutes} minute#{'s' unless minutes == 1}"
+        else
+          "#{seconds} second#{'s' unless seconds == 1}"
+        end
+      else
+        "#{days} day#{'s' unless days == 1}"
+      end
+      [string, interval < 0 ? 'from now' : 'ago'].join ' '
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]

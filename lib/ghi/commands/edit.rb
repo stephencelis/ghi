@@ -10,7 +10,7 @@ EOF
           opts.on(
             '-m', '--message <text>', 'change issue description'
           ) do |text|
-            assigns[:title] = text
+            assigns[:title], assigns[:body] = text.split(/\n+/, 2)
           end
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
@@ -41,7 +41,7 @@ EOF
         require_issue
         require_repo
         options.parse! args
-        i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }
+        i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
       end
     end

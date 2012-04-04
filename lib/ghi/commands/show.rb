@@ -11,7 +11,7 @@ module GHI
       def execute
         require_issue
         require_repo
-        i = throb { api.get "/repos/#{repo}/issues/#{issue}" }
+        i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
         puts format_issue(i)
       end
     end

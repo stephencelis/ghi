@@ -17,7 +17,7 @@ module GHI
           opts.banner = <<EOF
 usage: ghi milestone [<modification options>] [<milestoneno>]
    or: ghi milestone -D <milestoneno>
-   or: ghi milestone -l [-c]
+   or: ghi milestone -l [-c] [-v]
 EOF
           opts.separator ''
           opts.on '-l', '--list', 'list milestones' do
@@ -35,6 +35,9 @@ EOF
           end
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
+          end
+          opts.on '-v', '--verbose', 'list milestones verbosely' do
+            self.verbose = true
           end
           opts.separator ''
           opts.separator 'Milestone modification options'
@@ -93,13 +96,28 @@ EOF
 
         case action
         when 'index'
-          milestones = throb { api.get uri }
-          puts format_milestones(milestones)
+          state = assigns[:state] || 'open'
+          print format_state state, "# #{repo} #{state} milestones"
+          print "\n" unless STDOUT.tty?
+          res = throb(0, format_state(state, '#')) { api.get uri }
+          loop do
+            milestones = res.body
+            if verbose
+              puts milestones.map { |m| format_milestone m }
+            else
+              puts format_milestones(milestones)
+            end
+            break unless res.next_page
+            page?
+            res = throb { api.get res.next_page }
+          end
         when 'show'
-          m = throb { api.get uri }
-          puts format_milestone(m)
+          m = throb { api.get uri }.body
+          print format_milestone(m)
+          puts 'Issues:'
+          List.execute %W(-q -M #{milestone} -- #{repo})
         when 'create'
-          m = throb { api.post uri, assigns }
+          m = throb { api.post uri, assigns }.body
           puts 'Milestone #%d created.' % m['number']
         when 'update'
           throb { api.patch uri, assigns }

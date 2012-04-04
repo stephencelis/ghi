@@ -10,6 +10,12 @@ module GHI
     def execute args
       STDOUT.sync = true
 
+      if index = args.index { |arg| arg !~ /^-/ }
+        command_name = args.delete_at index
+        command_args = args.slice! index, args.length
+      end
+      command_args ||= []
+
       option_parser = OptionParser.new do |opts|
         opts.banner = <<EOF
 usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
@@ -31,12 +37,6 @@ EOF
         opts.on('-v') { self.v = true }
         opts.on('-h') { raise OptionParser::InvalidOption }
       end
-
-      if index = args.index { |arg| arg !~ /^-/ }
-        command_name = args.delete_at index
-        command_args = args.slice! index, args.length
-      end
-      command_args ||= []
 
       begin
         option_parser.parse! args

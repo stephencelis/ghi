@@ -1,9 +1,11 @@
+require 'curses'
 require 'date'
 
 module GHI
   module Commands
     class List < Command
       attr_accessor :reverse
+      attr_accessor :quiet
 
       def options
         OptionParser.new do |opts|
@@ -86,6 +88,7 @@ module GHI
           options.parse! args
         rescue OptionParser::InvalidOption => e
           fallback.parse! e.args
+          retry
         end
 
         if reverse
@@ -93,14 +96,23 @@ module GHI
           assigns[:direction] = 'asc'
         end
 
-        print format_issues_header
-        issues = throb(0, format_state(assigns[:state], '#')) {
-          api.get uri, assigns
-        }
-        if verbose
-          puts issues.map { |i| format_issue(i) }
-        else
-          puts format_issues(issues, repo.nil?)
+        unless quiet
+          print format_issues_header
+          print "\n" unless STDOUT.tty?
+        end
+        res = throb(
+          0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
+        ) { api.get uri, assigns }
+        loop do
+          issues = res.body
+          if verbose
+            puts issues.map { |i| format_issue i }
+          else
+            puts format_issues(issues, repo.nil?)
+          end
+          break unless res.next_page
+          page?
+          res = throb { api.get res.next_page }
         end
       end
 
@@ -113,6 +125,7 @@ module GHI
       def fallback
         OptionParser.new do |opts|
           opts.on('-c', '--closed') { assigns[:state] = 'closed' }
+          opts.on('-q', '--quiet')  { self.quiet = true }
         end
       end
     end

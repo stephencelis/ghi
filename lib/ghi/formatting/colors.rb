@@ -25,16 +25,16 @@ module GHI
         escape :bright, &block
       end
 
+      def underline &block
+        escape :underline, &block
+      end
+
       def blink &block
         escape :blink, &block
       end
 
       def inverse &block
         escape :inverse, &block
-      end
-
-      def highlight string, token
-        string.gsub(token) { |match| bright { fg(:yellow) { match } } }
       end
 
       def no_color

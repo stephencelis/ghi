@@ -39,14 +39,19 @@ EOF
 
         case action
         when 'list'
-          comments = index
-          puts format_comments(comments)
+          res = index
+          loop do
+            puts format_comments(res.body)
+            break unless res.next_page
+            page?
+            res = throb { api.get res.next_page }
+          end
         when 'create'
           create
         when 'update', 'destroy'
-          comments = index
-          # FIXME: FETCH LAST PAGE IF LINK HEADER.
-          self.comment = comments.reverse.find { |c|
+          res = index
+          res = throb { api.get res.last_page } if res.last_page
+          self.comment = res.body.reverse.find { |c|
             c['user']['login'] == Authorization.username
           }
           if comment

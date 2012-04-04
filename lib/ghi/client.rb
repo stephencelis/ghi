@@ -22,6 +22,30 @@ module GHI
       def errors()  [*body['errors']] end
     end
 
+    class Response
+      def initialize response
+        @response = response
+      end
+
+      def body
+        @body ||= JSON.parse @response.body
+      end
+
+      def next_page() links['next'] end
+      def last_page() links['last'] end
+
+      private
+
+      def links
+        return @links if defined? @links
+        @links = {}
+        if links = @response['Link']
+          links.scan(/<([^>]+)>; rel="([^"]+)"/).each { |l, r| @links[r] = l }
+        end
+        @links
+      end
+    end
+
     CONTENT_TYPE = 'application/vnd.github+json'
     METHODS = {
       :head   => Net::HTTP::Head,
@@ -89,7 +113,7 @@ module GHI
 
       case res
       when Net::HTTPSuccess
-        return res.body ? JSON.parse(res.body) : nil
+        return Response.new(res)
       when Net::HTTPUnauthorized
         if password.nil?
           raise Authorization::Required, 'Authorization required'

@@ -19,7 +19,7 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message <text>', 'describe issue' do |text|
-            assigns[:title], assigns[:description] = text.split(/\n+/, 2)
+            assigns[:title], assigns[:body] = text.split(/\n+/, 2)
           end
           opts.on(
             '-u', '--[no-]assign <user>', 'assign to specified user'
@@ -59,7 +59,7 @@ EOF
             warn "Missing argument: -m"
             abort options.to_s
           end
-          i = throb { api.post "/repos/#{repo}/issues", assigns }
+          i = throb { api.post "/repos/#{repo}/issues", assigns }.body
           puts format_issue(i)
           puts 'Opened.'
         end

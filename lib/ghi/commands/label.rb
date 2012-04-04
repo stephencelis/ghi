@@ -77,7 +77,7 @@ EOF
         else
           uri = "/repos/#{repo}/labels"  
         end
-        labels = throb { api.get uri }
+        labels = throb { api.get uri }.body
         if labels.empty?
           puts 'None.'
         else
@@ -91,7 +91,7 @@ EOF
       def create
         label = throb {
           api.post "/repos/#{repo}/labels", assigns.merge(:name => name)
-        }
+        }.body
         return update if label.nil?
         puts "%s created." % bg(label['color']) { " #{label['name']} "}
       rescue Client::Error => e
@@ -102,7 +102,9 @@ EOF
       end
 
       def update
-        label = throb { api.patch "/repos/#{repo}/labels/#{name}", assigns }
+        label = throb {
+          api.patch "/repos/#{repo}/labels/#{name}", assigns
+        }.body
         puts "%s updated." % bg(label['color']) { " #{label['name']} "}
       end
 
@@ -114,7 +116,7 @@ EOF
       def add
         labels = throb {
           api.post "/repos/#{repo}/issues/#{issue}/labels", name
-        }
+        }.body
         labels.delete_if { |l| !name.include?(l['name']) }
         puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
       end
@@ -125,17 +127,19 @@ EOF
           throb { api.delete base_uri }
           puts "Labels removed."
         when 1
-          labels = throb { api.delete "#{base_uri}/#{name.join}" }
+          labels = throb { api.delete "#{base_uri}/#{name.join}" }.body
           puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
         else
-          labels = throb { api.get "/repos/#{repo}/issues/#{issue}/labels" }
+          labels = throb {
+            api.get "/repos/#{repo}/issues/#{issue}/labels"
+          }.body
           self.name = labels.map { |l| l['name'] } - name
           replace
         end
       end
 
       def replace
-        labels = throb { api.put base_uri, name }
+        labels = throb { api.put base_uri, name }.body
         puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
       end
 
