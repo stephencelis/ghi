@@ -145,7 +145,7 @@ module GHI
     # TODO: Show milestone, number of comments, pull request attached.
     def format_issue i
       ERB.new(<<EOF).result binding
-<% p = i['pull_request'].key? 'html_url' %>\
+<% p = i['pull_request']['html_url'] %>\
 <%= bright { \
 indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
