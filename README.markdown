@@ -2,16 +2,17 @@
 
 https://github.com/stephencelis/ghi
 
-GitHub Issues on the command line. Use your <tt>$EDITOR</tt>, not your
-browser.
+GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
+
+Note: This is being rapidly prototyped for GitHub API v3.
 
 
 ## The Basics
 
 Get:
 
-```
-% gem install ghi
+``` bash
+$ gem install ghi --pre
 ```
 
 Go:
@@ -19,7 +20,7 @@ Go:
 ![Example](/stephencelis/ghi/raw/v3/images/example.png)
 
 ```
-usage: ghi [--version] [-h|--help] <command> [<args>]
+usage: ghi [--version] [-h|--help] <command> [<args>] [ -- [<user>/]<repo>]
 
 The most commonly used ghi commands are:
    list        List your issues (or a repository's)
