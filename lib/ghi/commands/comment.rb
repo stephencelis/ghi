@@ -40,14 +40,10 @@ EOF
         case action
         when 'list'
           res = index
-          begin
-            loop do
-              puts format_comments(res.body)
-              break unless res.next_page
-              res = throb { api.get res.next_page }
-            end
-          ensure
-            reclaim_stdout
+          page do
+            puts format_comments(res.body)
+            break unless res.next_page
+            res = throb { api.get res.next_page }
           end
         when 'create'
           create

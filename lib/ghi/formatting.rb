@@ -34,16 +34,22 @@ module GHI
           end
         }
       }
-      $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
       super strings
-    rescue Errno::EPIPE
-      exit
     end
 
-    def reclaim_stdout
+    def page throttle = 1
+      $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
+      loop do
+        yield
+        sleep throttle
+      end
+    rescue Errno::EPIPE
+      exit
+    ensure
       $stdout.close_write
       $stdout = STDOUT
       print CURSOR[:show]
+      exit
     end
 
     def truncate string, reserved

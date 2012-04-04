@@ -103,20 +103,15 @@ module GHI
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
         ) { api.get uri, assigns }
-        n = 0
-        begin
-          loop do
-            issues = res.body
-            if verbose
-              puts issues.map { |i| format_issue i }
-            else
-              puts format_issues(issues, repo.nil?)
-            end
-            break unless res.next_page
-            res = throb { api.get res.next_page }
+        page do
+          issues = res.body
+          if verbose
+            puts issues.map { |i| format_issue i }
+          else
+            puts format_issues(issues, repo.nil?)
           end
-        ensure
-          reclaim_stdout
+          break unless res.next_page
+          res = throb { api.get res.next_page }
         end
       end
 

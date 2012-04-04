@@ -100,19 +100,15 @@ EOF
           print format_state state, "# #{repo} #{state} milestones"
           print "\n" unless STDOUT.tty?
           res = throb(0, format_state(state, '#')) { api.get uri }
-          begin
-            loop do
-              milestones = res.body
-              if verbose
-                puts milestones.map { |m| format_milestone m }
-              else
-                puts format_milestones(milestones)
-              end
-              break unless res.next_page
-              res = throb { api.get res.next_page }
+          page do
+            milestones = res.body
+            if verbose
+              puts milestones.map { |m| format_milestone m }
+            else
+              puts format_milestones(milestones)
             end
-          ensure
-            reclaim_stdout
+            break unless res.next_page
+            res = throb { api.get res.next_page }
           end
         when 'show'
           m = throb { api.get uri }.body
