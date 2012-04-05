@@ -99,7 +99,7 @@ EOF
           state = assigns[:state] || 'open'
           print format_state state, "# #{repo} #{state} milestones"
           print "\n" unless STDOUT.tty?
-          res = throb(0, format_state(state, '#')) { api.get uri }
+          res = throb(0, format_state(state, '#')) { api.get uri, assigns }
           page do
             milestones = res.body
             if verbose

@@ -2,9 +2,8 @@ require 'cgi'
 require 'net/https'
 
 unless defined? Net::HTTP::Patch
-  Net::HTTP::Patch = Class.new Net::HTTP::Post do
-    METHOD = 'PATCH'
-  end
+  # PATCH support for 1.8.7.
+  Net::HTTP::Patch = Class.new(Net::HTTP::Post) { METHOD = 'PATCH' }
 end
 
 module GHI

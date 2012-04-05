@@ -61,11 +61,11 @@ module GHI
       result
     end
 
-    def indent string, level = 4
+    def indent string, level = 4, maxwidth = columns
       string = string.gsub(/\r/, '')
       string.gsub!(/[\t ]+$/, '')
       string.gsub!(/\n{3,}/, "\n\n")
-      width = columns - level - 1
+      width = maxwidth - level - 1
       lines = string.scan(
         /.{0,#{width}}(?:\s|\Z)|[\S]{#{width},}/ # TODO: Test long lines.
       ).map { |line| " " * level + line.chomp }
@@ -89,7 +89,12 @@ module GHI
       header = "# #{repo || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
-          header.sub! repo, "#{repo} milestone ##{milestone}"
+          case milestone
+            when '*'    then header << ' with a milestone'
+            when 'none' then header << ' without a milestone'
+          else
+            header.sub! repo, "#{repo} milestone ##{milestone}"
+          end
         end
         if assignee = assigns[:assignee]
           header << case assignee
@@ -155,11 +160,11 @@ module GHI
     end
 
     # TODO: Show milestone, number of comments, pull request attached.
-    def format_issue i
+    def format_issue i, width = columns
       ERB.new(<<EOF).result binding
 <% p = i['pull_request']['html_url'] %>\
-<%= bright { no_color { \
-indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } } %>
+<%= bright { no_color { indent '%s%s: %s' % [p ? '↑' : '#', \
+*i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
 <%= format_state i['state'], format_tag(i['state']), :bg %>\
@@ -167,7 +172,7 @@ indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } } %>
 <% if i['assignee'] %>@<%= i['assignee']['login'] %> is assigned. <% end %>\
 <% unless i['labels'].empty? %><%= format_labels(i['labels']) %><% end %>\
 <% end %>
-<% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'] %>
+<% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'], 4, width %>
 <% end %>
 
 EOF
@@ -178,11 +183,11 @@ EOF
       comments.map { |comment| format_comment comment }
     end
 
-    def format_comment c
+    def format_comment c, width = columns
       <<EOF
 @#{c['user']['login']} commented \
 #{format_date DateTime.parse(c['created_at'])}:
-#{indent c['body']}
+#{indent c['body'], 4, width}
 
 
 EOF
@@ -217,8 +222,9 @@ indent '#%s: %s' % m.values_at('number', 'title'), 0 } } %>
 Due <%= fg((:red if due_on <= DateTime.now)) { format_date due_on } %>.
 <% end %>\
 <% if m['description'] && !m['description'].empty? %>
-<%= indent m['description'] %>\
+<%= indent m['description'] %>
 <% end %>
+
 EOF
     end
 
@@ -233,6 +239,47 @@ EOF
 
     def format_tag tag
       (colorize? ? ' %s ' : '[%s]') % tag
+    end
+
+    #--
+    # Helpers:
+    #++
+
+    def format_editor issue = nil
+      message = ERB.new(<<EOF).result binding
+
+Please explain the issue. The first line will become the title. Lines
+starting with '#' will be ignored, and empty messages will not be filed.
+Issues are formatted with GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
+
+On <%= repo %>
+
+<%= no_color { format_issue issue, columns - 2 if issue } %>
+EOF
+      message.rstrip!
+      message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
+      message.insert 0, [issue['title'], issue['body']].join("\n\n") if issue
+      message
+    end
+
+    def format_comment_editor issue, comment = nil
+      message = ERB.new(<<EOF).result binding
+
+Leave a comment. Lines starting with '#' will be ignored, and empty messages
+will not be sent. Comments are formatted with GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
+
+On <%= repo %> issue #<%= issue %>
+
+<%= no_color { format_comment comment, columns - 2 } if comment %>
+EOF
+      message.rstrip!
+      message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
+      message.insert 0, comment['body'] if comment
+      message
     end
 
     def format_markdown string, indent = 4

@@ -12,7 +12,7 @@ EOF
           end
           opts.separator ''
           opts.separator 'Issue modification options'
-          opts.on '-m', '--message <text>', 'close with message' do |text|
+          opts.on '-m', '--message [<text>]', 'close with message' do |text|
             assigns[:comment] = text
           end
           opts.separator ''
@@ -27,11 +27,12 @@ EOF
           List.execute %W(-sc -- #{repo})
         else
           require_issue
-          Edit.execute %W(-sc #{issue} -- #{repo})
-          puts 'Closed.'
-          if assigns[:comment]
-            Comment.execute %W(#{issue} -m #{assigns[:comment]} -- #{repo})
+          if assigns.key? :comment
+            Comment.execute [
+              issue, '-m', assigns[:comment], '--', repo
+            ].compact
           end
+          Edit.execute %W(-sc #{issue} -- #{repo})
         end
       end
 

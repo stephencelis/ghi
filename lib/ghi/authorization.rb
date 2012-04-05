@@ -22,7 +22,7 @@ module GHI
             :note_url => 'https://github.com/stephencelis/ghi'
           )
         }
-        @token = res['token']
+        @token = res.body['token']
         
         run = []
         unless username

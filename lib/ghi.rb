@@ -4,6 +4,7 @@ module GHI
   autoload :Authorization, 'ghi/authorization'
   autoload :Client,        'ghi/client'
   autoload :Commands,      'ghi/commands'
+  autoload :Editor,        'ghi/editor'
   autoload :Formatting,    'ghi/formatting'
 
   class << self

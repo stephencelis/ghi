@@ -18,11 +18,11 @@ EOF
           end
           opts.separator ''
           opts.separator 'Issue modification options'
-          opts.on '-m', '--message <text>', 'describe issue' do |text|
+          opts.on '-m', '--message [<text>]', 'describe issue' do |text|
             assigns[:title], assigns[:body] = text.split(/\n+/, 2)
           end
           opts.on(
-            '-u', '--[no-]assign <user>', 'assign to specified user'
+            '-u', '--[no-]assign [<user>]', 'assign to specified user'
           ) do |assignee|
             assigns[:assignee] = assignee
           end
@@ -45,8 +45,7 @@ EOF
         self.action = 'create'
 
         if extract_issue
-          Edit.execute args.unshift('-so', issue, '--', repo)
-          puts 'Reopened.'
+          Edit.execute args.push('-so', issue, '--', repo)
           exit
         end
 
@@ -54,11 +53,16 @@ EOF
 
         case action
         when 'index'
-          List.execute args.unshift('--', repo)
+          if assigns.key? :assignee
+            args.unshift assigns[:assignee] if assigns[:assignee]
+            args.unshift '-u'
+          end
+          List.execute args.push('--', repo)
         when 'create'
-          if assigns[:title].nil? # FIXME: Open $EDITOR.
-            warn "Missing argument: -m"
-            abort options.to_s
+          if assigns[:title].nil?
+            message = Editor.gets format_editor
+            abort "There's no issue." if message.nil? || message.empty?
+            assigns[:title], assigns[:body] = message.split(/\n+/, 2)
           end
           i = throb { api.post "/repos/#{repo}/issues", assigns }.body
           puts format_issue(i)

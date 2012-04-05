@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Edit < Command
+      attr_accessor :edit
+
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
@@ -8,8 +10,9 @@ usage: ghi edit [options] <issueno>
 EOF
           opts.separator ''
           opts.on(
-            '-m', '--message <text>', 'change issue description'
+            '-m', '--message [<text>]', 'change issue description'
           ) do |text|
+            next self.edit = true if text.nil?
             assigns[:title], assigns[:body] = text.split(/\n+/, 2)
           end
           opts.on(
@@ -41,8 +44,26 @@ EOF
         require_issue
         require_repo
         options.parse! args
+        if edit || assigns.empty?
+          i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+          message = Editor.gets format_editor(i)
+          abort "There's no issue." if message.nil? || message.empty?
+          assigns[:title], assigns[:body] = message.split(/\n+/, 2)
+        end
+        if assigns[:title]
+          titles_match = assigns[:title].strip == i['title'].strip
+          if assigns[:body]
+            bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
+          end
+        end
+        if titles_match && bodies_match
+          abort 'No change.' if assigns.dup.delete_if { |k, v|
+            [:title, :body].include? k
+          }
+        end
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
+        puts 'Updated.'
       end
     end
   end

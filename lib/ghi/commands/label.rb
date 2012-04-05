@@ -61,6 +61,7 @@ EOF
         if issue
           self.action ||= 'add'
           self.name = args.shift.to_s.split ','
+          self.name.concat args
         else
           self.action ||= 'create'
           self.name ||= args.shift
@@ -117,7 +118,6 @@ EOF
         labels = throb {
           api.post "/repos/#{repo}/issues/#{issue}/labels", name
         }.body
-        labels.delete_if { |l| !name.include?(l['name']) }
         puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
       end
 
@@ -128,7 +128,11 @@ EOF
           puts "Labels removed."
         when 1
           labels = throb { api.delete "#{base_uri}/#{name.join}" }.body
-          puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
+          if labels.empty?
+            puts "Issue #%d unlabeled." % issue
+          else
+            puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
+          end
         else
           labels = throb {
             api.get "/repos/#{repo}/issues/#{issue}/labels"
@@ -140,7 +144,11 @@ EOF
 
       def replace
         labels = throb { api.put base_uri, name }.body
-        puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
+        if labels.empty?
+          puts "Issue #%d unlabeled." % issue
+        else
+          puts "Issue #%d labeled %s." % [issue, format_labels(labels)]
+        end
       end
 
       private

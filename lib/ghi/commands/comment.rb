@@ -15,7 +15,7 @@ EOF
           # opts.on '-v', '--verbose', 'list events, too'
           opts.separator ''
           opts.separator 'Comment modification options'
-          opts.on '-m', '--message <text>', 'comment body' do |text|
+          opts.on '-m', '--message [<text>]', 'comment body' do |text|
             assigns[:body] = text
           end
           opts.on '--amend', 'amend previous comment' do
@@ -59,7 +59,7 @@ EOF
             abort 'No recent comment found.'
           end
         when 'close'
-          Close.execute %W(-m #{assigns[:body]} #{issue} -- #{repo})
+          Close.execute [issue, '-m', assigns[:body], '--', repo].compact
         end
       end
 
@@ -71,19 +71,21 @@ EOF
 
       def create
         require_body
-        throb { api.post uri, assigns }
-        puts 'Comment created.'
+        c = throb { api.post uri, assigns }.body
+        puts format_comment c
+        puts 'Commented.'
       end
 
       def update
         require_body
-        throb { api.patch uri, assigns }
-        puts 'Comment updated.'
+        c = throb { api.patch uri, assigns }.body
+        puts format_comment c
+        puts 'Updated.'
       end
 
       def destroy
         throb { api.delete uri }
-        puts 'Comment deleted.'
+        puts 'Deleted.'
       end
 
       private
@@ -93,10 +95,11 @@ EOF
       end
 
       def require_body
-        if assigns[:body].nil? # FIXME: Open $EDITOR.
-          warn 'Missing argument: -m'
-          abort options.to_s
-        end
+        return if assigns[:body]
+        message = Editor.gets format_comment_editor(issue, comment)
+        abort 'No comment.' if message.nil? || message.empty?
+        abort 'No change.' if comment && message.strip == comment['body'].strip
+        assigns[:body] = message if message
       end
     end
   end

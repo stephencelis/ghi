@@ -90,12 +90,10 @@ module GHI
           fallback.parse! e.args
           retry
         end
-
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
         end
-
         unless quiet
           print header = format_issues_header
           print "\n" unless STDOUT.tty?
@@ -113,6 +111,14 @@ module GHI
           break unless res.next_page
           res = throb { api.get res.next_page }
         end
+      rescue Client::Error => e
+        if e.response.code == '422'
+          e.errors.any? { |err|
+            err['code'] == 'missing' && err['field'] == 'milestone'
+          } and abort 'No such milestone.'
+        end
+
+        raise
       end
 
       private
