@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 
-require 'ghi'
+autoload :GHI, 'ghi'
 GHI.execute ARGV
