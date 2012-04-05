@@ -158,8 +158,8 @@ module GHI
     def format_issue i
       ERB.new(<<EOF).result binding
 <% p = i['pull_request']['html_url'] %>\
-<%= bright { \
-indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } %>
+<%= bright { no_color { \
+indent '%s%s: %s' % [p ? '↑' : '#', *i.values_at('number', 'title')], 0 } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
 <%= format_state i['state'], format_tag(i['state']), :bg %>\
@@ -208,7 +208,8 @@ EOF
 
     def format_milestone m
       ERB.new(<<EOF).result binding
-<%= bright { indent '#%s: %s' % m.values_at('number', 'title'), 0 } %>
+<%= bright { no_color { \
+indent '#%s: %s' % m.values_at('number', 'title'), 0 } } %>
 @<%= m['creator']['login'] %> created this milestone <%= m['created_at'] %>. \
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
