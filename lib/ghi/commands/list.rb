@@ -103,7 +103,7 @@ module GHI
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
         ) { api.get uri, assigns }
-        page "\r#{CURSOR[:up][1]}#{header}" do
+        page header && "\r#{CURSOR[:up][1]}#{header}" do
           issues = res.body
           if verbose
             puts issues.map { |i| format_issue i }
