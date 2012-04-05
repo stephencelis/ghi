@@ -12,13 +12,15 @@ module GHI
         require_issue
         require_repo
         i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-        puts format_issue(i)
-        if i['comments'] > 0
-          puts "#{i['comments']} Comments:\n\n"
-          Comment.execute %W(-l #{issue} -- #{repo})
+        page do
+          puts format_issue(i)
+          n = i['comments']
+          if n > 0
+            puts "#{n} Comment#{'s' unless n == 1}:\n\n"
+            Comment.execute %W(-l #{issue} -- #{repo})
+          end
+          break
         end
-      ensure
-        reclaim_stdout
       end
     end
   end
