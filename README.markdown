@@ -1,6 +1,6 @@
 # ghi
 
-https://github.com/stephencelis/ghi
+<https://github.com/stephencelis/ghi>
 
 GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
 
