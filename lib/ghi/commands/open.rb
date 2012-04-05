@@ -41,10 +41,11 @@ EOF
       end
 
       def execute
+        require_repo
         self.action = 'create'
 
         if extract_issue
-          Edit.new(args.unshift('-so', issue)).execute
+          Edit.execute args.unshift('-so', issue, '--', repo)
           puts 'Reopened.'
           exit
         end
@@ -53,7 +54,7 @@ EOF
 
         case action
         when 'index'
-          List.new(args).execute
+          List.execute args.unshift('--', repo)
         when 'create'
           if assigns[:title].nil? # FIXME: Open $EDITOR.
             warn "Missing argument: -m"
