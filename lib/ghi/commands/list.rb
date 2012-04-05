@@ -1,4 +1,3 @@
-require 'curses'
 require 'date'
 
 module GHI
