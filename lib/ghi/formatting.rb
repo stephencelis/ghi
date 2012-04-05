@@ -245,6 +245,9 @@ EOF
     # Helpers:
     #++
 
+    #--
+    # TODO: DRY up editor formatters.
+    #++
     def format_editor issue = nil
       message = ERB.new(<<EOF).result binding
 

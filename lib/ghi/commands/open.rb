@@ -2,11 +2,6 @@ module GHI
   module Commands
     class Open < Command
       def options
-        #--
-        # TODO: Support shortcuts, e.g,
-        #
-        #   ghi open "Issue Title"
-        #++
         OptionParser.new do |opts|
           opts.banner = <<EOF
 usage: ghi open [options]
@@ -59,6 +54,7 @@ EOF
           end
           List.execute args.push('--', repo)
         when 'create'
+          assigns[:title] = args.join ' ' unless args.empty?
           if assigns[:title].nil?
             message = Editor.gets format_editor
             abort "There's no issue?" if message.nil? || message.empty?

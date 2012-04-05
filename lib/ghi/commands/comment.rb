@@ -95,6 +95,7 @@ EOF
       end
 
       def require_body
+        assigns[:body] = args.join ' ' unless args.empty?
         return if assigns[:body]
         message = Editor.gets format_comment_editor(issue, comment)
         abort 'No comment.' if message.nil? || message.empty?
