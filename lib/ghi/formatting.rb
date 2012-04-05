@@ -47,10 +47,12 @@ module GHI
     rescue Errno::EPIPE
       exit
     ensure
-      $stdout.close_write
-      $stdout = STDOUT
-      print CURSOR[:show]
-      exit
+      unless $stdout == STDOUT
+        $stdout.close_write
+        $stdout = STDOUT
+        print CURSOR[:show]
+        exit
+      end
     end
 
     def truncate string, reserved
