@@ -93,7 +93,7 @@ EOF
       end
 
       def require_body
-        if assigns[:body].nil?
+        if assigns[:body].nil? # FIXME: Open $EDITOR.
           warn 'Missing argument: -m'
           abort options.to_s
         end

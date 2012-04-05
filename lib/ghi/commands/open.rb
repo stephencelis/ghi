@@ -55,7 +55,7 @@ EOF
         when 'index'
           List.new(args).execute
         when 'create'
-          if assigns[:title].nil? # FIXME: Open $EDITOR
+          if assigns[:title].nil? # FIXME: Open $EDITOR.
             warn "Missing argument: -m"
             abort options.to_s
           end
