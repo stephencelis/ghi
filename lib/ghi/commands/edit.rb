@@ -50,16 +50,16 @@ EOF
           abort "There's no issue." if message.nil? || message.empty?
           assigns[:title], assigns[:body] = message.split(/\n+/, 2)
         end
-        if assigns[:title]
+        if assigns[:title] && i
           titles_match = assigns[:title].strip == i['title'].strip
           if assigns[:body]
             bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
           end
-        end
-        if titles_match && bodies_match
-          abort 'No change.' if assigns.dup.delete_if { |k, v|
-            [:title, :body].include? k
-          }
+          if titles_match && bodies_match
+            abort 'No change.' if assigns.dup.delete_if { |k, v|
+              [:title, :body].include? k
+            }
+          end
         end
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)

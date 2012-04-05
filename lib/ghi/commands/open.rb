@@ -19,7 +19,7 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'describe issue' do |text|
-            assigns[:title], assigns[:body] = text.split(/\n+/, 2)
+            assigns[:title], assigns[:body] = text.split(/\n+/, 2) if text
           end
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
@@ -61,7 +61,7 @@ EOF
         when 'create'
           if assigns[:title].nil?
             message = Editor.gets format_editor
-            abort "There's no issue." if message.nil? || message.empty?
+            abort "There's no issue?" if message.nil? || message.empty?
             assigns[:title], assigns[:body] = message.split(/\n+/, 2)
           end
           i = throb { api.post "/repos/#{repo}/issues", assigns }.body

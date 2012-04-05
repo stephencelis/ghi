@@ -211,10 +211,10 @@ EOF
       }
     end
 
-    def format_milestone m
+    def format_milestone m, width = columns
       ERB.new(<<EOF).result binding
 <%= bright { no_color { \
-indent '#%s: %s' % m.values_at('number', 'title'), 0 } } %>
+indent '#%s: %s' % m.values_at('number', 'title'), 0, width } } %>
 @<%= m['creator']['login'] %> created this milestone <%= m['created_at'] %>. \
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
@@ -222,7 +222,7 @@ indent '#%s: %s' % m.values_at('number', 'title'), 0 } } %>
 Due <%= fg((:red if due_on <= DateTime.now)) { format_date due_on } %>.
 <% end %>\
 <% if m['description'] && !m['description'].empty? %>
-<%= indent m['description'] %>
+<%= indent m['description'], 4, width %>
 <% end %>
 
 EOF
@@ -248,9 +248,9 @@ EOF
     def format_editor issue = nil
       message = ERB.new(<<EOF).result binding
 
-Please explain the issue. The first line will become the title. Lines
-starting with '#' will be ignored, and empty messages will not be filed.
-Issues are formatted with GitHub Flavored Markdown (GFM):
+Please explain the issue. The first line will become the title. Trailing
+lines starting with '#' (like these) will be ignored, and empty messages will
+not be submitted. Issues are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
@@ -264,11 +264,33 @@ EOF
       message
     end
 
+    def format_milestone_editor milestone = nil
+      message = ERB.new(<<EOF).result binding
+
+Describe the milestone. The first line will become the title. Trailing lines
+starting with '#' (like these) will be ignored, and empty messages will not be
+submitted. Milestones are formatted with GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
+
+On <%= repo %>
+
+<%= no_color { format_milestone milestone, columns - 2 } if milestone %>
+EOF
+      message.rstrip!
+      message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
+      message.insert 0, [
+        milestone['title'], milestone['description']
+      ].join("\n\n") if milestone
+      message
+    end
+
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Lines starting with '#' will be ignored, and empty messages
-will not be sent. Comments are formatted with GitHub Flavored Markdown (GFM):
+Leave a comment. The first line will become the title. Trailing lines starting
+with '#' (like these) will be ignored, and empty messages will not be
+submitted. Comments are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 

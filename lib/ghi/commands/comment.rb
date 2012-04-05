@@ -72,20 +72,20 @@ EOF
       def create
         require_body
         c = throb { api.post uri, assigns }.body
-        puts format_comment c
+        puts format_comment(c)
         puts 'Commented.'
       end
 
       def update
         require_body
         c = throb { api.patch uri, assigns }.body
-        puts format_comment c
+        puts format_comment(c)
         puts 'Updated.'
       end
 
       def destroy
         throb { api.delete uri }
-        puts 'Deleted.'
+        puts 'Comment deleted.'
       end
 
       private

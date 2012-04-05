@@ -3,6 +3,7 @@ require 'date'
 module GHI
   module Commands
     class Milestone < Command
+      attr_accessor :edit
       attr_accessor :reverse
 
       #--
@@ -42,9 +43,11 @@ EOF
           opts.separator ''
           opts.separator 'Milestone modification options'
           opts.on(
-            '-m', '--message <text>', 'change milestone description'
+            '-m', '--message [<text>]', 'change milestone description'
           ) do |text|
             self.action = 'create'
+            self.edit = true
+            next unless text
             assigns[:title], assigns[:description] = text.split(/\n+/, 2)
           end
           # FIXME: We already describe --[no-]closed; describe this, too?
@@ -116,11 +119,34 @@ EOF
           puts 'Issues:'
           List.execute %W(-q -M #{milestone} -- #{repo})
         when 'create'
+          if assigns[:title].nil?
+            message = Editor.gets format_milestone_editor
+            abort 'Empty milestone.' if message.nil? || message.empty?
+            assigns[:title], assigns[:description] = message.split(/\n+/, 2)
+          end
           m = throb { api.post uri, assigns }.body
           puts 'Milestone #%d created.' % m['number']
         when 'update'
-          throb { api.patch uri, assigns }
-          puts 'Milestone updated.'
+          if edit || assigns.empty?
+            m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
+            message = Editor.gets format_milestone_editor(m)
+            abort 'Empty milestone.' if message.nil? || message.empty?
+            assigns[:title], assigns[:description] = message.split(/\n+/, 2)
+          end
+          if assigns[:title] && m
+            t_match = assigns[:title].strip == m['title'].strip
+            if assigns[:description]
+              b_match = assigns[:description].strip == m['description'].strip
+            end
+            if t_match && b_match
+              abort 'No change.' if assigns.dup.delete_if { |k, v|
+                [:title, :description].include? k
+              }
+            end
+          end
+          m = throb { api.patch uri, assigns }.body
+          puts format_milestone(m)
+          puts 'Updated.'
         when 'destroy'
           throb { api.delete uri }
           puts 'Milestone deleted.'
