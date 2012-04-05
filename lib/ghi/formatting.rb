@@ -223,7 +223,7 @@ EOF
     end
 
     def format_state state, string = state, layer = :fg
-      send(layer, state == 'closed' ? 'ff0000' : '00ff00') { string }
+      send(layer, state == 'closed' ? 'ff0000' : '2cc200') { string }
     end
 
     def format_labels labels
