@@ -236,17 +236,12 @@ EOF
     end
 
     def format_markdown string, indent = 4
+      c = '268bd2'
+
       # Headers.
       string.gsub!(/^( {#{indent}}\#{1,6} .+)$/, bright{'\1'})
       string.gsub!(
         /(^ {#{indent}}.+$\n^ {#{indent}}[-=]+$)/, bright{'\1'}
-      )
-      # Emphasis.
-      string.gsub!(
-        /(^|\s)(\*\w(?:[^*]*\w)?\*)(\s|$)/m, '\1' + underline{'\2'} + '\3'
-      )
-      string.gsub!(
-        /(^|\s)(_\w(?:[^_]*\w)?_)(\s|$)/m, '\1' + underline{'\2'} + '\3'
       )
       # Strong.
       string.gsub!(
@@ -255,19 +250,30 @@ EOF
       string.gsub!(
         /(^|\s)(_{2}\w(?:[^_]*\w)?_{2})(\s|$)/m, '\1' + bright {'\2'} + '\3'
       )
+      # Emphasis.
+      string.gsub!(
+        /(^|\s)(\*\w(?:[^*]*\w)?\*)(\s|$)/m, '\1' + underline{'\2'} + '\3'
+      )
+      string.gsub!(
+        /(^|\s)(_\w(?:[^_]*\w)?_)(\s|$)/m, '\1' + underline{'\2'} + '\3'
+      )
+      # Bullets/Blockquotes.
+      string.gsub!(/(^ {#{indent}}(?:[*->]|\d+\.) )/, fg(c){'\1'})
+      # URIs.
+      string.gsub!(
+        %r{\b(<)?(https?://\S+|[^@\s]+@[^@\s]+)(>)?\b},
+        fg(c){'\1' + underline{'\2'} + '\3'}
+      )
       # Code.
       string.gsub!(
         /
           (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
           (^|[^`])(`[^`]+`)([^`]|$)
-        /mx,
-        fg(c = '268bd2'){'\1'} + bg(c){'\2'} + '\3' + fg(c){'\4'} + '\5'
-      )
-      # URI.
-      string.gsub!(
-        %r{\b(<)?(https?://[\s]+|\w+@\w+)(>)?\b},
-        '\1' + underline{'\2'} + '\3'
-      )
+        /mx
+      ) {
+        post = $5
+        fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
+      }
       string
     end
 
