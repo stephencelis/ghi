@@ -12,7 +12,9 @@ Note: This is being rapidly prototyped for GitHub API v3.
 Get:
 
 ``` bash
-$ gem install ghi --pre
+$ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
+  chmod 755 ghi && \
+  mv ghi /usr/local/bin
 ```
 
 Go:
