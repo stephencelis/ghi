@@ -258,7 +258,7 @@ EOF
         /(^|\s)(_\w(?:[^_]*\w)?_)(\s|$)/m, '\1' + underline{'\2'} + '\3'
       )
       # Bullets/Blockquotes.
-      string.gsub!(/(^ {#{indent}}(?:[*->]|\d+\.) )/, fg(c){'\1'})
+      string.gsub!(/(^ {#{indent}}(?:[*>-]|\d+\.) )/, fg(c){'\1'})
       # URIs.
       string.gsub!(
         %r{\b(<)?(https?://\S+|[^@\s]+@[^@\s]+)(>)?\b},
