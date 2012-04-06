@@ -245,6 +245,7 @@ EOF
     def percent milestone, string = nil
       open, closed = milestone.values_at('open_issues', 'closed_issues')
       complete = closed.to_f / (open + closed)
+      complete = 0 if complete.nan?
       i = (columns * complete).round
       if string.nil?
         string = ' %d%% (%d closed, %d open)' % [complete * 100, closed, open]
