@@ -116,7 +116,7 @@ EOF
         when 'show'
           m = throb { api.get uri }.body
           page do
-            print format_milestone(m)
+            puts format_milestone(m)
             puts 'Issues:'
             List.execute %W(-q -M #{milestone} -- #{repo})
             break

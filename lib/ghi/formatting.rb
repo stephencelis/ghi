@@ -171,6 +171,10 @@ module GHI
 <% if i['assignee'] || !i['labels'].empty? %>
 <% if i['assignee'] %>@<%= i['assignee']['login'] %> is assigned. <% end %>\
 <% unless i['labels'].empty? %><%= format_labels(i['labels']) %><% end %>\
+<% end %>\
+<% if i['milestone'] %>
+Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
+<%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
 <% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'], 4, width %>
 <% end %>
@@ -201,13 +205,11 @@ EOF
       }.last['number'].to_s.size
 
       milestones.map { |m|
-        due_on = m['due_on'] && DateTime.parse(m['due_on'])
-        [
-          "  #{bright { m['number'].to_s.rjust max }}:",
-          fg((:red if due_on && due_on <= DateTime.now)) {
-            truncate(m['title'], max + 4)
-          }
-        ].compact.join ' '
+        line = ["  #{bright { m['number'].to_s.rjust max }}:"]
+        space = past_due?(m) ? 6 : 4
+        line << truncate(m['title'], max + space)
+        line << bright{fg(:yellow){'⚠'}} if past_due? m
+        line.join ' '
       }
     end
 
@@ -219,13 +221,23 @@ indent '#%s: %s' % m.values_at('number', 'title'), 0, width } } %>
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
 <% due_on = DateTime.parse m['due_on'] %>\
-Due <%= fg((:red if due_on <= DateTime.now)) { format_date due_on } %>.
+<% if past_due? m %>\
+<%= bright{fg(:yellow){"⚠"}} %> \
+<%= bright{fg(:red){"Past due by \#{format_date due_on, false}."}} %>
+<% else %>\
+Due in <%= format_date due_on, false %>.
+<% end %>\
 <% end %>\
 <% if m['description'] && !m['description'].empty? %>
 <%= indent m['description'], 4, width %>
 <% end %>
 
 EOF
+    end
+
+    def past_due? milestone
+      return false unless milestone['due_on']
+      DateTime.parse(milestone['due_on']) <= DateTime.now
     end
 
     def format_state state, string = state, layer = :fg
@@ -349,7 +361,7 @@ EOF
       string
     end
 
-    def format_date date
+    def format_date date, suffix = true
       days = (interval = DateTime.now - date).to_i.abs
       string = if days.zero?
         seconds, _ = interval.divmod Rational(1, 86400)
@@ -365,7 +377,8 @@ EOF
       else
         "#{days} day#{'s' unless days == 1}"
       end
-      [string, interval < 0 ? 'from now' : 'ago'].join ' '
+      ago = interval < 0 ? 'from now' : 'ago' if suffix
+      [string, ago].compact.join ' '
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]
