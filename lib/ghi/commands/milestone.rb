@@ -115,9 +115,12 @@ EOF
           end
         when 'show'
           m = throb { api.get uri }.body
-          print format_milestone(m)
-          puts 'Issues:'
-          List.execute %W(-q -M #{milestone} -- #{repo})
+          page do
+            print format_milestone(m)
+            puts 'Issues:'
+            List.execute %W(-q -M #{milestone} -- #{repo})
+            break
+          end
         when 'create'
           if assigns[:title].nil?
             message = Editor.gets format_milestone_editor
