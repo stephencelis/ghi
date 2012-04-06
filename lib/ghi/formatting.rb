@@ -205,11 +205,11 @@ EOF
       }.last['number'].to_s.size
 
       milestones.map { |m|
-        line = ["  #{bright { m['number'].to_s.rjust max }}:"]
+        line = ["  #{m['number'].to_s.rjust max }:"]
         space = past_due?(m) ? 6 : 4
         line << truncate(m['title'], max + space)
-        line << bright{fg(:yellow){'⚠'}} if past_due? m
-        line.join ' '
+        line << '⚠' if past_due? m
+        percent m, line.join(' ')
       }
     end
 
@@ -217,7 +217,8 @@ EOF
       ERB.new(<<EOF).result binding
 <%= bright { no_color { \
 indent '#%s: %s' % m.values_at('number', 'title'), 0, width } } %>
-@<%= m['creator']['login'] %> created this milestone <%= m['created_at'] %>. \
+@<%= m['creator']['login'] %> created this milestone \
+<%= format_date DateTime.parse(m['created_at']) %>. \
 <%= format_state m['state'], format_tag(m['state']), :bg %>
 <% if m['due_on'] %>\
 <% due_on = DateTime.parse m['due_on'] %>\
@@ -228,6 +229,7 @@ indent '#%s: %s' % m.values_at('number', 'title'), 0, width } } %>
 Due in <%= format_date due_on, false %>.
 <% end %>\
 <% end %>\
+<%= percent m %>
 <% if m['description'] && !m['description'].empty? %>
 <%= indent m['description'], 4, width %>
 <% end %>
@@ -238,6 +240,17 @@ EOF
     def past_due? milestone
       return false unless milestone['due_on']
       DateTime.parse(milestone['due_on']) <= DateTime.now
+    end
+
+    def percent milestone, string = nil
+      open, closed = milestone.values_at('open_issues', 'closed_issues')
+      complete = closed.to_f / (open + closed)
+      i = (columns * complete).round
+      if string.nil?
+        string = ' %d%% (%d closed, %d open)' % [complete * 100, closed, open]
+      end
+      string = string.ljust columns
+      [bg('2cc200'){string[0, i]}, string[i, columns - i]].join
     end
 
     def format_state state, string = state, layer = :fg
