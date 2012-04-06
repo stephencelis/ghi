@@ -27,6 +27,7 @@ task :build do
   files = FileList[*manifest]
   File.open 'ghi', 'w' do |f|
     f.puts '#!/usr/bin/env ruby'
+    f.puts '# encoding: utf-8'
     files.each { |file| f << File.read(file).gsub(/^\s+autoload.+$\n+/, '') }
     f.chmod 0755
   end
