@@ -102,7 +102,9 @@ EOF
 
     private
 
-    ALIASES = {
+    ALIASES = Hash.new { |hash, key|
+      ['show', key] if /^\d+$/ === key
+    }.update(
       'c'        => %w(close),
       'claim'    => %w(assign),
       'e'        => %w(edit),
@@ -116,7 +118,7 @@ EOF
       'st'       => %w(list),
       'tag'      => %w(label),
       'unassign' => %w(assign -d)
-    }
+    )
 
     def fetch_alias command, args
       return command unless fetched = ALIASES[command]
