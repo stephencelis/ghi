@@ -19,15 +19,12 @@ module GHI
 
       option_parser = OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi [--version] [--help] <command> [<args>] [ -- [<user>/]<repo>]
+usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
+           [ -- [<user>/]<repo>]
 EOF
-#         opts.banner = <<EOF
-# usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
-#            [ -- [<user>/]<repo>]
-# EOF
         opts.on('--version') { command_name = 'version' }
         opts.on '-p', '--paginate', '--[no-]pager' do |paginate|
-          
+          GHI::Formatting.paginate = paginate
         end
         opts.on '--help' do
           command_args.unshift(*args)
@@ -102,7 +99,7 @@ EOF
 
     private
 
-    ALIASES = Hash.new { |hash, key|
+    ALIASES = Hash.new { |_, key|
       ['show', key] if /^\d+$/ === key
     }.update(
       'c'        => %w(close),

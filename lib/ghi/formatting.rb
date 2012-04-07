@@ -4,6 +4,11 @@ require 'erb'
 
 module GHI
   module Formatting
+    class << self
+      attr_accessor :paginate
+    end
+    self.paginate = true # Default.
+
     autoload :Colors, 'ghi/formatting/colors'
     include Colors
 
@@ -37,9 +42,12 @@ module GHI
       super strings
     end
 
-    def page header = nil, throttle = 1
-      $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
-      puts header if header
+    def page header = nil, throttle = 0
+      if paginate?
+        $stdout = IO.popen('less -EKrX -b1', 'w')
+        puts header if header
+      end
+
       loop do
         yield
         sleep throttle
@@ -53,6 +61,10 @@ module GHI
         print CURSOR[:show]
         exit
       end
+    end
+
+    def paginate?
+      $stdout.tty? && $stdout == STDOUT && Formatting.paginate
     end
 
     def truncate string, reserved
@@ -396,7 +408,7 @@ EOF
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]
-      return yield unless $stdout.tty?
+      return yield unless paginate?
 
       throb = THROBBERS[rand(THROBBERS.length)]
       throb.reverse! if rand > 0.5
