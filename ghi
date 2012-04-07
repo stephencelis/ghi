@@ -15,15 +15,12 @@ module GHI
 
       option_parser = OptionParser.new do |opts|
         opts.banner = <<EOF
-usage: ghi [--version] [--help] <command> [<args>] [ -- [<user>/]<repo>]
+usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
+           [ -- [<user>/]<repo>]
 EOF
-#         opts.banner = <<EOF
-# usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
-#            [ -- [<user>/]<repo>]
-# EOF
         opts.on('--version') { command_name = 'version' }
         opts.on '-p', '--paginate', '--[no-]pager' do |paginate|
-          
+          GHI::Formatting.paginate = paginate
         end
         opts.on '--help' do
           command_args.unshift(*args)
@@ -98,7 +95,7 @@ EOF
 
     private
 
-    ALIASES = Hash.new { |hash, key|
+    ALIASES = Hash.new { |_, key|
       ['show', key] if /^\d+$/ === key
     }.update(
       'c'        => %w(close),
@@ -1729,6 +1726,10 @@ require 'erb'
 
 module GHI
   module Formatting
+    class << self
+      attr_accessor :paginate
+    end
+    self.paginate = true # Default.
     include Colors
 
     CURSOR = {
@@ -1761,9 +1762,12 @@ module GHI
       super strings
     end
 
-    def page header = nil, throttle = 1
-      $stdout = IO.popen('less -EKrX -b1', 'w') if $stdout == STDOUT
-      puts header if header
+    def page header = nil, throttle = 0
+      if paginate?
+        $stdout = IO.popen('less -EKrX -b1', 'w')
+        puts header if header
+      end
+
       loop do
         yield
         sleep throttle
@@ -1777,6 +1781,10 @@ module GHI
         print CURSOR[:show]
         exit
       end
+    end
+
+    def paginate?
+      $stdout.tty? && $stdout == STDOUT && Formatting.paginate
     end
 
     def truncate string, reserved
@@ -2120,7 +2128,7 @@ EOF
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]
-      return yield unless $stdout.tty?
+      return yield unless paginate?
 
       throb = THROBBERS[rand(THROBBERS.length)]
       throb.reverse! if rand > 0.5
