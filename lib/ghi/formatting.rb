@@ -179,7 +179,14 @@ module GHI
 *i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
-<%= format_state i['state'], format_tag(i['state']), :bg %>\
+<%= format_state i['state'], format_tag(i['state']), :bg %> \
+<% unless i['comments'] == 0 %>\
+<%= fg('aaaaaa'){
+  template = "%d comment"
+  template << "s" unless i['comments'] == 1
+  '(' << template % i['comments'] << ')'
+} %>\
+<% end %>\
 <% if i['assignee'] || !i['labels'].empty? %>
 <% if i['assignee'] %>@<%= i['assignee']['login'] %> is assigned. <% end %>\
 <% unless i['labels'].empty? %><%= format_labels(i['labels']) %><% end %>\
@@ -188,7 +195,8 @@ module GHI
 Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 <%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
-<% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'], 4, width %>
+<% if i['body'] && !i['body'].empty? %>
+<%= indent i['body'], 4, width %>
 <% end %>
 
 EOF
