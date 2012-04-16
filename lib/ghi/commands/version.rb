@@ -4,7 +4,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 'dev1'
+      PRE     = Time.now.strftime '%Y%m%d'
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 

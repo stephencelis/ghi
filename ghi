@@ -7,9 +7,12 @@ module GHI
     def execute args
       STDOUT.sync = true
 
+      double_dash = args.index { |arg| arg == '--' }
       if index = args.index { |arg| arg !~ /^-/ }
-        command_name = args.delete_at index
-        command_args = args.slice! index, args.length
+        if double_dash.nil? || index < double_dash
+          command_name = args.delete_at index
+          command_args = args.slice! index, args.length
+        end
       end
       command_args ||= []
 
@@ -1764,7 +1767,7 @@ module GHI
 
     def page header = nil, throttle = 0
       if paginate?
-        $stdout = IO.popen('less -EKrX -b1', 'w')
+        $stdout = IO.popen('less -EKRX -b1', 'w')
         puts header if header
       end
 
@@ -1899,7 +1902,14 @@ module GHI
 *i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
-<%= format_state i['state'], format_tag(i['state']), :bg %>\
+<%= format_state i['state'], format_tag(i['state']), :bg %> \
+<% unless i['comments'] == 0 %>\
+<%= fg('aaaaaa'){
+  template = "%d comment"
+  template << "s" unless i['comments'] == 1
+  '(' << template % i['comments'] << ')'
+} %>\
+<% end %>\
 <% if i['assignee'] || !i['labels'].empty? %>
 <% if i['assignee'] %>@<%= i['assignee']['login'] %> is assigned. <% end %>\
 <% unless i['labels'].empty? %><%= format_labels(i['labels']) %><% end %>\
@@ -1908,7 +1918,8 @@ module GHI
 Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 <%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
-<% if i['body'] && !i['body'].empty? %>\n<%= indent i['body'], 4, width %>
+<% if i['body'] && !i['body'].empty? %>
+<%= indent i['body'], 4, width %>
 <% end %>
 
 EOF
@@ -2095,15 +2106,15 @@ EOF
         fg(c){'\1' + underline{'\2'} + '\3'}
       )
       # Code.
-      string.gsub!(
-        /
-          (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
-          (^|[^`])(`[^`]+`)([^`]|$)
-        /mx
-      ) {
-        post = $5
-        fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
-      }
+      # string.gsub!(
+      #   /
+      #     (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
+      #     (^|[^`])(`[^`]+`)([^`]|$)
+      #   /mx
+      # ) {
+      #   post = $5
+      #   fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
+      # }
       string
     end
 
@@ -3105,12 +3116,13 @@ module GHI
         end
         unless quiet
           print header = format_issues_header
-          print "\n" unless STDOUT.tty?
+          print "\n" unless paginate?
         end
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
         ) { api.get uri, assigns }
-        page header && "\r#{CURSOR[:up][1]}#{header}" do
+        print "\r#{CURSOR[:up][1]}" if header && paginate?
+        page header do
           issues = res.body
           if verbose
             puts issues.map { |i| format_issue i }
@@ -3248,7 +3260,7 @@ EOF
         when 'index'
           state = assigns[:state] || 'open'
           print format_state state, "# #{repo} #{state} milestones"
-          print "\n" unless STDOUT.tty?
+          print "\n" unless paginate?
           res = throb(0, format_state(state, '#')) { api.get uri, assigns }
           page do
             milestones = res.body
@@ -3426,7 +3438,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 'dev1'
+      PRE     = Time.now.strftime '%Y%m%d'
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
