@@ -100,7 +100,8 @@ module GHI
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
         ) { api.get uri, assigns }
-        page header && "\r#{CURSOR[:up][1]}#{header}" do
+        print "\r#{CURSOR[:up][1]}" if header && paginate?
+        page header do
           issues = res.body
           if verbose
             puts issues.map { |i| format_issue i }

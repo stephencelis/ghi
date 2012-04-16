@@ -44,7 +44,7 @@ module GHI
 
     def page header = nil, throttle = 0
       if paginate?
-        $stdout = IO.popen('less -EKrX -b1', 'w')
+        $stdout = IO.popen('less -EKRX -b1', 'w')
         puts header if header
       end
 
@@ -375,15 +375,15 @@ EOF
         fg(c){'\1' + underline{'\2'} + '\3'}
       )
       # Code.
-      string.gsub!(
-        /
-          (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
-          (^|[^`])(`[^`]+`)([^`]|$)
-        /mx
-      ) {
-        post = $5
-        fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
-      }
+      # string.gsub!(
+      #   /
+      #     (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
+      #     (^|[^`])(`[^`]+`)([^`]|$)
+      #   /mx
+      # ) {
+      #   post = $5
+      #   fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
+      # }
       string
     end
 
