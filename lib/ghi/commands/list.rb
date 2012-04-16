@@ -95,7 +95,7 @@ module GHI
         end
         unless quiet
           print header = format_issues_header
-          print "\n" unless STDOUT.tty?
+          print "\n" unless paginate?
         end
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
