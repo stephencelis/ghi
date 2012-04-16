@@ -11,9 +11,12 @@ module GHI
     def execute args
       STDOUT.sync = true
 
+      double_dash = args.index { |arg| arg == '--' }
       if index = args.index { |arg| arg !~ /^-/ }
-        command_name = args.delete_at index
-        command_args = args.slice! index, args.length
+        if double_dash.nil? || index < double_dash
+          command_name = args.delete_at index
+          command_args = args.slice! index, args.length
+        end
       end
       command_args ||= []
 
