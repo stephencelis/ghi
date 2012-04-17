@@ -157,14 +157,15 @@ module GHI
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
         p = i['pull_request']['html_url'] and l += 2
-        c = i['comments'] if i['comments'] > 0 and l += 2
+        c = i['comments']
+        l += c.to_s.length + 1 unless c == 0
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           "#{bright { n.to_s.rjust nmax }}:",
           truncate(title, l),
           format_labels(labels),
-          (fg('aaaaaa') { c } if c),
+          (fg('aaaaaa') { c } unless c == 0),
           (fg('aaaaaa') { '↑' } if p),
           (fg(:yellow) { '@' } if a)
         ].compact.join ' '
