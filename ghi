@@ -2679,7 +2679,11 @@ EOF
       private
 
       def uri
-        comment ? comment['url'] : "/repos/#{repo}/issues/#{issue}/comments"
+        if comment
+          comment['url']
+        else
+          "/repos/#{repo}/issues/#{issue}/comments?per_page=100"
+        end
       end
 
       def require_body
@@ -2938,7 +2942,7 @@ EOF
         if issue
           uri = "/repos/#{repo}/issues/#{issue}/labels"
         else
-          uri = "/repos/#{repo}/labels"  
+          uri = "/repos/#{repo}/labels"
         end
         labels = throb { api.get uri }.body
         if labels.empty?
@@ -3148,7 +3152,7 @@ module GHI
       private
 
       def uri
-        repo ? "/repos/#{repo}/issues" : '/issues'
+        (repo ? "/repos/#{repo}" : '') << '/issues?per_page=100'
       end
 
       def fallback
@@ -3325,7 +3329,7 @@ EOF
         if milestone
           "/repos/#{repo}/milestones/#{milestone}"
         else
-          "/repos/#{repo}/milestones"
+          "/repos/#{repo}/milestones?per_page=100"
         end
       end
 
