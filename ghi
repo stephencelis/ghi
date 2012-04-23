@@ -2654,7 +2654,7 @@ EOF
       protected
 
       def index
-        throb { api.get uri }
+        throb { api.get uri, :per_page => 100 }
       end
 
       def create
@@ -2682,7 +2682,7 @@ EOF
         if comment
           comment['url']
         else
-          "/repos/#{repo}/issues/#{issue}/comments?per_page=100"
+          "/repos/#{repo}/issues/#{issue}/comments"
         end
       end
 
@@ -3101,7 +3101,7 @@ module GHI
             assigns[:assignee] = Authorization.username
           end
           opts.on(
-            '-U', '--mentioned [<user>]', 'mentioning you or specified user' 
+            '-U', '--mentioned [<user>]', 'mentioning you or specified user'
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
           end
@@ -3110,6 +3110,7 @@ module GHI
       end
 
       def execute
+        assigns[:per_page] = 100
         begin
           options.parse! args
         rescue OptionParser::InvalidOption => e
@@ -3152,7 +3153,7 @@ module GHI
       private
 
       def uri
-        (repo ? "/repos/#{repo}" : '') << '/issues?per_page=100'
+        (repo ? "/repos/#{repo}" : '') << '/issues'
       end
 
       def fallback
@@ -3265,6 +3266,7 @@ EOF
 
         case action
         when 'index'
+          assigns[:per_page] = 100
           state = assigns[:state] || 'open'
           print format_state state, "# #{repo} #{state} milestones"
           print "\n" unless paginate?
@@ -3329,7 +3331,7 @@ EOF
         if milestone
           "/repos/#{repo}/milestones/#{milestone}"
         else
-          "/repos/#{repo}/milestones?per_page=100"
+          "/repos/#{repo}/milestones"
         end
       end
 
