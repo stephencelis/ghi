@@ -34,7 +34,7 @@ EOF
           opts.on(
             '-L', '--label <labelname>...', Array, 'associate with label(s)'
           ) do |labels|
-            assigns[:labels] = labels
+            (assigns[:labels] ||= []).concat labels
           end
           opts.separator ''
         end

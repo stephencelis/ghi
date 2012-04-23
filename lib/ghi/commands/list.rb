@@ -22,7 +22,7 @@ module GHI
           opts.on(
             '-L', '--label <labelname>...', Array, 'by label(s)'
           ) do |labels|
-            assigns[:labels] = labels.join ','
+            (assigns[:labels] ||= []).concat labels
           end
           opts.on(
             '-S', '--sort <by>', %w(created updated comments),
@@ -89,6 +89,7 @@ module GHI
           fallback.parse! e.args
           retry
         end
+        assigns[:labels] = assigns[:labels].join ',' if assigns[:labels]
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
