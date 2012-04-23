@@ -16,7 +16,7 @@ module GHI
           puts format_issue(i)
           n = i['comments']
           if n > 0
-            puts "#{n} Comment#{'s' unless n == 1}:\n\n"
+            puts "#{n} comment#{'s' unless n == 1}:\n\n"
             Comment.execute %W(-l #{issue} -- #{repo})
           end
           break
