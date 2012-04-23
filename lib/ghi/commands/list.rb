@@ -125,7 +125,7 @@ module GHI
       private
 
       def uri
-        repo ? "/repos/#{repo}/issues" : '/issues'
+        (repo ? "/repos/#{repo}" : '') << '/issues?per_page=100'
       end
 
       def fallback

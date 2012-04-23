@@ -76,7 +76,7 @@ EOF
         if issue
           uri = "/repos/#{repo}/issues/#{issue}/labels"
         else
-          uri = "/repos/#{repo}/labels"  
+          uri = "/repos/#{repo}/labels"
         end
         labels = throb { api.get uri }.body
         if labels.empty?

@@ -91,7 +91,11 @@ EOF
       private
 
       def uri
-        comment ? comment['url'] : "/repos/#{repo}/issues/#{issue}/comments"
+        if comment
+          comment['url']
+        else
+          "/repos/#{repo}/issues/#{issue}/comments?per_page=100"
+        end
       end
 
       def require_body

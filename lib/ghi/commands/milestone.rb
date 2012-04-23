@@ -163,7 +163,7 @@ EOF
         if milestone
           "/repos/#{repo}/milestones/#{milestone}"
         else
-          "/repos/#{repo}/milestones"
+          "/repos/#{repo}/milestones?per_page=100"
         end
       end
 
