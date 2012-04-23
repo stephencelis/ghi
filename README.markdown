@@ -22,7 +22,8 @@ Go:
 ![Example](/stephencelis/ghi/raw/master/images/example.png)
 
 ```
-usage: ghi [--version] [-h|--help] <command> [<args>] [ -- [<user>/]<repo>]
+usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
+           [ -- [<user>/]<repo>]
 
 The most commonly used ghi commands are:
    list        List your issues (or a repository's)
@@ -44,7 +45,7 @@ See 'ghi help <command>' for more information on a specific command.
 (The MIT License)
 
 © 2009–2012 Stephen Celis (<stephen@stephencelis.com>).
-json-pure Copyright Genki Takiuchi.
+json-pure © Genki Takiuchi.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
