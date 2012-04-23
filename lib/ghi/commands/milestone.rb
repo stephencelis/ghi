@@ -151,6 +151,7 @@ EOF
           puts format_milestone(m)
           puts 'Updated.'
         when 'destroy'
+          require_milestone
           throb { api.delete uri }
           puts 'Milestone deleted.'
         end
