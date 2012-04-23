@@ -99,6 +99,7 @@ EOF
 
         case action
         when 'index'
+          assigns[:per_page] = 100
           state = assigns[:state] || 'open'
           print format_state state, "# #{repo} #{state} milestones"
           print "\n" unless paginate?
@@ -163,7 +164,7 @@ EOF
         if milestone
           "/repos/#{repo}/milestones/#{milestone}"
         else
-          "/repos/#{repo}/milestones?per_page=100"
+          "/repos/#{repo}/milestones"
         end
       end
 

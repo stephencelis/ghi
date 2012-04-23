@@ -66,7 +66,7 @@ EOF
       protected
 
       def index
-        throb { api.get uri }
+        throb { api.get uri, :per_page => 100 }
       end
 
       def create
@@ -94,7 +94,7 @@ EOF
         if comment
           comment['url']
         else
-          "/repos/#{repo}/issues/#{issue}/comments?per_page=100"
+          "/repos/#{repo}/issues/#{issue}/comments"
         end
       end
 

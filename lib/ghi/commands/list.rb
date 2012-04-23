@@ -74,7 +74,7 @@ module GHI
             assigns[:assignee] = Authorization.username
           end
           opts.on(
-            '-U', '--mentioned [<user>]', 'mentioning you or specified user' 
+            '-U', '--mentioned [<user>]', 'mentioning you or specified user'
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
           end
@@ -83,6 +83,7 @@ module GHI
       end
 
       def execute
+        assigns[:per_page] = 100
         begin
           options.parse! args
         rescue OptionParser::InvalidOption => e
@@ -125,7 +126,7 @@ module GHI
       private
 
       def uri
-        (repo ? "/repos/#{repo}" : '') << '/issues?per_page=100'
+        (repo ? "/repos/#{repo}" : '') << '/issues'
       end
 
       def fallback
