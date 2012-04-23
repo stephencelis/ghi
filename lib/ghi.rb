@@ -111,6 +111,7 @@ EOF
       'l'        => %w(list),
       'L'        => %w(label),
       'm'        => %w(comment),
+      'M'        => %w(milestone),
       'o'        => %w(open),
       'reopen'   => %w(open),
       'rm'       => %w(close),
