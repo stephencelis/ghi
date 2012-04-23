@@ -107,6 +107,7 @@ EOF
       'l'        => %w(list),
       'L'        => %w(label),
       'm'        => %w(comment),
+      'M'        => %w(milestone),
       'o'        => %w(open),
       'reopen'   => %w(open),
       'rm'       => %w(close),
@@ -1670,7 +1671,7 @@ module GHI
 
       def offset hex
         h, s, l = rgb_to_hsl(to_rgb(WEB[hex.to_s] || hex))
-        l < 55 && !(40..80).include?(h) ? l *= 1.75 : l /= 2
+        l < 55 && !(40..80).include?(h) ? l *= 1.875 : l /= 3
         hsl_to_rgb([h, s, l]).map { |c| '%02x' % c }.join
       end
 
@@ -1880,14 +1881,15 @@ module GHI
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
         p = i['pull_request']['html_url'] and l += 2
-        c = i['comments'] if i['comments'] > 0 and l += 2
+        c = i['comments']
+        l += c.to_s.length + 1 unless c == 0
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           "#{bright { n.to_s.rjust nmax }}:",
           truncate(title, l),
           format_labels(labels),
-          (fg('aaaaaa') { c } if c),
+          (fg('aaaaaa') { c } unless c == 0),
           (fg('aaaaaa') { '↑' } if p),
           (fg(:yellow) { '@' } if a)
         ].compact.join ' '
@@ -2762,7 +2764,7 @@ EOF
           opts.on(
             '-L', '--label <labelname>...', Array, 'associate with label(s)'
           ) do |labels|
-            assigns[:labels] = labels
+            (assigns[:labels] ||= []).concat labels
           end
           opts.separator ''
         end
@@ -3043,7 +3045,7 @@ module GHI
           opts.on(
             '-L', '--label <labelname>...', Array, 'by label(s)'
           ) do |labels|
-            assigns[:labels] = labels.join ','
+            (assigns[:labels] ||= []).concat labels
           end
           opts.on(
             '-S', '--sort <by>', %w(created updated comments),
@@ -3110,6 +3112,7 @@ module GHI
           fallback.parse! e.args
           retry
         end
+        assigns[:labels] = assigns[:labels].join ',' if assigns[:labels]
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
@@ -3310,6 +3313,7 @@ EOF
           puts format_milestone(m)
           puts 'Updated.'
         when 'destroy'
+          require_milestone
           throb { api.delete uri }
           puts 'Milestone deleted.'
         end
@@ -3366,7 +3370,7 @@ EOF
           opts.on(
             '-L', '--label <labelname>...', Array, 'associate with label(s)'
           ) do |labels|
-            assigns[:labels] = labels
+            (assigns[:labels] ||= []).concat labels
           end
           opts.separator ''
         end
@@ -3423,7 +3427,7 @@ module GHI
           puts format_issue(i)
           n = i['comments']
           if n > 0
-            puts "#{n} Comment#{'s' unless n == 1}:\n\n"
+            puts "#{n} comment#{'s' unless n == 1}:\n\n"
             Comment.execute %W(-l #{issue} -- #{repo})
           end
           break
@@ -3438,7 +3442,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = Time.now.strftime '%Y%m%d'
+      PRE     = 20120423
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
