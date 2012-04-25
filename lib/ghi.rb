@@ -39,6 +39,13 @@ EOF
         opts.on '--[no-]color' do |colorize|
           Formatting::Colors.colorize = colorize
         end
+        opts.on '-l' do
+          if command_name
+            raise OptionParser::InvalidOption
+          else
+            command_name = 'list'
+          end
+        end
         opts.on '-v' do
           command_name ? self.v = true : command_name = 'version'
         end
