@@ -68,6 +68,7 @@ module GHI
           opts.on(
             '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
           ) do |assignee|
+            assignee = assignee.sub /^@/, ''
             assigns[:assignee] = any_or_none_or assignee
           end
           opts.on '--mine', 'assigned to you' do
@@ -83,6 +84,10 @@ module GHI
       end
 
       def execute
+        if index = args.index { |arg| /^@/ === arg }
+          assigns[:assignee] = args.delete_at(index)[1..-1]
+        end
+
         begin
           options.parse! args
         rescue OptionParser::InvalidOption => e
