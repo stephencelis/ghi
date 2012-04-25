@@ -85,10 +85,8 @@ EOF
           end
         rescue SocketError => e
           abort "Couldn't find internet."
-        rescue Errno::ECONNREFUSED => e
-          abort "Couldn't connect to GitHub."
-        rescue Errno::ETIMEDOUT => e
-          abort 'Timed out looking for GitHub.'
+        rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT => e
+          abort "Couldn't find GitHub."
         end
       end
     rescue Authorization::Required => e

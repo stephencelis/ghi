@@ -79,6 +79,14 @@ EOF
             puts 'Opened.'
           end
         end
+      rescue Client::Error => e
+        error = e.errors.first
+        abort "%s %s %s %s." % [
+          error['resource'],
+          error['field'],
+          [*error['value']].join(', '),
+          error['code']
+        ]
       end
     end
   end
