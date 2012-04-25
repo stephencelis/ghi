@@ -104,7 +104,8 @@ EOF
         if comment
           comment['url']
         else
-          "/repos/#{repo}/issues/#{issue}/comments"
+          i = issue.is_a?(Hash) ? issue['number'] : issue
+          "/repos/#{repo}/issues/#{i}/comments"
         end
       end
 
