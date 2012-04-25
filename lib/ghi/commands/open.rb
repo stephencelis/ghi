@@ -1,6 +1,7 @@
 module GHI
   module Commands
     class Open < Command
+      attr_accessor :editor
       attr_accessor :web
 
       def options
@@ -16,7 +17,11 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'describe issue' do |text|
-            assigns[:title], assigns[:body] = text.split(/\n+/, 2) if text
+            if text
+              assigns[:title], assigns[:body] = text.split(/\n+/, 2)
+            else
+              self.editor = true
+            end
           end
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
@@ -64,8 +69,8 @@ EOF
               assigns[:title], assigns[:body] = args.join(' '), assigns[:title]
             end
             assigns[:title] = args.join ' ' unless args.empty?
-            if assigns[:title].nil?
-              message = Editor.gets format_editor
+            if assigns[:title].nil? || editor
+              message = Editor.gets format_editor(assigns)
               abort "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end

@@ -181,6 +181,7 @@ module GHI
 
     # TODO: Show milestone, number of comments, pull request attached.
     def format_issue i, width = columns
+      return unless i['created_at']
       ERB.new(<<EOF).result binding
 <% p = i['pull_request']['html_url'] %>\
 <%= bright { no_color { indent '%s%s: %s' % [p ? '↑' : '#', \
@@ -317,7 +318,9 @@ On <%= repo %>
 EOF
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
-      message.insert 0, [issue['title'], issue['body']].join("\n\n") if issue
+      message.insert 0, [
+        issue['title'] || issue[:title], issue['body'] || issue[:body]
+      ].join("\n\n") if issue
       message
     end
 
