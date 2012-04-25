@@ -105,7 +105,7 @@ EOF
     private
 
     ALIASES = Hash.new { |_, key|
-      ['show', key] if /^\d+$/ === key
+      [key] if /^\d+$/ === key
     }.update(
       'c'        => %w(close),
       'claim'    => %w(assign),
@@ -125,6 +125,17 @@ EOF
 
     def fetch_alias command, args
       return command unless fetched = ALIASES[command]
+
+      # If the <command> is an issue number, check the options to see if an
+      # edit or show is desired.
+      if fetched.first =~ /^\d+$/
+        edit_options = Commands::Edit.new([]).options.top.list
+        edit_options.reject! { |arg| !arg.is_a?(OptionParser::Switch) }
+        edit_options.map! { |arg| [arg.short, arg.long] }
+        edit_options.flatten!
+        fetched.unshift((edit_options & args).empty? ? 'show' : 'edit')
+      end
+
       command = fetched.shift
       args.unshift(*fetched)
       command
@@ -1911,6 +1922,7 @@ module GHI
 
     # TODO: Show milestone, number of comments, pull request attached.
     def format_issue i, width = columns
+      return unless i['created_at']
       ERB.new(<<EOF).result binding
 <% p = i['pull_request']['html_url'] %>\
 <%= bright { no_color { indent '%s%s: %s' % [p ? '↑' : '#', \
@@ -2047,7 +2059,9 @@ On <%= repo %>
 EOF
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
-      message.insert 0, [issue['title'], issue['body']].join("\n\n") if issue
+      message.insert 0, [
+        issue['title'] || issue[:title], issue['body'] || issue[:body]
+      ].join("\n\n") if issue
       message
     end
 
@@ -3410,6 +3424,7 @@ end
 module GHI
   module Commands
     class Open < Command
+      attr_accessor :editor
       attr_accessor :web
 
       def options
@@ -3425,7 +3440,11 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'describe issue' do |text|
-            assigns[:title], assigns[:body] = text.split(/\n+/, 2) if text
+            if text
+              assigns[:title], assigns[:body] = text.split(/\n+/, 2)
+            else
+              self.editor = true
+            end
           end
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
@@ -3473,8 +3492,8 @@ EOF
               assigns[:title], assigns[:body] = args.join(' '), assigns[:title]
             end
             assigns[:title] = args.join ' ' unless args.empty?
-            if assigns[:title].nil?
-              message = Editor.gets format_editor
+            if assigns[:title].nil? || editor
+              message = Editor.gets format_editor(assigns)
               abort "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
