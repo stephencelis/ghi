@@ -39,7 +39,9 @@ EOF
         opts.on '--[no-]color' do |colorize|
           Formatting::Colors.colorize = colorize
         end
-        opts.on('-v') { self.v = true }
+        opts.on '-v' do
+          command_name ? self.v = true : command_name = 'version'
+        end
         opts.on('-h') { raise OptionParser::InvalidOption }
       end
 
