@@ -10,11 +10,9 @@ EOF
           opts.on '--local', 'set for local repo only' do
             assigns[:local] = true
           end
-          opts.on '--auth [<username>:<password>]' do |credentials|
+          opts.on '--auth [<username>]' do |username|
             self.action = 'auth'
-            username, password = credentials.split ':', 2 if credentials
-            assigns[:username] = username
-            assigns[:password] = password
+            assigns[:username] = username || Authorization.username
           end
           opts.separator ''
         end
@@ -25,10 +23,32 @@ EOF
         options.parse! args.empty? ? %w(-h) : args
 
         if self.action == 'auth'
+          assigns[:password] = Authorization.password || get_password
           Authorization.authorize!(
             assigns[:username], assigns[:password], assigns[:local]
           )
         end
+      end
+
+      private
+
+      def get_password
+        print "Enter #{assigns[:username]}'s GitHub password (never stored): "
+        current_tty = `stty -g`
+        system 'stty raw -echo -icanon isig' if $?.success?
+        input = ''
+        while char = $stdin.getbyte and not (char == 13 or char == 10)
+          if char == 127 or char == 8
+            input[-1, 1] = '' unless input.empty?
+          else
+            input << char.chr
+          end
+        end
+        input
+      rescue Interrupt
+        print '^C'
+      ensure
+        system "stty #{current_tty}" unless current_tty.empty?
       end
     end
   end

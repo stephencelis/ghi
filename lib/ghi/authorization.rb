@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module GHI
   module Authorization
     extend Formatting
@@ -14,7 +16,7 @@ module GHI
       def authorize! user = username, pass = password, local = true
         return false unless user && pass
 
-        res = throb {
+        res = throb(54, "✔\r") {
           Client.new(user, pass).post(
             '/authorizations',
             :scopes   => %w(public_repo repo),
@@ -26,9 +28,9 @@ module GHI
         
         run = []
         unless username
-          run << "git config#{' --global ' unless local} github.user #{user}"
+          run << "git config#{' --global' unless local} github.user #{user}"
         end
-        run << "git config#{' --global ' unless local} ghi.token #{token}"
+        run << "git config#{' --global' unless local} ghi.token #{token}"
 
         system run.join('; ')
 
@@ -47,7 +49,7 @@ EOF
           end
         end
       rescue Client::Error => e
-        abort e.message
+        abort "#{e.message}#{CURSOR[:column][0]}"
       end
 
       def username

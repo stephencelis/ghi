@@ -100,7 +100,7 @@ EOF
       end
       warn <<EOF
 
-Please run 'ghi config --auth <username>:<password>'
+Please run 'ghi config --auth <username>'
 EOF
       exit 1
     end
