@@ -5,6 +5,7 @@ module GHI
     class Milestone < Command
       attr_accessor :edit
       attr_accessor :reverse
+      attr_accessor :web
 
       #--
       # FIXME: Opt for better interface, e.g.,
@@ -40,6 +41,7 @@ EOF
           opts.on '-v', '--verbose', 'list milestones verbosely' do
             self.verbose = true
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Milestone modification options'
           opts.on(
@@ -99,58 +101,74 @@ EOF
 
         case action
         when 'index'
-          assigns[:per_page] = 100
-          state = assigns[:state] || 'open'
-          print format_state state, "# #{repo} #{state} milestones"
-          print "\n" unless paginate?
-          res = throb(0, format_state(state, '#')) { api.get uri, assigns }
-          page do
-            milestones = res.body
-            if verbose
-              puts milestones.map { |m| format_milestone m }
-            else
-              puts format_milestones(milestones)
+          if web
+            Web.new(repo).open 'issues/milestones', assigns
+          else
+            assigns[:per_page] = 100
+            state = assigns[:state] || 'open'
+            print format_state state, "# #{repo} #{state} milestones"
+            print "\n" unless paginate?
+            res = throb(0, format_state(state, '#')) { api.get uri, assigns }
+            page do
+              milestones = res.body
+              if verbose
+                puts milestones.map { |m| format_milestone m }
+              else
+                puts format_milestones(milestones)
+              end
+              break unless res.next_page
+              res = throb { api.get res.next_page }
             end
-            break unless res.next_page
-            res = throb { api.get res.next_page }
           end
         when 'show'
-          m = throb { api.get uri }.body
-          page do
-            puts format_milestone(m)
-            puts 'Issues:'
-            List.execute %W(-q -M #{milestone} -- #{repo})
-            break
+          if web
+            List.execute %W(-w -M #{milestone} -- #{repo})
+          else
+            m = throb { api.get uri }.body
+            page do
+              puts format_milestone(m)
+              puts 'Issues:'
+              List.execute %W(-q -M #{milestone} -- #{repo})
+              break
+            end
           end
         when 'create'
-          if assigns[:title].nil?
-            message = Editor.gets format_milestone_editor
-            abort 'Empty milestone.' if message.nil? || message.empty?
-            assigns[:title], assigns[:description] = message.split(/\n+/, 2)
+          if web
+            Web.new(repo).open 'issues/milestones/new'
+          else
+            if assigns[:title].nil?
+              message = Editor.gets format_milestone_editor
+              abort 'Empty milestone.' if message.nil? || message.empty?
+              assigns[:title], assigns[:description] = message.split(/\n+/, 2)
+            end
+            m = throb { api.post uri, assigns }.body
+            puts 'Milestone #%d created.' % m['number']
           end
-          m = throb { api.post uri, assigns }.body
-          puts 'Milestone #%d created.' % m['number']
         when 'update'
-          if edit || assigns.empty?
-            m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
-            message = Editor.gets format_milestone_editor(m)
-            abort 'Empty milestone.' if message.nil? || message.empty?
-            assigns[:title], assigns[:description] = message.split(/\n+/, 2)
-          end
-          if assigns[:title] && m
-            t_match = assigns[:title].strip == m['title'].strip
-            if assigns[:description]
-              b_match = assigns[:description].strip == m['description'].strip
+          if web
+            Web.new(repo).open "issues/milestones/#{milestone}/edit"
+          else
+            if edit || assigns.empty?
+              m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
+              message = Editor.gets format_milestone_editor(m)
+              abort 'Empty milestone.' if message.nil? || message.empty?
+              assigns[:title], assigns[:description] = message.split(/\n+/, 2)
             end
-            if t_match && b_match
-              abort 'No change.' if assigns.dup.delete_if { |k, v|
-                [:title, :description].include? k
-              }
+            if assigns[:title] && m
+              t_match = assigns[:title].strip == m['title'].strip
+              if assigns[:description]
+                b_match = assigns[:description].strip == m['description'].strip
+              end
+              if t_match && b_match
+                abort 'No change.' if assigns.dup.delete_if { |k, v|
+                  [:title, :description].include? k
+                }
+              end
             end
+            m = throb { api.patch uri, assigns }.body
+            puts format_milestone(m)
+            puts 'Updated.'
           end
-          m = throb { api.patch uri, assigns }.body
-          puts format_milestone(m)
-          puts 'Updated.'
         when 'destroy'
           require_milestone
           throb { api.delete uri }

@@ -2,6 +2,7 @@ module GHI
   module Commands
     class Comment < Command
       attr_accessor :comment
+      attr_accessor :web
 
       def options
         OptionParser.new do |opts|
@@ -12,6 +13,7 @@ EOF
           opts.on '-l', '--list', 'list comments' do
             self.action = 'list'
           end
+          opts.on('-w', '--web') { self.web = true }
           # opts.on '-v', '--verbose', 'list events, too'
           opts.separator ''
           opts.separator 'Comment modification options'
@@ -46,7 +48,11 @@ EOF
             res = throb { api.get res.next_page }
           end
         when 'create'
-          create
+          if web
+            Web.new(repo).open "issues/#{issue}#issue_comment_form"
+          else
+            create
+          end
         when 'update', 'destroy'
           res = index
           res = throb { api.get res.last_page } if res.last_page

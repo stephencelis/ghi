@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Open < Command
+      attr_accessor :web
+
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
@@ -31,6 +33,7 @@ EOF
           ) do |labels|
             (assigns[:labels] ||= []).concat labels
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
         end
       end
@@ -54,15 +57,22 @@ EOF
           end
           List.execute args.push('--', repo)
         when 'create'
-          assigns[:title] = args.join ' ' unless args.empty?
-          if assigns[:title].nil?
-            message = Editor.gets format_editor
-            abort "There's no issue?" if message.nil? || message.empty?
-            assigns[:title], assigns[:body] = message.split(/\n+/, 2)
+          if web
+            Web.new(repo).open 'issues/new'
+          else
+            unless args.empty?
+              assigns[:title], assigns[:body] = args.join(' '), assigns[:title]
+            end
+            assigns[:title] = args.join ' ' unless args.empty?
+            if assigns[:title].nil?
+              message = Editor.gets format_editor
+              abort "There's no issue?" if message.nil? || message.empty?
+              assigns[:title], assigns[:body] = message.split(/\n+/, 2)
+            end
+            i = throb { api.post "/repos/#{repo}/issues", assigns }.body
+            puts format_issue(i)
+            puts 'Opened.'
           end
-          i = throb { api.post "/repos/#{repo}/issues", assigns }.body
-          puts format_issue(i)
-          puts 'Opened.'
         end
       end
     end

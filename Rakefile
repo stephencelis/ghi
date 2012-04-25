@@ -8,6 +8,7 @@ task :build do
     lib/ghi/authorization.rb
     lib/ghi/client.rb
     lib/ghi/editor.rb
+    lib/ghi/web.rb
     lib/ghi/commands.rb
     lib/ghi/commands/command.rb
     lib/ghi/commands/assign.rb

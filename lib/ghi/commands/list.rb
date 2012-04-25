@@ -3,6 +3,7 @@ require 'date'
 module GHI
   module Commands
     class List < Command
+      attr_accessor :web
       attr_accessor :reverse
       attr_accessor :quiet
 
@@ -44,9 +45,8 @@ module GHI
               raise OptionParser::InvalidArgument, e.message
             end
           end
-          opts.on '-v', '--verbose' do
-            self.verbose = true
-          end
+          opts.on('-v', '--verbose') { self.verbose = true }
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Global options'
           opts.on(
@@ -83,7 +83,6 @@ module GHI
       end
 
       def execute
-        assigns[:per_page] = 100
         begin
           options.parse! args
         rescue OptionParser::InvalidOption => e
@@ -95,23 +94,28 @@ module GHI
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
         end
-        unless quiet
-          print header = format_issues_header
-          print "\n" unless paginate?
-        end
-        res = throb(
-          0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
-        ) { api.get uri, assigns }
-        print "\r#{CURSOR[:up][1]}" if header && paginate?
-        page header do
-          issues = res.body
-          if verbose
-            puts issues.map { |i| format_issue i }
-          else
-            puts format_issues(issues, repo.nil?)
+        if web
+          Web.new(repo || 'dashboard').open 'issues', assigns
+        else
+          assigns[:per_page] = 100
+          unless quiet
+            print header = format_issues_header
+            print "\n" unless paginate?
           end
-          break unless res.next_page
-          res = throb { api.get res.next_page }
+          res = throb(
+            0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
+          ) { api.get uri, assigns }
+          print "\r#{CURSOR[:up][1]}" if header && paginate?
+          page header do
+            issues = res.body
+            if verbose
+              puts issues.map { |i| format_issue i }
+            else
+              puts format_issues(issues, repo.nil?)
+            end
+            break unless res.next_page
+            res = throb { api.get res.next_page }
+          end
         end
       rescue Client::Error => e
         if e.response.code == '422'

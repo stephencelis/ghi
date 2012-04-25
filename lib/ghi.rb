@@ -6,6 +6,7 @@ module GHI
   autoload :Commands,      'ghi/commands'
   autoload :Editor,        'ghi/editor'
   autoload :Formatting,    'ghi/formatting'
+  autoload :Web,           'ghi/web'
 
   class << self
     def execute args
