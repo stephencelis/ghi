@@ -98,6 +98,12 @@ EOF
       exit 1
     end
 
+    def config key
+      var = key.gsub('core', 'git').gsub('.', '_').upcase
+      value = ENV[var] || `git config #{key}`.chomp
+      value unless value.empty?
+    end
+
     attr_accessor :v
     alias v? v
 

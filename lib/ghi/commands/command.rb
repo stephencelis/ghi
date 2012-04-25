@@ -33,8 +33,10 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = ENV['GHI_REPO'] || `git config --local ghi.repo`.chomp
-        @repo = detect_repo if @repo.empty?
+        @repo = GHI.config('ghi.repo') || detect_repo
+        unless @repo.include? '/'
+          @repo = [Authorization.username, @repo].join '/'
+        end
         @repo
       end
       alias extract_repo repo

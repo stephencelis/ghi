@@ -15,9 +15,9 @@ module GHI
       private
 
       def editor
-        editor   = ENV['GHI_EDITOR']
-        editor ||= ENV['GIT_EDITOR']
-        editor ||= `git config core.editor`.split.first
+        editor   = GHI.config 'ghi.editor'
+        editor ||= GHI.config 'core.editor'
+        editor ||= ENV['VISUAL']
         editor ||= ENV['EDITOR']
         editor ||= 'vi'
       end

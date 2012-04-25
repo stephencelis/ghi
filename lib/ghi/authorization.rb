@@ -8,7 +8,7 @@ module GHI
     class << self
       def token
         return @token if defined? @token
-        @token = config 'ghi.token'
+        @token = GHI.config 'ghi.token'
       end
 
       def authorize! user = username, pass = password, local = true
@@ -52,19 +52,12 @@ EOF
 
       def username
         return @username if defined? @username
-        @username = config 'github.user'
+        @username = GHI.config 'github.user'
       end
 
       def password
         return @password if defined? @password
-        @password = config 'github.password'
-      end
-
-      private
-
-      def config key
-        value = ENV["#{key.upcase.gsub '.', '_'}"] || `git config #{key}`.chomp
-        value unless value.empty?
+        @password = GHI.config 'github.password'
       end
     end
   end

@@ -44,7 +44,14 @@ module GHI
 
     def page header = nil, throttle = 0
       if paginate?
-        $stdout = IO.popen('less -EKRX -b1', 'w')
+        pager   = GHI.config('ghi.pager') || GHI.config('core.pager')
+        pager ||= ENV['PAGER']
+        pager ||= 'less -EKRX -b1'
+
+        if pager && !pager.empty? && pager != 'cat'
+          $stdout = IO.popen pager, 'w'
+        end
+
         puts header if header
       end
 
