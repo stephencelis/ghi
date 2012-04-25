@@ -1,0 +1,133 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "GHI" "1" "April 2012" "Stephen Celis" "GHI Manual"
+.
+.SH "NAME"
+\fBghi\fR \- the stupid issue tracker
+.
+.SH "SYNOPSIS"
+\fBghi\fR [\fB\-\-version\fR] [\fB\-p\fR|\fB\-\-paginate\fR|\fB\-\-no\-pager\fR] [\fB\-\-help\fR] \fIcommand\fR [\fIargs\fR]
+.
+.br
+\fB\fR \fB\fR \fB\fR \fB\fR [ \fB\-\-\fR [\fIuser\fR/]\fIrepo\fR]]
+.
+.SH "DESCRIPTION"
+GHI is the alphabetical acronym for GitHub Issues\. GHI provides an easy way to manage your issues from the comfort of the command line and your editor of choice\.
+.
+.P
+GHI should look familiar if you\'re familiar with Git\. When invoked from a repository directory with a GitHub remote, GHI will default to work with the repository\'s issues\. Otherwise, GHI will work with your global issues or with a repository terminating its arguments\.
+.
+.P
+The \fIcommand\fR is either the name of a GHI command (see below) or an alias\.
+.
+.SH "OPTIONS"
+.
+.TP
+\fB\-\-version\fR
+Prints the GHI version number\.
+.
+.TP
+\fB\-\-help\fR
+Prints the synopsis and a list of commonly\-used commands\. If a GHI command is named, this option will bring up the manual page for that command\.
+.
+.IP
+See \fBghi\-help\fR(1) for more information\.
+.
+.TP
+\fB\-p\fR, \fB\-\-paginate\fR
+Pipe all output into less if standard output is a terminal\.
+.
+.TP
+\fB\-\-no\-pager\fR
+Do not pipe output into a pager\.
+.
+.TP
+\fB\-\-[no\-]color\fR
+Toggle colorized output\.
+.
+.SH "GHI COMMANDS"
+.
+.TP
+\fBghi\-assign\fR(1)
+Assign an issue to yourself (or someone else)\.
+.
+.TP
+\fBghi\-close\fR(1)
+Close an issue\.
+.
+.TP
+\fBghi\-comment\fR(1)
+Leave a comment on an issue\.
+.
+.TP
+\fBghi\-config\fR(1)
+Configure GHI\.
+.
+.TP
+\fBghi\-edit\fR(1)
+Modify an existing issue\.
+.
+.TP
+\fBghi\-label\fR(1)
+Create, list, modify, or delete labels\.
+.
+.TP
+\fBghi\-list\fR(1)
+List your issues (or a repository\'s)\.
+.
+.TP
+\fBghi\-milestone\fR(1)
+Manage project milestones\.
+.
+.TP
+\fBghi\-open\fR(1)
+Open (or reopen) an issue\.
+.
+.TP
+\fBghi\-show\fR(1)
+Show an issue\'s details\.
+.
+.SH "ENVIRONMENT VARIABLES"
+Various GHI commands use the following environment variables:
+.
+.TP
+\fIGHI_REPO\fR
+The GitHub repository to be used by the issued GHI command\.
+.
+.TP
+\fIGHI_TOKEN\fR
+The OAuth access token used to authenticate you\.
+.
+.TP
+\fIGHI_PAGER\fR
+This environment variable overrides \fI$GIT_PAGER\fR and \fI$PAGER\fR\. If it is set to an empty string or to the value "cat", git will not launch a pager\.
+.
+.TP
+\fIGHI_EDITOR\fR
+This environment variable overrides \fI$GIT_EDITOR\fR, \fI$VISUAL\fR, and \fI$EDITOR\fR\.
+.
+.TP
+\fIGITHUB_USER\fR
+Your GitHub username: used to authenticate and identify you\.
+.
+.TP
+\fIGITHUB_PASSWORD\fR
+If you store your GitHub password in an environment variable, GHI will automatically attempt to fetch an access token using it\.
+.
+.P
+All environment variables may also be stored in Git configuration files where the variable is in lowercase form and the underscore is a period (e\.g\., \fI$GHI_REPO\fR would become the ghi\.repo option)\.
+.
+.SH "AUTHORS"
+GHI is maintained by Stephen Celis\. A full list of contributors can be found at \fIhttps://github\.com/stephencelis/ghi/contributors\fR\.
+.
+.SH "REPORTING BUGS"
+.
+.nf
+
+ghi open \-\- stephencelis/ghi
+.
+.fi
+.
+.P
+Or visit \fIhttps://github\.com/stephencelis/ghi/issues\fR\.

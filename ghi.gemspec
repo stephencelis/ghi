@@ -13,10 +13,10 @@ EOF
   s.executables      = %w(ghi)
 
   s.has_rdoc         = false
-  # s.extra_rdoc_files = %w(README.markdown)
-  # s.rdoc_options     = %w(--main README.markdown)
 
   s.author           = 'Stephen Celis'
   s.email            = 'stephen@stephencelis.com'
   s.homepage         = 'https://github.com/stephencelis/ghi'
+
+  s.add_development_dependency 'ronn'
 end

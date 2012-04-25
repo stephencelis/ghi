@@ -1,14 +1,22 @@
 PATH
   remote: .
   specs:
-    ghi (1.0.0.dev)
+    ghi (0.9.0.20120424)
 
 GEM
   remote: http://rubygems.org/
   specs:
+    hpricot (0.8.4)
+    mustache (0.99.4)
+    rdiscount (1.6.8)
+    ronn (0.7.3)
+      hpricot (>= 0.8.2)
+      mustache (>= 0.7.0)
+      rdiscount (>= 1.5.8)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   ghi!
+  ronn

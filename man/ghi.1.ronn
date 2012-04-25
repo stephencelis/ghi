@@ -1,0 +1,112 @@
+ghi(1) -- the stupid issue tracker
+==================================
+
+## SYNOPSIS
+
+`ghi` [`--version`] [`-p`|`--paginate`|`--no-pager`] [`--help`] <command>
+[<args>]<br> ` ` ` ` ` ` ` ` [ `--` [<user>/]<repo>]]
+
+## DESCRIPTION
+
+GHI is the alphabetical acronym for GitHub Issues. GHI provides an easy way to
+manage your issues from the comfort of the command line and your editor of
+choice.
+
+GHI should look familiar if you're familiar with Git. When invoked from a
+repository directory with a GitHub remote, GHI will default to work with the
+repository's issues. Otherwise, GHI will work with your global issues or with a
+repository terminating its arguments.
+
+The <command> is either the name of a GHI command (see below) or an alias.
+
+## OPTIONS
+
+  * `--version`:
+    Prints the GHI version number.
+
+  * `--help`:
+    Prints the synopsis and a list of commonly-used commands. If a GHI command
+    is named, this option will bring up the manual page for that command.
+
+    See `ghi-help`(1) for more information.
+
+  * `-p`, `--paginate`:
+    Pipe all output into less if standard output is a terminal.
+
+  * `--no-pager`:
+    Do not pipe output into a pager.
+
+  * `--[no-]color`:
+    Toggle colorized output.
+
+## GHI COMMANDS
+
+  * `ghi-assign`(1):
+    Assign an issue to yourself (or someone else).
+
+  * `ghi-close`(1):
+    Close an issue.
+
+  * `ghi-comment`(1):
+    Leave a comment on an issue.
+
+  * `ghi-config`(1):
+    Configure GHI.
+
+  * `ghi-edit`(1):
+    Modify an existing issue.
+
+  * `ghi-label`(1):
+    Create, list, modify, or delete labels.
+
+  * `ghi-list`(1):
+    List your issues (or a repository's).
+
+  * `ghi-milestone`(1):
+    Manage project milestones.
+
+  * `ghi-open`(1):
+    Open (or reopen) an issue.
+
+  * `ghi-show`(1):
+    Show an issue's details.
+
+## ENVIRONMENT VARIABLES
+
+Various GHI commands use the following environment variables:
+
+  * _GHI_REPO_:
+    The GitHub repository to be used by the issued GHI command.
+
+  * _GHI_TOKEN_:
+    The OAuth access token used to authenticate you.
+
+  * _GHI_PAGER_:
+    This environment variable overrides _$GIT_PAGER_ and _$PAGER_. If it is set
+    to an empty string or to the value "cat", git will not launch a pager.
+
+  * _GHI_EDITOR_:
+    This environment variable overrides _$GIT_EDITOR_, _$VISUAL_, and
+    _$EDITOR_.
+
+  * _GITHUB_USER_:
+    Your GitHub username: used to authenticate and identify you.
+
+  * _GITHUB_PASSWORD_:
+    If you store your GitHub password in an environment variable, GHI will
+    automatically attempt to fetch an access token using it.
+
+All environment variables may also be stored in Git configuration files where
+the variable is in lowercase form and the underscore is a period (e.g.,
+_$GHI_REPO_ would become the ghi.repo option).
+
+## AUTHORS
+
+GHI is maintained by Stephen Celis. A full list of contributors can be found
+at <https://github.com/stephencelis/ghi/contributors>.
+
+## REPORTING BUGS
+
+    ghi open -- stephencelis/ghi
+
+Or visit <https://github.com/stephencelis/ghi/issues>.

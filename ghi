@@ -93,6 +93,12 @@ EOF
       exit 1
     end
 
+    def config key
+      var = key.gsub('core', 'git').gsub('.', '_').upcase
+      value = ENV[var] || `git config #{key}`.chomp
+      value unless value.empty?
+    end
+
     attr_accessor :v
     alias v? v
 
@@ -1768,7 +1774,14 @@ module GHI
 
     def page header = nil, throttle = 0
       if paginate?
-        $stdout = IO.popen('less -EKRX -b1', 'w')
+        pager   = GHI.config('ghi.pager') || GHI.config('core.pager')
+        pager ||= ENV['PAGER']
+        pager ||= 'less -EKRX -b1'
+
+        if pager && !pager.empty? && pager != 'cat'
+          $stdout = IO.popen pager, 'w'
+        end
+
         puts header if header
       end
 
@@ -2174,7 +2187,7 @@ module GHI
     class << self
       def token
         return @token if defined? @token
-        @token = config 'ghi.token'
+        @token = GHI.config 'ghi.token'
       end
 
       def authorize! user = username, pass = password, local = true
@@ -2218,19 +2231,12 @@ EOF
 
       def username
         return @username if defined? @username
-        @username = config 'github.user'
+        @username = GHI.config 'github.user'
       end
 
       def password
         return @password if defined? @password
-        @password = config 'github.password'
-      end
-
-      private
-
-      def config key
-        value = ENV["#{key.upcase.gsub '.', '_'}"] || `git config #{key}`.chomp
-        value unless value.empty?
+        @password = GHI.config 'github.password'
       end
     end
   end
@@ -2375,9 +2381,9 @@ module GHI
       private
 
       def editor
-        editor   = ENV['GHI_EDITOR']
-        editor ||= ENV['GIT_EDITOR']
-        editor ||= `git config core.editor`.split.first
+        editor   = GHI.config 'ghi.editor'
+        editor ||= GHI.config 'core.editor'
+        editor ||= ENV['VISUAL']
         editor ||= ENV['EDITOR']
         editor ||= 'vi'
       end
@@ -2449,8 +2455,10 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = ENV['GHI_REPO'] || `git config --local ghi.repo`.chomp
-        @repo = detect_repo if @repo.empty?
+        @repo = GHI.config('ghi.repo') || detect_repo
+        unless @repo.include? '/'
+          @repo = [Authorization.username, @repo].join '/'
+        end
         @repo
       end
       alias extract_repo repo

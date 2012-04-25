@@ -34,9 +34,18 @@ task :build do
   end
 end
 
+desc 'Build the manuals'
+task :man do
+  `ronn man/*.ronn --manual='GHI Manual' --organization='Stephen Celis'`
+end
+
 desc 'Install the standalone script'
-task :install => :build do
+task :install => [:build, :man] do
   prefix = ENV['PREFIX'] || ENV['prefix'] || '/usr/local'
+
   FileUtils.mkdir_p   "#{prefix}/bin"
   FileUtils.cp 'ghi', "#{prefix}/bin"
+
+  FileUtils.mkdir_p "#{prefix}/share/man/man1"
+  FileUtils.cp Dir["man/*.1"], "#{prefix}/share/man/man1"
 end
