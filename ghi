@@ -34,7 +34,16 @@ EOF
         opts.on '--[no-]color' do |colorize|
           Formatting::Colors.colorize = colorize
         end
-        opts.on('-v') { self.v = true }
+        opts.on '-l' do
+          if command_name
+            raise OptionParser::InvalidOption
+          else
+            command_name = 'list'
+          end
+        end
+        opts.on '-v' do
+          command_name ? self.v = true : command_name = 'version'
+        end
         opts.on('-h') { raise OptionParser::InvalidOption }
       end
 
@@ -2095,8 +2104,9 @@ submitted. Comments are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
-On <%= repo %> issue #<%= issue %>
+On <%= repo %> issue #<%= issue['number'] %>
 
+<%= no_color { format_issue issue } if verbose %>\
 <%= no_color { format_comment comment, columns - 2 } if comment %>
 EOF
       message.rstrip!
@@ -2638,6 +2648,7 @@ module GHI
   module Commands
     class Comment < Command
       attr_accessor :comment
+      attr_accessor :verbose
       attr_accessor :web
 
       def options
@@ -2664,6 +2675,9 @@ EOF
           end
           opts.on '--close', 'close associated issue' do
             self.action = 'close'
+          end
+          opts.on '-v', '--verbose' do
+            self.verbose = true
           end
           opts.separator ''
         end
@@ -2743,6 +2757,11 @@ EOF
       def require_body
         assigns[:body] = args.join ' ' unless args.empty?
         return if assigns[:body]
+        if issue && verbose
+          self.issue = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+        else
+          self.issue = {'number'=>issue}
+        end
         message = Editor.gets format_comment_editor(issue, comment)
         abort 'No comment.' if message.nil? || message.empty?
         abort 'No change.' if comment && message.strip == comment['body'].strip
@@ -3149,6 +3168,7 @@ module GHI
           opts.on(
             '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
           ) do |assignee|
+            assignee = assignee.sub /^@/, ''
             assigns[:assignee] = any_or_none_or assignee
           end
           opts.on '--mine', 'assigned to you' do
@@ -3164,6 +3184,10 @@ module GHI
       end
 
       def execute
+        if index = args.index { |arg| /^@/ === arg }
+          assigns[:assignee] = args.delete_at(index)[1..-1]
+        end
+
         begin
           options.parse! args
         rescue OptionParser::InvalidOption => e
