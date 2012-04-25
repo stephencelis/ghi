@@ -106,9 +106,9 @@ module GHI
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE # FIXME 1.8.7
 
-      GHI.v? and puts "===> #{method.to_s.upcase} #{path} #{req.body}"
+      GHI.v? and puts "\r===> #{method.to_s.upcase} #{path} #{req.body}"
       res = http.start { http.request req }
-      GHI.v? and puts "<=== #{res.code}: #{res.body}"
+      GHI.v? and puts "\r<=== #{res.code}: #{res.body}"
 
       case res
       when Net::HTTPSuccess
