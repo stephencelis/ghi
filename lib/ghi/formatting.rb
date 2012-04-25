@@ -354,8 +354,9 @@ submitted. Comments are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
-On <%= repo %> issue #<%= issue %>
+On <%= repo %> issue #<%= issue['number'] %>
 
+<%= no_color { format_issue issue } if verbose %>\
 <%= no_color { format_comment comment, columns - 2 } if comment %>
 EOF
       message.rstrip!

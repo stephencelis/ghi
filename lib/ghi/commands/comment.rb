@@ -2,6 +2,7 @@ module GHI
   module Commands
     class Comment < Command
       attr_accessor :comment
+      attr_accessor :verbose
       attr_accessor :web
 
       def options
@@ -28,6 +29,9 @@ EOF
           end
           opts.on '--close', 'close associated issue' do
             self.action = 'close'
+          end
+          opts.on '-v', '--verbose' do
+            self.verbose = true
           end
           opts.separator ''
         end
@@ -107,6 +111,11 @@ EOF
       def require_body
         assigns[:body] = args.join ' ' unless args.empty?
         return if assigns[:body]
+        if issue && verbose
+          self.issue = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+        else
+          self.issue = {'number'=>issue}
+        end
         message = Editor.gets format_comment_editor(issue, comment)
         abort 'No comment.' if message.nil? || message.empty?
         abort 'No change.' if comment && message.strip == comment['body'].strip
