@@ -1,4 +1,4 @@
-require 'tempfile'
+require 'tmpdir'
 
 module GHI
   class Editor
