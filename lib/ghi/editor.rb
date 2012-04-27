@@ -36,9 +36,13 @@ module GHI
     end
 
     def dir
+      @dir ||= git_dir || Dir.tmpdir
+    end
+
+    def git_dir
+      return unless Commands::Command.detected_repo
       dir = `git rev-parse --git-dir 2>/dev/null`.chomp
-      dir = Dir.tmpdir if dir.empty?
-      dir
+      dir unless dir.empty?
     end
   end
 end

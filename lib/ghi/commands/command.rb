@@ -6,12 +6,16 @@ module GHI
     class Command
       include Formatting
 
-      def self.execute args
-        command = new args
-        if i = args.index('--')
-          command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+      class << self
+        attr_accessor :detected_repo
+
+        def execute args
+          command = new args
+          if i = args.index('--')
+            command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+          end
+          command.execute
         end
-        command.execute
       end
 
       attr_reader :args
@@ -72,7 +76,7 @@ module GHI
         remote   = remotes.find { |r| r[:remote] == 'upstream' }
         remote ||= remotes.find { |r| r[:remote] == 'origin' }
         remote ||= remotes.find { |r| r[:user]   == Authorization.username }
-        remote[:repo] if remote
+        Command.detected_repo = true and remote[:repo] if remote
       end
 
       def issue
