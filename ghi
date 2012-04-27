@@ -44,7 +44,6 @@ EOF
         opts.on '-v' do
           command_name ? self.v = true : command_name = 'version'
         end
-        opts.on('-h') { raise OptionParser::InvalidOption }
       end
 
       begin
@@ -2388,7 +2387,7 @@ module GHI
     end
   end
 end
-require 'tempfile'
+require 'tmpdir'
 
 module GHI
   class Editor
@@ -2426,9 +2425,13 @@ module GHI
     end
 
     def dir
+      @dir ||= git_dir || Dir.tmpdir
+    end
+
+    def git_dir
+      return unless Commands::Command.detected_repo
       dir = `git rev-parse --git-dir 2>/dev/null`.chomp
-      dir = Dir.tmpdir if dir.empty?
-      dir
+      dir unless dir.empty?
     end
   end
 end
@@ -2470,12 +2473,16 @@ module GHI
     class Command
       include Formatting
 
-      def self.execute args
-        command = new args
-        if i = args.index('--')
-          command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+      class << self
+        attr_accessor :detected_repo
+
+        def execute args
+          command = new args
+          if i = args.index('--')
+            command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+          end
+          command.execute
         end
-        command.execute
       end
 
       attr_reader :args
@@ -2536,7 +2543,7 @@ module GHI
         remote   = remotes.find { |r| r[:remote] == 'upstream' }
         remote ||= remotes.find { |r| r[:remote] == 'origin' }
         remote ||= remotes.find { |r| r[:user]   == Authorization.username }
-        remote[:repo] if remote
+        Command.detected_repo = true and remote[:repo] if remote
       end
 
       def issue
@@ -3637,7 +3644,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120426
+      PRE     = 20120427
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
