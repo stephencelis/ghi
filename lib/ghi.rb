@@ -118,7 +118,6 @@ EOF
     ALIASES = Hash.new { |_, key|
       [key] if /^\d+$/ === key
     }.update(
-      'c'        => %w(close),
       'claim'    => %w(assign),
       'e'        => %w(edit),
       'l'        => %w(list),

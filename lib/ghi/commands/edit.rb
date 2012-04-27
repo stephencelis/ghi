@@ -20,6 +20,9 @@ EOF
           ) do |assignee|
             assigns[:assignee] = assignee
           end
+          opts.on '--claim', 'assign to yourself' do
+            assigns[:assignee] = Authorization.username
+          end
           opts.on(
             '-s', '--state <in>', %w(open closed),
             {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
@@ -38,11 +41,18 @@ EOF
           end
           opts.separator ''
           opts.separator 'Pull request options'
-          opts.on '-H', '--head [[<username>:]<branch>]' do |head|
+          opts.on(
+            '-H', '--head [[<user>:]<branch>]',
+            'branch where your changes are implemented',
+            '(defaults to current branch)'
+          ) do |head|
             self.action = 'pull'
             assigns[:head] = head
           end
-          opts.on '-b', '--base [<branch>]' do |base|
+          opts.on(
+            '-b', '--base [<branch>]',
+            'branch you want your changes pulled into', '(defaults to master)'
+          ) do |base|
             self.action = 'pull'
             assigns[:base] = base
           end
@@ -96,14 +106,17 @@ EOF
           begin
             assigns[:issue] = issue
             assigns[:base] ||= 'master'
-            assigns[:head] ||= begin
+            head = begin
               if ref = %x{
                 git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null
               }.chomp!
                 ref.split('/').last if $? == 0
               end
             end
-            if assigns[:head].nil?
+            assigns[:head] ||= head
+            if assigns[:head]
+              assigns[:head].sub!(/:$/, ":#{head}")
+            else
               abort "fatal: HEAD can't be null"
             end
             throb { api.post "/repos/#{repo}/pulls", assigns }
