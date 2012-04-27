@@ -79,18 +79,16 @@ EOF
         throb { api.get uri, :per_page => 100 }
       end
 
-      def create
-        require_body
+      def create message = 'Commented.'
+        e = require_body
         c = throb { api.post uri, assigns }.body
         puts format_comment(c)
-        puts 'Commented.'
+        puts message
+        e.unlink if e
       end
 
       def update
-        require_body
-        c = throb { api.patch uri, assigns }.body
-        puts format_comment(c)
-        puts 'Updated.'
+        create 'Comment updated.'
       end
 
       def destroy
@@ -116,10 +114,14 @@ EOF
         else
           i = {'number'=>issue}
         end
-        message = Editor.gets format_comment_editor(i, comment)
-        abort 'No comment.' if message.nil? || message.empty?
-        abort 'No change.' if comment && message.strip == comment['body'].strip
+        filename = "GHI_COMMENT_#{issue}"
+        filename << "_#{comment['id']}" if comment
+        e = Editor.new filename
+        message = e.gets format_comment_editor(i, comment)
+        e.unlink 'No comment.' if message.nil? || message.empty?
+        e.unlink 'No change.' if comment && message.strip == comment['body'].strip
         assigns[:body] = message if message
+        e
       end
     end
   end

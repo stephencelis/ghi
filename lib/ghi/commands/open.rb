@@ -70,11 +70,13 @@ EOF
             end
             assigns[:title] = args.join ' ' unless args.empty?
             if assigns[:title].nil? || editor
-              message = Editor.gets format_editor(assigns)
-              abort "There's no issue?" if message.nil? || message.empty?
+              e = Editor.new 'GHI_ISSUE'
+              message = e.gets format_editor(assigns)
+              e.unlink "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
+            e.unlink
             puts format_issue(i)
             puts 'Opened.'
           end

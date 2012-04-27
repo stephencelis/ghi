@@ -137,12 +137,14 @@ EOF
             Web.new(repo).open 'issues/milestones/new'
           else
             if assigns[:title].nil?
-              message = Editor.gets format_milestone_editor
-              abort 'Empty milestone.' if message.nil? || message.empty?
+              e = Editor.new 'GHI_MILESTONE'
+              message = e.gets format_milestone_editor
+              e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
             end
             m = throb { api.post uri, assigns }.body
             puts 'Milestone #%d created.' % m['number']
+            e.unlink if e
           end
         when 'update'
           if web
@@ -150,8 +152,9 @@ EOF
           else
             if edit || assigns.empty?
               m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
-              message = Editor.gets format_milestone_editor(m)
-              abort 'Empty milestone.' if message.nil? || message.empty?
+              e = Editor.new "GHI_MILESTONE_#{milestone}"
+              message = e.gets format_milestone_editor(m)
+              e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
             end
             if assigns[:title] && m
@@ -160,6 +163,7 @@ EOF
                 b_match = assigns[:description].strip == m['description'].strip
               end
               if t_match && b_match
+                e.unlink if e
                 abort 'No change.' if assigns.dup.delete_if { |k, v|
                   [:title, :description].include? k
                 }
@@ -168,6 +172,7 @@ EOF
             m = throb { api.patch uri, assigns }.body
             puts format_milestone(m)
             puts 'Updated.'
+            e.unlink if e
           end
         when 'destroy'
           require_milestone

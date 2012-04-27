@@ -320,7 +320,7 @@ EOF
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
-      ].join("\n\n") if issue
+      ].compact.join("\n\n") if issue
       message
     end
 

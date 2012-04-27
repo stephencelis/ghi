@@ -46,8 +46,9 @@ EOF
         options.parse! args
         if edit || assigns.empty?
           i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-          message = Editor.gets format_editor(i)
-          abort "There's no issue." if message.nil? || message.empty?
+          e = Editor.new "GHI_ISSUE_#{issue}"
+          message = e.gets format_editor(i)
+          e.unlink "There's no issue." if message.nil? || message.empty?
           assigns[:title], assigns[:body] = message.split(/\n+/, 2)
         end
         if assigns[:title] && i
@@ -56,6 +57,7 @@ EOF
             bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
           end
           if titles_match && bodies_match
+            e.unlink if e
             abort 'No change.' if assigns.dup.delete_if { |k, v|
               [:title, :body].include? k
             }
@@ -64,6 +66,7 @@ EOF
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
         puts 'Updated.'
+        e.unlink if e
       rescue Client::Error => e
         error = e.errors.first
         abort "%s %s %s %s." % [
