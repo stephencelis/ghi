@@ -49,7 +49,6 @@ EOF
         opts.on '-v' do
           command_name ? self.v = true : command_name = 'version'
         end
-        opts.on('-h') { raise OptionParser::InvalidOption }
       end
 
       begin
