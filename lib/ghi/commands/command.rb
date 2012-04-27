@@ -63,20 +63,23 @@ module GHI
       end
 
       def detect_repo
-        remotes = `git config --get-regexp remote\..+\.url`.split "\n"
-        remotes.reject! { |r| !r.include? 'github.com'}
+        remote   = remotes.find { |r| r[:remote] == 'upstream' }
+        remote ||= remotes.find { |r| r[:remote] == 'origin' }
+        remote ||= remotes.find { |r| r[:user]   == Authorization.username }
+        Command.detected_repo = true and remote[:repo] if remote
+      end
 
-        remotes.map! { |r|
+      def remotes
+        return @remotes if defined? @remotes
+        @remotes = `git config --get-regexp remote\..+\.url`.split "\n"
+        @remotes.reject! { |r| !r.include? 'github.com'}
+        @remotes.map! { |r|
           remote, user, repo = r.scan(
             %r{remote\.([^\.]+)\.url .*?([^:/]+)/([^/\s]+?)(?:\.git)?$}
           ).flatten
           { :remote => remote, :user => user, :repo => "#{user}/#{repo}" }
         }
-
-        remote   = remotes.find { |r| r[:remote] == 'upstream' }
-        remote ||= remotes.find { |r| r[:remote] == 'origin' }
-        remote ||= remotes.find { |r| r[:user]   == Authorization.username }
-        Command.detected_repo = true and remote[:repo] if remote
+        @remotes
       end
 
       def issue
