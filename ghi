@@ -2068,7 +2068,7 @@ EOF
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
-      ].join("\n\n") if issue
+      ].compact.join("\n\n") if issue
       message
     end
 
@@ -2392,25 +2392,43 @@ require 'tempfile'
 
 module GHI
   class Editor
-    class << self
-      def gets prefill
-        Tempfile.open 'GHI_ISSUE' do |f|
-          f << prefill
-          f.rewind
-          system "#{editor} #{f.path}"
-          return File.read(f.path).gsub(/(?:^#.*$\n?)+\s*\z/, '').strip
-        end
-      end
+    attr_reader :filename
+    def initialize filename
+      @filename = filename
+    end
 
-      private
-
-      def editor
-        editor   = GHI.config 'ghi.editor'
-        editor ||= GHI.config 'core.editor'
-        editor ||= ENV['VISUAL']
-        editor ||= ENV['EDITOR']
-        editor ||= 'vi'
+    def gets prefill
+      File.open path, 'a+' do |f|
+        f << prefill if File.zero? path
+        f.rewind
+        system "#{editor} #{f.path}"
+        return File.read(f.path).gsub(/(?:^#.*$\n?)+\s*\z/, '').strip
       end
+    end
+
+    def unlink message = nil
+      File.delete path
+      abort message if message
+    end
+
+    private
+
+    def editor
+      editor   = GHI.config 'ghi.editor'
+      editor ||= GHI.config 'core.editor'
+      editor ||= ENV['VISUAL']
+      editor ||= ENV['EDITOR']
+      editor ||= 'vi'
+    end
+
+    def path
+      File.join dir, filename
+    end
+
+    def dir
+      dir = `git rev-parse --git-dir 2>/dev/null`.chomp
+      dir = Dir.tmpdir if dir.empty?
+      dir
     end
   end
 end
@@ -2725,18 +2743,16 @@ EOF
         throb { api.get uri, :per_page => 100 }
       end
 
-      def create
-        require_body
+      def create message = 'Commented.'
+        e = require_body
         c = throb { api.post uri, assigns }.body
         puts format_comment(c)
-        puts 'Commented.'
+        puts message
+        e.unlink if e
       end
 
       def update
-        require_body
-        c = throb { api.patch uri, assigns }.body
-        puts format_comment(c)
-        puts 'Updated.'
+        create 'Comment updated.'
       end
 
       def destroy
@@ -2762,10 +2778,14 @@ EOF
         else
           i = {'number'=>issue}
         end
-        message = Editor.gets format_comment_editor(i, comment)
-        abort 'No comment.' if message.nil? || message.empty?
-        abort 'No change.' if comment && message.strip == comment['body'].strip
+        filename = "GHI_COMMENT_#{issue}"
+        filename << "_#{comment['id']}" if comment
+        e = Editor.new filename
+        message = e.gets format_comment_editor(i, comment)
+        e.unlink 'No comment.' if message.nil? || message.empty?
+        e.unlink 'No change.' if comment && message.strip == comment['body'].strip
         assigns[:body] = message if message
+        e
       end
     end
   end
@@ -2873,8 +2893,9 @@ EOF
         options.parse! args
         if edit || assigns.empty?
           i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-          message = Editor.gets format_editor(i)
-          abort "There's no issue." if message.nil? || message.empty?
+          e = Editor.new "GHI_ISSUE_#{issue}"
+          message = e.gets format_editor(i)
+          e.unlink "There's no issue." if message.nil? || message.empty?
           assigns[:title], assigns[:body] = message.split(/\n+/, 2)
         end
         if assigns[:title] && i
@@ -2883,6 +2904,7 @@ EOF
             bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
           end
           if titles_match && bodies_match
+            e.unlink if e
             abort 'No change.' if assigns.dup.delete_if { |k, v|
               [:title, :body].include? k
             }
@@ -2891,6 +2913,7 @@ EOF
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
         puts 'Updated.'
+        e.unlink if e
       rescue Client::Error => e
         error = e.errors.first
         abort "%s %s %s %s." % [
@@ -3414,12 +3437,14 @@ EOF
             Web.new(repo).open 'issues/milestones/new'
           else
             if assigns[:title].nil?
-              message = Editor.gets format_milestone_editor
-              abort 'Empty milestone.' if message.nil? || message.empty?
+              e = Editor.new 'GHI_MILESTONE'
+              message = e.gets format_milestone_editor
+              e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
             end
             m = throb { api.post uri, assigns }.body
             puts 'Milestone #%d created.' % m['number']
+            e.unlink if e
           end
         when 'update'
           if web
@@ -3427,8 +3452,9 @@ EOF
           else
             if edit || assigns.empty?
               m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
-              message = Editor.gets format_milestone_editor(m)
-              abort 'Empty milestone.' if message.nil? || message.empty?
+              e = Editor.new "GHI_MILESTONE_#{milestone}"
+              message = e.gets format_milestone_editor(m)
+              e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
             end
             if assigns[:title] && m
@@ -3437,6 +3463,7 @@ EOF
                 b_match = assigns[:description].strip == m['description'].strip
               end
               if t_match && b_match
+                e.unlink if e
                 abort 'No change.' if assigns.dup.delete_if { |k, v|
                   [:title, :description].include? k
                 }
@@ -3445,6 +3472,7 @@ EOF
             m = throb { api.patch uri, assigns }.body
             puts format_milestone(m)
             puts 'Updated.'
+            e.unlink if e
           end
         when 'destroy'
           require_milestone
@@ -3545,11 +3573,13 @@ EOF
             end
             assigns[:title] = args.join ' ' unless args.empty?
             if assigns[:title].nil? || editor
-              message = Editor.gets format_editor(assigns)
-              abort "There's no issue?" if message.nil? || message.empty?
+              e = Editor.new 'GHI_ISSUE'
+              message = e.gets format_editor(assigns)
+              e.unlink "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
+            e.unlink
             puts format_issue(i)
             puts 'Opened.'
           end
@@ -3607,7 +3637,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120424
+      PRE     = 20120426
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
