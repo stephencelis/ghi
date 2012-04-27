@@ -64,6 +64,14 @@ EOF
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
         puts 'Updated.'
+      rescue Client::Error => e
+        error = e.errors.first
+        abort "%s %s %s %s." % [
+          error['resource'],
+          error['field'],
+          [*error['value']].join(', '),
+          error['code']
+        ]
       end
     end
   end
