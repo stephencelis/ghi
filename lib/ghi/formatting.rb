@@ -160,7 +160,7 @@ module GHI
 
       issues.map { |i|
         n, title, labels = i['number'], i['title'], i['labels']
-        l = 8 + nmax + rmax + no_color { format_labels labels }.to_s.length
+        l = 9 + nmax + rmax + no_color { format_labels labels }.to_s.length
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
         p = i['pull_request']['html_url'] and l += 2
