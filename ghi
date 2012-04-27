@@ -2750,8 +2750,7 @@ EOF
         if comment
           comment['url']
         else
-          i = issue.is_a?(Hash) ? issue['number'] : issue
-          "/repos/#{repo}/issues/#{i}/comments"
+          "/repos/#{repo}/issues/#{issue}/comments"
         end
       end
 
@@ -2759,11 +2758,11 @@ EOF
         assigns[:body] = args.join ' ' unless args.empty?
         return if assigns[:body]
         if issue && verbose
-          self.issue = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+          i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
         else
-          self.issue = {'number'=>issue}
+          i = {'number'=>issue}
         end
-        message = Editor.gets format_comment_editor(issue, comment)
+        message = Editor.gets format_comment_editor(i, comment)
         abort 'No comment.' if message.nil? || message.empty?
         abort 'No change.' if comment && message.strip == comment['body'].strip
         assigns[:body] = message if message
@@ -2892,6 +2891,14 @@ EOF
         i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
         puts format_issue(i)
         puts 'Updated.'
+      rescue Client::Error => e
+        error = e.errors.first
+        abort "%s %s %s %s." % [
+          error['resource'],
+          error['field'],
+          [*error['value']].join(', '),
+          error['code']
+        ]
       end
     end
   end
