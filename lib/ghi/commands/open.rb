@@ -28,6 +28,9 @@ EOF
           ) do |assignee|
             assigns[:assignee] = assignee
           end
+          opts.on '--claim', 'assign to yourself' do
+            assigns[:assignee] = Authorization.username
+          end
           opts.on(
             '-M', '--milestone <n>', 'associate with milestone'
           ) do |milestone|

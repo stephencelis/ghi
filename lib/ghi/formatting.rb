@@ -436,7 +436,7 @@ EOF
 
       thread = Thread.new do
         dot = lambda do
-          print("\r#{CURSOR[:column][position]}#{throb[i]}#{CURSOR[:hide]}")
+          print "\r#{CURSOR[:column][position]}#{throb[i]}#{CURSOR[:hide]}"
           i = (i + 1) % throb.length
           sleep 0.1 and dot.call
         end
