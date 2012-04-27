@@ -104,8 +104,7 @@ EOF
         if comment
           comment['url']
         else
-          i = issue.is_a?(Hash) ? issue['number'] : issue
-          "/repos/#{repo}/issues/#{i}/comments"
+          "/repos/#{repo}/issues/#{issue}/comments"
         end
       end
 
@@ -113,11 +112,11 @@ EOF
         assigns[:body] = args.join ' ' unless args.empty?
         return if assigns[:body]
         if issue && verbose
-          self.issue = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+          i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
         else
-          self.issue = {'number'=>issue}
+          i = {'number'=>issue}
         end
-        message = Editor.gets format_comment_editor(issue, comment)
+        message = Editor.gets format_comment_editor(i, comment)
         abort 'No comment.' if message.nil? || message.empty?
         abort 'No change.' if comment && message.strip == comment['body'].strip
         assigns[:body] = message if message
