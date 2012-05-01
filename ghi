@@ -113,7 +113,6 @@ EOF
     ALIASES = Hash.new { |_, key|
       [key] if /^\d+$/ === key
     }.update(
-      # 'c'        => %w(close),
       'claim'    => %w(assign),
       'e'        => %w(edit),
       'l'        => %w(list),
@@ -2629,6 +2628,8 @@ end
 module GHI
   module Commands
     class Close < Command
+      attr_accessor :web
+
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
@@ -2638,6 +2639,7 @@ EOF
           opts.on '-l', '--list', 'list closed issues' do
             assigns[:command] = List
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'close with message' do |text|
@@ -2652,7 +2654,9 @@ EOF
         require_repo
 
         if list?
-          List.execute %W(-sc -- #{repo})
+          args.unshift %W(-sc -- #{repo})
+          args.unshift '-w' if web
+          List.execute args
         else
           require_issue
           if assigns.key? :comment
@@ -2919,8 +2923,8 @@ EOF
 
       def execute
         self.action = 'edit'
-        require_issue
         require_repo
+        require_issue
         options.parse! args
         case action
         when 'edit'
@@ -2946,7 +2950,9 @@ EOF
               throb { api.post "/repos/#{repo}/pulls", assigns }.body
               puts "Issue ##{issue} tracked to pull from #{assigns[:head]}."
             end
-            i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
+            i = throb {
+              api.patch "/repos/#{repo}/issues/#{issue}", assigns
+            }.body
             puts format_issue(i)
             puts 'Updated.'
             e.unlink if e
@@ -3444,6 +3450,7 @@ EOF
 
       def execute
         self.action = 'index'
+        require_repo
         extract_milestone
 
         begin
@@ -3580,6 +3587,7 @@ EOF
           opts.on '-l', '--list', 'list open tickets' do
             self.action = 'index'
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'describe issue' do |text|
@@ -3607,7 +3615,6 @@ EOF
           ) do |labels|
             (assigns[:labels] ||= []).concat labels
           end
-          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
         end
       end
@@ -3629,6 +3636,7 @@ EOF
             args.unshift assigns[:assignee] if assigns[:assignee]
             args.unshift '-u'
           end
+          args.unshift '-w' if web
           List.execute args.push('--', repo)
         when 'create'
           if web
@@ -3645,7 +3653,7 @@ EOF
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
-            e.unlink
+            e.unlink if e
             puts format_issue(i)
             puts 'Opened.'
           end
@@ -3703,7 +3711,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120427
+      PRE     = 20120501
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
