@@ -14,6 +14,7 @@ EOF
           opts.on '-l', '--list', 'list open tickets' do
             self.action = 'index'
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'describe issue' do |text|
@@ -41,7 +42,6 @@ EOF
           ) do |labels|
             (assigns[:labels] ||= []).concat labels
           end
-          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
         end
       end
@@ -63,6 +63,7 @@ EOF
             args.unshift assigns[:assignee] if assigns[:assignee]
             args.unshift '-u'
           end
+          args.unshift '-w' if web
           List.execute args.push('--', repo)
         when 'create'
           if web
@@ -79,7 +80,7 @@ EOF
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
-            e.unlink
+            e.unlink if e
             puts format_issue(i)
             puts 'Opened.'
           end

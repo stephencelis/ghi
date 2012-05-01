@@ -62,8 +62,8 @@ EOF
 
       def execute
         self.action = 'edit'
-        require_issue
         require_repo
+        require_issue
         options.parse! args
         case action
         when 'edit'
@@ -89,7 +89,9 @@ EOF
               throb { api.post "/repos/#{repo}/pulls", assigns }.body
               puts "Issue ##{issue} tracked to pull from #{assigns[:head]}."
             end
-            i = throb { api.patch "/repos/#{repo}/issues/#{issue}", assigns }.body
+            i = throb {
+              api.patch "/repos/#{repo}/issues/#{issue}", assigns
+            }.body
             puts format_issue(i)
             puts 'Updated.'
             e.unlink if e

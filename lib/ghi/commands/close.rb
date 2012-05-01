@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Close < Command
+      attr_accessor :web
+
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
@@ -10,6 +12,7 @@ EOF
           opts.on '-l', '--list', 'list closed issues' do
             assigns[:command] = List
           end
+          opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-m', '--message [<text>]', 'close with message' do |text|
@@ -24,7 +27,9 @@ EOF
         require_repo
 
         if list?
-          List.execute %W(-sc -- #{repo})
+          args.unshift %W(-sc -- #{repo})
+          args.unshift '-w' if web
+          List.execute args
         else
           require_issue
           if assigns.key? :comment
