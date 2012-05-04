@@ -87,7 +87,7 @@ EOF
       retry if Authorization.authorize!
       warn e.message
       if Authorization.token
-        warn <<EOF
+        warn <<EOF.chomp
 
 Not authorized for this action with your token. To regenerate a new token:
 EOF
@@ -2204,6 +2204,7 @@ module GHI
     extend Formatting
 
     class Required < RuntimeError
+      def message() 'Authorization required.' end
     end
 
     class << self
@@ -2224,7 +2225,7 @@ module GHI
           )
         }
         @token = res.body['token']
-        
+
         run = []
         unless username
           run << "git config#{' --global' unless local} github.user #{user}"
@@ -2797,7 +2798,9 @@ EOF
         e = Editor.new filename
         message = e.gets format_comment_editor(i, comment)
         e.unlink 'No comment.' if message.nil? || message.empty?
-        e.unlink 'No change.' if comment && message.strip == comment['body'].strip
+        if comment && message.strip == comment['body'].strip
+          e.unlink 'No change.'
+        end
         assigns[:body] = message if message
         e
       end
@@ -2957,7 +2960,7 @@ EOF
             puts 'Updated.'
             e.unlink if e
           rescue Client::Error => e
-            error = e.errors.first
+            raise unless error = e.errors.first
             abort "%s %s %s %s." % [
               error['resource'],
               error['field'],
@@ -2988,7 +2991,8 @@ EOF
               issue, assigns[:head], base
             ]
           rescue Client::Error => e
-            abort e.errors.last['message'].sub /^base /, ''
+            raise unless error = e.errors.last
+            abort error['message'].sub /^base /, ''
           end
         end
       end
@@ -3659,7 +3663,7 @@ EOF
           end
         end
       rescue Client::Error => e
-        error = e.errors.first
+        raise unless error = e.errors.first
         abort "%s %s %s %s." % [
           error['resource'],
           error['field'],
@@ -3711,7 +3715,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120501
+      PRE     = 20120504
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
