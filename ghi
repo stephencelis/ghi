@@ -2983,7 +2983,9 @@ EOF
             if assigns[:head]
               assigns[:head].sub!(/:$/, ":#{head}")
             else
-              abort "fatal: HEAD can't be null"
+              abort <<EOF.chomp
+fatal: HEAD can't be null. (Is your current branch being tracked upstream?)
+EOF
             end
             throb { api.post "/repos/#{repo}/pulls", assigns }
             base = [repo.split('/').first, assigns[:base]].join ':'
