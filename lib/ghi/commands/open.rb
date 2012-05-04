@@ -86,7 +86,7 @@ EOF
           end
         end
       rescue Client::Error => e
-        error = e.errors.first
+        raise unless error = e.errors.first
         abort "%s %s %s %s." % [
           error['resource'],
           error['field'],

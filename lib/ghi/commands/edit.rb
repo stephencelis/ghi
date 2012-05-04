@@ -96,7 +96,7 @@ EOF
             puts 'Updated.'
             e.unlink if e
           rescue Client::Error => e
-            error = e.errors.first
+            raise unless error = e.errors.first
             abort "%s %s %s %s." % [
               error['resource'],
               error['field'],
@@ -127,7 +127,8 @@ EOF
               issue, assigns[:head], base
             ]
           rescue Client::Error => e
-            abort e.errors.last['message'].sub /^base /, ''
+            raise unless error = e.errors.last
+            abort error['message'].sub /^base /, ''
           end
         end
       end

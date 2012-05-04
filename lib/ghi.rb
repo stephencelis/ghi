@@ -92,7 +92,7 @@ EOF
       retry if Authorization.authorize!
       warn e.message
       if Authorization.token
-        warn <<EOF
+        warn <<EOF.chomp
 
 Not authorized for this action with your token. To regenerate a new token:
 EOF

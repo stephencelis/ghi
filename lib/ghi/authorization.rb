@@ -5,6 +5,7 @@ module GHI
     extend Formatting
 
     class Required < RuntimeError
+      def message() 'Authorization required.' end
     end
 
     class << self
@@ -25,7 +26,7 @@ module GHI
           )
         }
         @token = res.body['token']
-        
+
         run = []
         unless username
           run << "git config#{' --global' unless local} github.user #{user}"

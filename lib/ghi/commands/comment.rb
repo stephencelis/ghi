@@ -119,7 +119,9 @@ EOF
         e = Editor.new filename
         message = e.gets format_comment_editor(i, comment)
         e.unlink 'No comment.' if message.nil? || message.empty?
-        e.unlink 'No change.' if comment && message.strip == comment['body'].strip
+        if comment && message.strip == comment['body'].strip
+          e.unlink 'No change.'
+        end
         assigns[:body] = message if message
         e
       end
