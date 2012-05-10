@@ -44,6 +44,7 @@ EOF
         opts.on '-v' do
           command_name ? self.v = true : command_name = 'version'
         end
+        opts.on('-V') { command_name = 'version' }
       end
 
       begin
@@ -1792,7 +1793,8 @@ module GHI
       if paginate?
         pager   = GHI.config('ghi.pager') || GHI.config('core.pager')
         pager ||= ENV['PAGER']
-        pager ||= 'less -EKRX -b1'
+        pager ||= 'less'
+        pager  += ' -EKRX -b1' if pager == 'less'
 
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'
@@ -3717,7 +3719,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120504
+      PRE     = 20120510
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
