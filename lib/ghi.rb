@@ -49,6 +49,7 @@ EOF
         opts.on '-v' do
           command_name ? self.v = true : command_name = 'version'
         end
+        opts.on('-V') { command_name = 'version' }
       end
 
       begin
