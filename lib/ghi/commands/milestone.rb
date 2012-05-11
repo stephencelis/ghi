@@ -129,7 +129,9 @@ EOF
             page do
               puts format_milestone(m)
               puts 'Issues:'
-              List.execute %W(-q -M #{milestone} -- #{repo})
+              args.unshift(*%W(-q -M #{milestone} -- #{repo}))
+              args.unshift '-v' if verbose
+              List.execute args
               break
             end
           end

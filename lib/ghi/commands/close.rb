@@ -27,7 +27,7 @@ EOF
         require_repo
 
         if list?
-          args.unshift %W(-sc -- #{repo})
+          args.unshift(*%W(-sc -- #{repo}))
           args.unshift '-w' if web
           List.execute args
         else
