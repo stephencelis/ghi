@@ -1794,7 +1794,7 @@ module GHI
         pager   = GHI.config('ghi.pager') || GHI.config('core.pager')
         pager ||= ENV['PAGER']
         pager ||= 'less'
-        pager  += ' -EKRX -b1' if pager == 'less'
+        pager  += ' -EKRX -b1' if pager =~ /^less( -[EKRX]+)?$/
 
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'
@@ -2657,7 +2657,7 @@ EOF
         require_repo
 
         if list?
-          args.unshift %W(-sc -- #{repo})
+          args.unshift(*%W(-sc -- #{repo}))
           args.unshift '-w' if web
           List.execute args
         else
@@ -2952,14 +2952,12 @@ EOF
                   [:title, :body].include? k
                 }
               end
-              throb { api.post "/repos/#{repo}/pulls", assigns }.body
-              puts "Issue ##{issue} tracked to pull from #{assigns[:head]}."
+              i = throb {
+                api.patch "/repos/#{repo}/issues/#{issue}", assigns
+              }.body
+              puts format_issue(i)
+              puts 'Updated.'
             end
-            i = throb {
-              api.patch "/repos/#{repo}/issues/#{issue}", assigns
-            }.body
-            puts format_issue(i)
-            puts 'Updated.'
             e.unlink if e
           rescue Client::Error => e
             raise unless error = e.errors.first
@@ -3506,7 +3504,9 @@ EOF
             page do
               puts format_milestone(m)
               puts 'Issues:'
-              List.execute %W(-q -M #{milestone} -- #{repo})
+              args.unshift(*%W(-q -M #{milestone} -- #{repo}))
+              args.unshift '-v' if verbose
+              List.execute args
               break
             end
           end
@@ -3719,7 +3719,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120510
+      PRE     = 20120627
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 

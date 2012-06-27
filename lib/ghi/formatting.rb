@@ -47,7 +47,7 @@ module GHI
         pager   = GHI.config('ghi.pager') || GHI.config('core.pager')
         pager ||= ENV['PAGER']
         pager ||= 'less'
-        pager  += ' -EKRX -b1' if pager == 'less'
+        pager  += ' -EKRX -b1' if pager =~ /^less( -[EKRX]+)?$/
 
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'

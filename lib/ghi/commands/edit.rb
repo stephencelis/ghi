@@ -86,14 +86,12 @@ EOF
                   [:title, :body].include? k
                 }
               end
-              throb { api.post "/repos/#{repo}/pulls", assigns }.body
-              puts "Issue ##{issue} tracked to pull from #{assigns[:head]}."
+              i = throb {
+                api.patch "/repos/#{repo}/issues/#{issue}", assigns
+              }.body
+              puts format_issue(i)
+              puts 'Updated.'
             end
-            i = throb {
-              api.patch "/repos/#{repo}/issues/#{issue}", assigns
-            }.body
-            puts format_issue(i)
-            puts 'Updated.'
             e.unlink if e
           rescue Client::Error => e
             raise unless error = e.errors.first
