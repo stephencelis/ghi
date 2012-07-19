@@ -75,7 +75,7 @@ EOF
               e.unlink "There's no issue." if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
-            if assigns[:title] && i
+            if i && assigns.keys.sort == [:body, :title]
               titles_match = assigns[:title].strip == i['title'].strip
               if assigns[:body]
                 bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
@@ -86,6 +86,8 @@ EOF
                   [:title, :body].include? k
                 }
               end
+            end
+            unless assigns.empty?
               i = throb {
                 api.patch "/repos/#{repo}/issues/#{issue}", assigns
               }.body
@@ -128,7 +130,7 @@ EOF
             ]
           rescue Client::Error => e
             raise unless error = e.errors.last
-            abort error['message'].sub /^base /, ''
+            abort error['message'].sub(/^base /, '')
           end
         end
       end
