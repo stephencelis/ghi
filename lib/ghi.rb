@@ -120,18 +120,21 @@ EOF
       [key] if /^\d+$/ === key
     }.update(
       'claim'    => %w(assign),
+      'create'   => %w(open),
       'e'        => %w(edit),
       'l'        => %w(list),
       'L'        => %w(label),
       'm'        => %w(comment),
       'M'        => %w(milestone),
+      'new'      => %w(open),
       'o'        => %w(open),
       'reopen'   => %w(open),
       'rm'       => %w(close),
       's'        => %w(show),
       'st'       => %w(list),
       'tag'      => %w(label),
-      'unassign' => %w(assign -d)
+      'unassign' => %w(assign -d),
+      'update'   => %w(edit)
     )
 
     def fetch_alias command, args
