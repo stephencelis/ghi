@@ -68,7 +68,7 @@ module GHI
           opts.on(
             '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
           ) do |assignee|
-            assignee = assignee.sub /^@/, ''
+            assignee = assignee.sub /^@/, '' if assignee
             assigns[:assignee] = any_or_none_or assignee
           end
           opts.on '--mine', 'assigned to you' do
