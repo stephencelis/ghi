@@ -54,6 +54,8 @@ module GHI
       :patch  => Net::HTTP::Patch,
       :delete => Net::HTTP::Delete
     }
+    HOST = 'api.github.com'
+    PORT = 443
 
     attr_reader :username, :password
     def initialize username = nil, password = nil
@@ -103,10 +105,12 @@ module GHI
       req.basic_auth username, password if username && password
 
       proxy = ENV['https_proxy'] || ENV['http_proxy']
+      proxy ||= `git config http.proxy`.chomp
       if proxy
-        http = Net::HTTP::Proxy(URI.parse(proxy).host, URI.parse(proxy).port).new 'api.github.com', 443
+        proxy = URI.parse proxy
+        http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT
       else
-        http = Net::HTTP.new 'api.github.com', 443
+        http = Net::HTTP.new HOST, PORT
       end
 
       http.use_ssl = true
