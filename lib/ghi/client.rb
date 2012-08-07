@@ -102,7 +102,13 @@ module GHI
       end
       req.basic_auth username, password if username && password
 
-      http = Net::HTTP.new 'api.github.com', 443
+      proxy = ENV['https_proxy'] || ENV['http_proxy']
+      if proxy
+        http = Net::HTTP::Proxy(URI.parse(proxy).host, URI.parse(proxy).port).new 'api.github.com', 443
+      else
+        http = Net::HTTP.new 'api.github.com', 443
+      end
+
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE # FIXME 1.8.7
 
