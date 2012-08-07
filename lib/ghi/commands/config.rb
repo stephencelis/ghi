@@ -22,7 +22,7 @@ EOF
         global = true
         options.parse! args.empty? ? %w(-h) : args
 
-        if self.action == 'auth'
+        if action == 'auth'
           assigns[:password] = Authorization.password || get_password
           Authorization.authorize!(
             assigns[:username], assigns[:password], assigns[:local]
