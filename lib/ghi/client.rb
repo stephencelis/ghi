@@ -104,8 +104,8 @@ module GHI
       end
       req.basic_auth username, password if username && password
 
-      proxy = ENV['https_proxy'] || ENV['http_proxy']
-      proxy ||= `git config http.proxy`.chomp
+      proxy   = GHI.config 'https.proxy', false
+      proxy ||= GHI.config 'http.proxy',  false
       if proxy
         proxy = URI.parse proxy
         http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT

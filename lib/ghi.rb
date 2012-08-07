@@ -105,9 +105,9 @@ EOF
       exit 1
     end
 
-    def config key
-      var = key.gsub('core', 'git').gsub('.', '_').upcase
-      value = ENV[var] || `git config #{key}`.chomp
+    def config key, upcase = true
+      var = key.gsub('core', 'git').gsub '.', '_'
+      value = ENV[upcase ? var.upcase : var] || `git config #{key}`.chomp
       value unless value.empty?
     end
 
