@@ -6,6 +6,7 @@ module GHI
       attr_accessor :web
       attr_accessor :reverse
       attr_accessor :quiet
+      attr_accessor :include_pull_requests
 
       def options
         OptionParser.new do |opts|
@@ -26,6 +27,11 @@ module GHI
             (assigns[:labels] ||= []).concat labels
           end
           opts.on(
+            '-N', '--not-label <labelname>...', Array, 'exclude issues with label(s)'
+          ) do |labels|
+            (assigns[:exclude_labels] ||= []).concat labels
+          end
+          opts.on(
             '-S', '--sort <by>', %w(created updated comments),
             {'c'=>'created','u'=>'updated','m'=>'comments'},
             "'created', 'updated', or 'comments'"
@@ -35,6 +41,7 @@ module GHI
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
           end
+          opts.on('-p', '--pull','include pull requests') { self.include_pull_requests = true }
           opts.on(
             '--since <date>', 'issues more recent than',
             "e.g., '2011-04-30'"
@@ -113,6 +120,16 @@ module GHI
           print "\r#{CURSOR[:up][1]}" if header && paginate?
           page header do
             issues = res.body
+            if assigns[:exclude_labels]
+              issues = issues.reject  do |i|
+                i["labels"].any? do |label|
+                  assigns[:exclude_labels].include? label["name"]    
+                end
+              end
+            end
+            unless include_pull_requests
+              issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+            end
             if verbose
               puts issues.map { |i| format_issue i }
             else
@@ -147,3 +164,5 @@ module GHI
     end
   end
 end
+
+
