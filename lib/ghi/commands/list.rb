@@ -36,7 +36,7 @@ module GHI
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
           end
-          opts.on('-p', '--no-pull','exclude pull requests') { self.exclude_pull_requests = true }
+          opts.on('-p', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
           opts.on(
             '--since <date>', 'issues more recent than',
             "e.g., '2011-04-30'"
