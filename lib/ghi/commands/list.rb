@@ -6,6 +6,7 @@ module GHI
       attr_accessor :web
       attr_accessor :reverse
       attr_accessor :quiet
+      attr_accessor :exclude_pull_requests
 
       def options
         OptionParser.new do |opts|
@@ -35,6 +36,7 @@ module GHI
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
           end
+          opts.on('-p', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
           opts.on(
             '--since <date>', 'issues more recent than',
             "e.g., '2011-04-30'"
@@ -113,6 +115,9 @@ module GHI
           print "\r#{CURSOR[:up][1]}" if header && paginate?
           page header do
             issues = res.body
+            if exclude_pull_requests
+              issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+            end
             if verbose
               puts issues.map { |i| format_issue i }
             else
