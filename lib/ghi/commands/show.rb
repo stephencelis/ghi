@@ -21,7 +21,7 @@ module GHI
           Web.new(repo).open patch_path || "issues/#{issue}"
         else
           if patch_path
-            i = throb { Web.new(repo).curl(patch_path) }
+            i = throb { Web.new(repo).curl patch_path }
             page do
               puts i
               break
