@@ -100,9 +100,9 @@ EOF
       exit 1
     end
 
-    def config key
-      var = key.gsub('core', 'git').gsub('.', '_').upcase
-      value = ENV[var] || `git config #{key}`.chomp
+    def config key, upcase = true
+      var = key.gsub('core', 'git').gsub '.', '_'
+      value = ENV[upcase ? var.upcase : var] || `git config #{key}`.chomp
       value unless value.empty?
     end
 
@@ -1781,11 +1781,11 @@ module GHI
 
     def puts *strings
       strings = strings.flatten.map { |s|
-        s.gsub(/@([^@\s]+)/) {
-          if $1 == Authorization.username
-            bright { fg(:yellow) { "@#$1" } }
+        s.gsub(/(^| )*@([^@\s]+)/) {
+          if $2 == Authorization.username
+            bright { fg(:yellow) { "#$1@#$2" } }
           else
-            bright { "@#$1" }
+            bright { "#$1@#$2" }
           end
         }
       }
@@ -2323,6 +2323,8 @@ module GHI
       :patch  => Net::HTTP::Patch,
       :delete => Net::HTTP::Delete
     }
+    HOST = 'api.github.com'
+    PORT = 443
 
     attr_reader :username, :password
     def initialize username = nil, password = nil
@@ -2371,7 +2373,15 @@ module GHI
       end
       req.basic_auth username, password if username && password
 
-      http = Net::HTTP.new 'api.github.com', 443
+      proxy   = GHI.config 'https.proxy', false
+      proxy ||= GHI.config 'http.proxy',  false
+      if proxy
+        proxy = URI.parse proxy
+        http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT
+      else
+        http = Net::HTTP.new HOST, PORT
+      end
+
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE # FIXME 1.8.7
 
@@ -2440,6 +2450,7 @@ module GHI
     end
   end
 end
+require 'open-uri'
 require 'uri'
 
 module GHI
@@ -2452,17 +2463,21 @@ module GHI
     end
 
     def open path = '', params = {}
-      unless params.empty?
-        q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
-        path += "?#{q.join '&'}"
-      end
-      system "open '#{uri + path}'"
+      system "open '#{uri_for path, params}'"
+    end
+
+    def curl path = '', params = {}
+      uri_for(path, params).open.read
     end
 
     private
 
-    def uri
-      URI(BASE_URI) + "#{base}/"
+    def uri_for path, params
+      unless params.empty?
+        q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
+        path += "?#{q.join '&'}"
+      end
+      URI(BASE_URI) + "#{base}/" + path
     end
   end
 end
@@ -2616,6 +2631,7 @@ EOF
           assigns[:assignee] = args.pop || Authorization.username
         end
         if assigns.key? :assignee
+          assigns[:assignee].sub! /^@/, ''
           assigns[:args].concat(
             assigns[:assignee] ? %W(-u #{assigns[:assignee]}) : %w(--no-assign)
           )
@@ -2836,7 +2852,7 @@ EOF
         global = true
         options.parse! args.empty? ? %w(-h) : args
 
-        if self.action == 'auth'
+        if action == 'auth'
           assigns[:password] = Authorization.password || get_password
           Authorization.authorize!(
             assigns[:username], assigns[:password], assigns[:local]
@@ -3237,6 +3253,7 @@ module GHI
       attr_accessor :web
       attr_accessor :reverse
       attr_accessor :quiet
+      attr_accessor :exclude_pull_requests
 
       def options
         OptionParser.new do |opts|
@@ -3266,6 +3283,7 @@ module GHI
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
           end
+          opts.on('-p', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
           opts.on(
             '--since <date>', 'issues more recent than',
             "e.g., '2011-04-30'"
@@ -3299,7 +3317,7 @@ module GHI
           opts.on(
             '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
           ) do |assignee|
-            assignee = assignee.sub /^@/, ''
+            assignee = assignee.sub /^@/, '' if assignee
             assigns[:assignee] = any_or_none_or assignee
           end
           opts.on '--mine', 'assigned to you' do
@@ -3344,6 +3362,9 @@ module GHI
           print "\r#{CURSOR[:up][1]}" if header && paginate?
           page header do
             issues = res.body
+            if exclude_pull_requests
+              issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+            end
             if verbose
               puts issues.map { |i| format_issue i }
             else
@@ -3686,12 +3707,13 @@ end
 module GHI
   module Commands
     class Show < Command
-      attr_accessor :web
+      attr_accessor :patch, :web
 
       def options
         OptionParser.new do |opts|
           opts.banner = 'usage: ghi show <issueno>'
           opts.separator ''
+          opts.on('-p', '--patch') { self.patch = true }
           opts.on('-w', '--web') { self.web = true }
         end
       end
@@ -3700,18 +3722,27 @@ module GHI
         require_issue
         require_repo
         options.parse! args
+        patch_path = "pull/#{issue}.patch" if patch # URI also in API...
         if web
-          Web.new(repo).open "issues/#{issue}"
+          Web.new(repo).open patch_path || "issues/#{issue}"
         else
-          i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-          page do
-            puts format_issue(i)
-            n = i['comments']
-            if n > 0
-              puts "#{n} comment#{'s' unless n == 1}:\n\n"
-              Comment.execute %W(-l #{issue} -- #{repo})
+          if patch_path
+            i = throb { Web.new(repo).curl patch_path }
+            page do
+              puts i
+              break
             end
-            break
+          else
+            i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+            page do
+              puts format_issue(i)
+              n = i['comments']
+              if n > 0
+                puts "#{n} comment#{'s' unless n == 1}:\n\n"
+                Comment.execute %W(-l #{issue} -- #{repo})
+              end
+              break
+            end
           end
         end
       end
@@ -3724,7 +3755,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120731
+      PRE     = 20121114
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 

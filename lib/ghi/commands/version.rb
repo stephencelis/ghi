@@ -4,7 +4,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20120731
+      PRE     = 20121114
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
