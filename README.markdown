@@ -7,9 +7,9 @@ GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
 Note: This is being rapidly prototyped for GitHub API v3.
 
 
-## The Basics
+## Install
 
-Get:
+
 
 ``` bash
 $ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
@@ -17,10 +17,7 @@ $ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
   mv ghi /usr/local/bin
 ```
 
-Go:
-
-![Example](/stephencelis/ghi/raw/master/images/example.png)
-
+## Usage
 ```
 usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
            [ -- [<user>/]<repo>]
@@ -38,6 +35,12 @@ The most commonly used ghi commands are:
 
 See 'ghi help <command>' for more information on a specific command.
 ```
+
+## Screenshot
+
+![Example](/stephencelis/ghi/raw/master/images/example.png)
+
+
 
 
 ## LICENSE
