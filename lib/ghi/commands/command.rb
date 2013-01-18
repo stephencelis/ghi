@@ -13,6 +13,12 @@ module GHI
           command = new args
           if i = args.index('--')
             command.repo = args.slice!(i, args.length)[1] # Raise if too many?
+          else
+            # Nothing provided: look in git configuration or use remote origin
+            repo = `git config --local ghi.upstream`.strip
+            if repo != ''
+              command.repo = repo
+            end
           end
           command.execute
         end
