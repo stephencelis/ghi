@@ -54,7 +54,11 @@ EOF
         abort option_parser.banner
       end
 
-      if command_name.nil? || command_name == 'help'
+      if command_name.nil?
+        command_name = "list"
+      end
+
+      if command_name == 'help'
         Commands::Help.execute command_args, option_parser.banner
       else
         command_name = fetch_alias command_name, command_args
