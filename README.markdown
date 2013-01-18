@@ -36,6 +36,22 @@ The most commonly used ghi commands are:
 See 'ghi help <command>' for more information on a specific command.
 ```
 
+## Configuration
+
+If you always manage issues that are not in the default repository, you can configure it so you won't have to provide it manually again:
+
+``` bash
+$ ghi list
+# my-user/repo open issues
+…
+
+$ git config --local ghi.repo upstream-user/repo
+
+$ ghi list
+# upstream-user/repo open issues
+…
+```
+
 ## Screenshot
 
 ![Example](/stephencelis/ghi/raw/master/images/example.png)
