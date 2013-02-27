@@ -38,7 +38,7 @@ See 'ghi help <command>' for more information on a specific command.
 
 ## Screenshot
 
-![Example](/stephencelis/ghi/raw/master/images/example.png)
+![Example](https://github.com/stephencelis/ghi/raw/master/images/example.png)
 
 
 
