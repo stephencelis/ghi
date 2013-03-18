@@ -50,12 +50,12 @@ EOF
         require_repo
         self.action = 'create'
 
+        options.parse! args
+
         if extract_issue
           Edit.execute args.push('-so', issue, '--', repo)
           exit
         end
-
-        options.parse! args
 
         case action
         when 'index'
