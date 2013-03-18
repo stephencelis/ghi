@@ -54,7 +54,11 @@ EOF
         abort option_parser.banner
       end
 
-      if command_name.nil? || command_name == 'help'
+      if command_name.nil?
+        command_name = "list"
+      end
+
+      if command_name == 'help'
         Commands::Help.execute command_args, option_parser.banner
       else
         command_name = fetch_alias command_name, command_args
@@ -3657,12 +3661,12 @@ EOF
         require_repo
         self.action = 'create'
 
+        options.parse! args
+
         if extract_issue
           Edit.execute args.push('-so', issue, '--', repo)
           exit
         end
-
-        options.parse! args
 
         case action
         when 'index'
@@ -3755,7 +3759,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20121114
+      PRE     = 20130318
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
