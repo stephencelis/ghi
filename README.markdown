@@ -9,7 +9,13 @@ Note: This is being rapidly prototyped for GitHub API v3.
 
 ## Install
 
+### Using RubyGems (recommended)
 
+``` bash
+$ gem install ghi
+```
+
+### Manually
 
 ``` bash
 $ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
