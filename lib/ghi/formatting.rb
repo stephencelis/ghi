@@ -170,8 +170,7 @@ module GHI
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
-          "#{bright { n.to_s.rjust nmax }}",
-          ":",
+          format_number(n.to_s.rjust(nmax)),
           truncate(title, l),
           format_labels(labels),
           (fg('aaaaaa') { c } unless c == 0),
@@ -179,6 +178,10 @@ module GHI
           (fg(:yellow) { '@' } if a)
         ].compact.join ' '
       }
+    end
+
+    def format_number n
+      colorize? ? "#{bright { n }}:" : "#{n} "
     end
 
     # TODO: Show milestone, number of comments, pull request attached.
