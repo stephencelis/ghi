@@ -4,20 +4,24 @@
 
 GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
 
-Note: This is being rapidly prototyped for GitHub API v3.
-
 
 ## Install
 
-
-
-``` bash
+Via curl:
+``` sh
 $ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
   chmod 755 ghi && \
   mv ghi /usr/local/bin
 ```
 
+Via gem:
+``` sh
+$ gem install ghi
+```
+
+
 ## Usage
+
 ```
 usage: ghi [--version] [-p|--paginate|--no-pager] [--help] <command> [<args>]
            [ -- [<user>/]<repo>]
@@ -36,34 +40,34 @@ The most commonly used ghi commands are:
 See 'ghi help <command>' for more information on a specific command.
 ```
 
+
 ## Configuration
 
-If you always manage issues that are not in the default repository, you can configure it so you won't have to provide it manually again:
+By default, ghi looks for GitHub issues by resolving the current working
+directory's repository: first it looks for an `upstream` remote, then it
+looks at `origin`.
 
-``` bash
+You can override the repository ghi uses by setting the local `ghi.repo`
+git configuration variable:
+
+``` sh
+$ git config ghi.repo username/reponame
 $ ghi list
-# my-user/repo open issues
-…
-
-$ git config --local ghi.repo upstream-user/repo
-
-$ ghi list
-# upstream-user/repo open issues
-…
+# username/reponame open issues
+...
 ```
+
 
 ## Screenshot
 
 ![Example](images/example.png)
 
 
-
-
 ## LICENSE
 
 (The MIT License)
 
-© 2009–2012 Stephen Celis (<stephen@stephencelis.com>).
+© 2009–2013 Stephen Celis (<stephen@stephencelis.com>).
 json-pure © Genki Takiuchi.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
