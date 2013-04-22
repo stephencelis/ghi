@@ -75,7 +75,7 @@ EOF
               e.unlink "There's no issue." if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
-            if i && assigns.keys.sort == [:body, :title]
+            if i && assigns.keys.map { |k| k.to_s }.sort == %w[body title]
               titles_match = assigns[:title].strip == i['title'].strip
               if assigns[:body]
                 bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
