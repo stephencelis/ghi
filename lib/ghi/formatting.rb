@@ -170,7 +170,8 @@ module GHI
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
-          "#{bright { n.to_s.rjust nmax }}:",
+          "#{bright { n.to_s.rjust nmax }}",
+          ":",
           truncate(title, l),
           format_labels(labels),
           (fg('aaaaaa') { c } unless c == 0),
