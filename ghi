@@ -2966,17 +2966,17 @@ EOF
               e = Editor.new "GHI_ISSUE_#{issue}"
               message = e.gets format_editor(i)
               e.unlink "There's no issue." if message.nil? || message.empty?
-              assigns[:title], assigns[:body] = message.split(/\n+/, 2)
+              assigns['title'], assigns['body'] = message.split(/\n+/, 2)
             end
-            if i && assigns.keys.sort == [:body, :title]
-              titles_match = assigns[:title].strip == i['title'].strip
-              if assigns[:body]
-                bodies_match = assigns[:body].to_s.strip == i['body'].to_s.strip
+            if i && assigns.keys.sort == ['body', 'title']
+              titles_match = assigns['title'].strip == i['title'].strip
+              if assigns['body']
+                bodies_match = assigns['body'].to_s.strip == i['body'].to_s.strip
               end
               if titles_match && bodies_match
                 e.unlink if e
                 abort 'No change.' if assigns.dup.delete_if { |k, v|
-                  [:title, :body].include? k
+                  ['title', 'body'].include? k
                 }
               end
             end
