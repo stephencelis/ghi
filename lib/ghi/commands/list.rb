@@ -27,7 +27,7 @@ module GHI
             (assigns[:labels] ||= []).concat labels
           end
           opts.on(
-            '-N', '--not-label <labelname>...', Array, 'exclude issues with label(s)'
+            '-N', '--not-label <labelname>...', Array, 'exclude with label(s)'
           ) do |labels|
             (assigns[:exclude_labels] ||= []).concat labels
           end
@@ -102,6 +102,9 @@ module GHI
           retry
         end
         assigns[:labels] = assigns[:labels].join ',' if assigns[:labels]
+        if assigns[:exclude_labels]
+          assigns[:exclude_labels] = assigns[:exclude_labels].join ','
+        end
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
