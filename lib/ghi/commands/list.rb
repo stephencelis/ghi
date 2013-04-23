@@ -27,6 +27,11 @@ module GHI
             (assigns[:labels] ||= []).concat labels
           end
           opts.on(
+            '-N', '--not-label <labelname>...', Array, 'exclude issues with label(s)'
+          ) do |labels|
+            (assigns[:exclude_labels] ||= []).concat labels
+          end
+          opts.on(
             '-S', '--sort <by>', %w(created updated comments),
             {'c'=>'created','u'=>'updated','m'=>'comments'},
             "'created', 'updated', or 'comments'"
@@ -117,6 +122,13 @@ module GHI
             issues = res.body
             if exclude_pull_requests
               issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+            end
+            if assigns[:exclude_labels]
+              issues = issues.reject  do |i|
+                i["labels"].any? do |label|
+                  assigns[:exclude_labels].include? label["name"]
+                end
+              end
             end
             if verbose
               puts issues.map { |i| format_issue i }

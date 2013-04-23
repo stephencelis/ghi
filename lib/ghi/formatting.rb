@@ -141,6 +141,9 @@ module GHI
       if labels = assigns[:labels]
         header << ", labeled #{assigns[:labels].gsub ',', ', '}"
       end
+      if excluded_labels = assigns[:exclude_labels]
+        header << ", excluding issues labelled #{assigns[:exclude_labels].join ", "}"
+      end
       if sort = assigns[:sort]
         header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
       end
