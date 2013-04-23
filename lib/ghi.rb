@@ -60,7 +60,7 @@ EOF
       end
 
       if command_name.nil?
-        command_name = "list"
+        command_name = 'list'
       end
 
       if command_name == 'help'
