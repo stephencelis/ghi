@@ -55,7 +55,7 @@ EOF
       end
 
       if command_name.nil?
-        command_name = "list"
+        command_name = 'list'
       end
 
       if command_name == 'help'
@@ -1893,7 +1893,10 @@ module GHI
         end
       end
       if labels = assigns[:labels]
-        header << ", labeled #{assigns[:labels].gsub ',', ', '}"
+        header << ", labeled #{labels.gsub ',', ', '}"
+      end
+      if excluded_labels = assigns[:exclude_labels]
+        header << ", excluding those labeled #{excluded_labels.gsub ',', ', '}"
       end
       if sort = assigns[:sort]
         header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
@@ -2323,6 +2326,11 @@ module GHI
     end
 
     CONTENT_TYPE = 'application/vnd.github+json'
+    USER_AGENT = 'ghi/%s (%s; +%s)' % [
+      GHI::Commands::Version::VERSION,
+      RUBY_DESCRIPTION,
+      'https://github.com/stephencelis/ghi'
+    ]
     METHODS = {
       :head   => Net::HTTP::Head,
       :get    => Net::HTTP::Get,
@@ -2371,7 +2379,8 @@ module GHI
         path += "?#{q.join '&'}"
       end
 
-      req = METHODS[method].new path, 'Accept' => CONTENT_TYPE
+      headers = { 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT }
+      req = METHODS[method].new path, headers
       if GHI::Authorization.token
         req['Authorization'] = "token #{GHI::Authorization.token}"
       end
@@ -3282,6 +3291,11 @@ module GHI
             (assigns[:labels] ||= []).concat labels
           end
           opts.on(
+            '-N', '--not-label <labelname>...', Array, 'exclude with label(s)'
+          ) do |labels|
+            (assigns[:exclude_labels] ||= []).concat labels
+          end
+          opts.on(
             '-S', '--sort <by>', %w(created updated comments),
             {'c'=>'created','u'=>'updated','m'=>'comments'},
             "'created', 'updated', or 'comments'"
@@ -3352,6 +3366,9 @@ module GHI
           retry
         end
         assigns[:labels] = assigns[:labels].join ',' if assigns[:labels]
+        if assigns[:exclude_labels]
+          assigns[:exclude_labels] = assigns[:exclude_labels].join ','
+        end
         if reverse
           assigns[:sort] ||= 'created'
           assigns[:direction] = 'asc'
@@ -3372,6 +3389,13 @@ module GHI
             issues = res.body
             if exclude_pull_requests
               issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+            end
+            if assigns[:exclude_labels]
+              issues = issues.reject  do |i|
+                i["labels"].any? do |label|
+                  assigns[:exclude_labels].include? label["name"]
+                end
+              end
             end
             if verbose
               puts issues.map { |i| format_issue i }
@@ -3763,7 +3787,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20130422.1
+      PRE     = 20130424
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
