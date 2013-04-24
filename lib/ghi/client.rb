@@ -46,6 +46,11 @@ module GHI
     end
 
     CONTENT_TYPE = 'application/vnd.github+json'
+    USER_AGENT = 'ghi/%s (%s; +%s)' % [
+      GHI::Commands::Version::VERSION,
+      RUBY_DESCRIPTION,
+      'https://github.com/stephencelis/ghi'
+    ]
     METHODS = {
       :head   => Net::HTTP::Head,
       :get    => Net::HTTP::Get,
@@ -94,7 +99,8 @@ module GHI
         path += "?#{q.join '&'}"
       end
 
-      req = METHODS[method].new path, 'Accept' => CONTENT_TYPE
+      headers = { 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT }
+      req = METHODS[method].new path, headers
       if GHI::Authorization.token
         req['Authorization'] = "token #{GHI::Authorization.token}"
       end
