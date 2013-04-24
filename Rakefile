@@ -1,6 +1,7 @@
 desc 'Build the standalone script'
 task :build do
   manifest = %w(
+    lib/ghi/commands/version.rb
     lib/ghi.rb
     lib/ghi/json.rb
     lib/ghi/formatting/colors.rb
@@ -22,7 +23,6 @@ task :build do
     lib/ghi/commands/milestone.rb
     lib/ghi/commands/open.rb
     lib/ghi/commands/show.rb
-    lib/ghi/commands/version.rb
     bin/ghi
   )
   files = FileList[*manifest]
