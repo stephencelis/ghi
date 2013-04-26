@@ -220,11 +220,15 @@ module GHI
         return yield unless color && colorize?
         previous_escape = Thread.current[:escape] || "\e[0m"
         escape = Thread.current[:escape] = "\e[%s%sm" % [
-          layer, ANSI[color] || "8;5;#{to_256(*to_rgb(color))}"
+          layer, ANSI[color] || escape_256(color)
         ]
         [escape, yield, previous_escape].join
       ensure
         Thread.current[:escape] = previous_escape
+      end
+
+      def escape_256 color
+        "8;5;#{to_256(*to_rgb(color))}" if ENV['TERM'] =~ /256/
       end
 
       def to_256 r, g, b
