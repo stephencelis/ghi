@@ -27,7 +27,7 @@ module GHI
               abort
             end
             page do
-              puts i
+              no_color { puts i }
               break
             end
           else
