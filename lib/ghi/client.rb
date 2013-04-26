@@ -59,7 +59,8 @@ module GHI
       :patch  => Net::HTTP::Patch,
       :delete => Net::HTTP::Delete
     }
-    HOST = 'api.github.com'
+    DEFAULT_HOST = 'api.github.com'
+    HOST = GHI.config('github.host') || DEFAULT_HOST
     PORT = 443
 
     attr_reader :username, :password
@@ -94,6 +95,8 @@ module GHI
     private
 
     def request method, path, options
+      path = "/api/v3#{path}" if HOST != DEFAULT_HOST
+
       if params = options[:params] and !params.empty?
         q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
         path += "?#{q.join '&'}"
