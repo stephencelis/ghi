@@ -72,7 +72,8 @@ module GHI
       def remotes
         return @remotes if defined? @remotes
         @remotes = `git config --get-regexp remote\..+\.url`.split "\n"
-        @remotes.reject! { |r| !r.include? 'github.com'}
+        github_host = GHI.config('github.host') || 'github.com'
+        @remotes.reject! { |r| !r.include? github_host}
         @remotes.map! { |r|
           remote, user, repo = r.scan(
             %r{remote\.([^\.]+)\.url .*?([^:/]+)/([^/\s]+?)(?:\.git)?$}

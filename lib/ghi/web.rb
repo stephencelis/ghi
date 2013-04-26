@@ -3,7 +3,8 @@ require 'uri'
 
 module GHI
   class Web
-    BASE_URI = 'https://github.com/'
+    HOST = GHI.config('github.host') || 'github.com'
+    BASE_URI = "https://#{HOST}/"
 
     attr_reader :base
     def initialize base
