@@ -22,6 +22,10 @@ module GHI
         else
           if patch_path
             i = throb { Web.new(repo).curl patch_path }
+            unless i.start_with? 'From'
+              warn 'Patch not found'
+              abort
+            end
             page do
               puts i
               break
