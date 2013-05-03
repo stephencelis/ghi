@@ -12,7 +12,9 @@ module GHI
     end
 
     def open path = '', params = {}
-      system "open '#{uri_for path, params}'"
+      launcher = 'open'
+      launcher = 'xdg-open' if /linux/ =~ RUBY_PLATFORM
+      system "#{launcher} '#{uri_for path, params}'"
     end
 
     def curl path = '', params = {}
