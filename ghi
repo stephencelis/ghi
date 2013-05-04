@@ -6,7 +6,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20130425
+      PRE     = 20130504
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
@@ -1697,11 +1697,15 @@ module GHI
         return yield unless color && colorize?
         previous_escape = Thread.current[:escape] || "\e[0m"
         escape = Thread.current[:escape] = "\e[%s%sm" % [
-          layer, ANSI[color] || "8;5;#{to_256(*to_rgb(color))}"
+          layer, ANSI[color] || escape_256(color)
         ]
         [escape, yield, previous_escape].join
       ensure
         Thread.current[:escape] = previous_escape
+      end
+
+      def escape_256 color
+        "8;5;#{to_256(*to_rgb(color))}" if ENV['TERM'] =~ /256/
       end
 
       def to_256 r, g, b
@@ -1874,6 +1878,10 @@ module GHI
     # Specific formatters:
     #++
 
+    def format_username username
+      username == Authorization.username ? 'you' : username
+    end
+
     def format_issues_header
       state = assigns[:state] || 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
@@ -1891,13 +1899,11 @@ module GHI
             when '*'    then ', assigned'
             when 'none' then ', unassigned'
           else
-            assignee = 'you' if Authorization.username == assignee
-            ", assigned to #{assignee}"
+            ", assigned to #{format_username assignee}"
           end
         end
         if mentioned = assigns[:mentioned]
-          mentioned = 'you' if Authorization.username == mentioned
-          header << ", mentioning #{mentioned}"
+          header << ", mentioning #{format_username mentioned}"
         end
       else
         header << case assigns[:filter]
@@ -1907,6 +1913,9 @@ module GHI
         else
           ' assigned to you'
         end
+      end
+      if creator = assigns[:creator]
+        header << " #{format_username creator} created"
       end
       if labels = assigns[:labels]
         header << ", labeled #{labels.gsub ',', ', '}"
@@ -2355,7 +2364,8 @@ module GHI
       :patch  => Net::HTTP::Patch,
       :delete => Net::HTTP::Delete
     }
-    HOST = 'api.github.com'
+    DEFAULT_HOST = 'api.github.com'
+    HOST = GHI.config('github.host') || DEFAULT_HOST
     PORT = 443
 
     attr_reader :username, :password
@@ -2390,6 +2400,8 @@ module GHI
     private
 
     def request method, path, options
+      path = "/api/v3#{path}" if HOST != DEFAULT_HOST
+
       if params = options[:params] and !params.empty?
         q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
         path += "?#{q.join '&'}"
@@ -2488,7 +2500,8 @@ require 'uri'
 
 module GHI
   class Web
-    BASE_URI = 'https://github.com/'
+    HOST = GHI.config('github.host') || 'github.com'
+    BASE_URI = "https://#{HOST}/"
 
     attr_reader :base
     def initialize base
@@ -2592,7 +2605,8 @@ module GHI
       def remotes
         return @remotes if defined? @remotes
         @remotes = `git config --get-regexp remote\..+\.url`.split "\n"
-        @remotes.reject! { |r| !r.include? 'github.com'}
+        github_host = GHI.config('github.host') || 'github.com'
+        @remotes.reject! { |r| !r.include? github_host}
         @remotes.map! { |r|
           remote, user, repo = r.scan(
             %r{remote\.([^\.]+)\.url .*?([^:/]+)/([^/\s]+?)(?:\.git)?$}
@@ -3362,6 +3376,12 @@ module GHI
             assigns[:assignee] = Authorization.username
           end
           opts.on(
+            '--creator [<user>]', 'created by you or specified user'
+          ) do |creator|
+            creator = creator.sub /^@/, '' if creator
+            assigns[:creator] = creator || Authorization.username
+          end
+          opts.on(
             '-U', '--mentioned [<user>]', 'mentioning you or specified user'
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
@@ -3776,8 +3796,12 @@ module GHI
         else
           if patch_path
             i = throb { Web.new(repo).curl patch_path }
+            unless i.start_with? 'From'
+              warn 'Patch not found'
+              abort
+            end
             page do
-              puts i
+              no_color { puts i }
               break
             end
           else
