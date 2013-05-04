@@ -32,7 +32,7 @@ task :build do
     files.each { |file| f << File.read(file).gsub(/^\s+autoload.+$\n+/, '') }
     f.chmod 0755
   end
-  exec './ghi 1>/dev/null'
+  system './ghi 1>/dev/null'
 end
 
 desc 'Build the manuals'
