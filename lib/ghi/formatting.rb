@@ -104,6 +104,10 @@ module GHI
     # Specific formatters:
     #++
 
+    def format_username username
+      username == Authorization.username ? 'you' : username
+    end
+
     def format_issues_header
       state = assigns[:state] || 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
@@ -121,13 +125,11 @@ module GHI
             when '*'    then ', assigned'
             when 'none' then ', unassigned'
           else
-            assignee = 'you' if Authorization.username == assignee
-            ", assigned to #{assignee}"
+            ", assigned to #{format_username assignee}"
           end
         end
         if mentioned = assigns[:mentioned]
-          mentioned = 'you' if Authorization.username == mentioned
-          header << ", mentioning #{mentioned}"
+          header << ", mentioning #{format_username mentioned}"
         end
       else
         header << case assigns[:filter]
@@ -137,6 +139,9 @@ module GHI
         else
           ' assigned to you'
         end
+      end
+      if creator = assigns[:creator]
+        header << " #{format_username creator} created"
       end
       if labels = assigns[:labels]
         header << ", labeled #{labels.gsub ',', ', '}"

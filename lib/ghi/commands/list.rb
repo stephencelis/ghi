@@ -82,6 +82,12 @@ module GHI
             assigns[:assignee] = Authorization.username
           end
           opts.on(
+            '--creator [<user>]', 'created by you or specified user'
+          ) do |creator|
+            creator = creator.sub /^@/, '' if creator
+            assigns[:creator] = creator || Authorization.username
+          end
+          opts.on(
             '-U', '--mentioned [<user>]', 'mentioning you or specified user'
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
