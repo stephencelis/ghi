@@ -103,6 +103,7 @@ module GHI
 
         begin
           options.parse! args
+          @repo ||= ARGV[0]
         rescue OptionParser::InvalidOption => e
           fallback.parse! e.args
           retry
