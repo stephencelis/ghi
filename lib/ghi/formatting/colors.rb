@@ -228,7 +228,7 @@ module GHI
       end
 
       def escape_256 color
-        "8;5;#{to_256(*to_rgb(color))}" if ENV['TERM'] =~ /256/
+        "8;5;#{to_256(*to_rgb(color))}" if `tput colors` =~ /256/
       end
 
       def to_256 r, g, b
