@@ -37,7 +37,7 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = GHI.config('ghi.repo') || detect_repo
+        @repo = detect_repo || GHI.config('ghi.repo')
         if @repo && !@repo.include?('/')
           @repo = [Authorization.username, @repo].join '/'
         end
