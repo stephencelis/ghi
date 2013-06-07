@@ -155,7 +155,6 @@ module GHI
       format_state assigns[:state], header
     end
 
-    # TODO: Show milestones.
     def format_issues issues, include_repo
       return 'None.' if issues.empty?
 
@@ -175,15 +174,18 @@ module GHI
         p = i['pull_request']['html_url'] and l += 2
         c = i['comments']
         l += c.to_s.length + 1 unless c == 0
+        m = i['milestone']
         [
           " ",
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           format_number(n.to_s.rjust(nmax)),
           truncate(title, l),
           format_labels(labels),
+          (fg(:green) { m['title'] } if m),
           (fg('aaaaaa') { c } unless c == 0),
           (fg('aaaaaa') { '↑' } if p),
-          (fg(:yellow) { '@' } if a)
+          (fg(:yellow) { '@' } if a),
+          (fg('aaaaaa') { '‡' } if m)
         ].compact.join ' '
       }
     end
