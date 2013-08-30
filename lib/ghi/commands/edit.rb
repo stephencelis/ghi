@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Edit < Command
+      include EditorTool
+
       attr_accessor :editor
 
       def options
@@ -73,6 +75,7 @@ EOF
               e = Editor.new "GHI_ISSUE_#{issue}"
               message = e.gets format_editor(i)
               e.unlink "There's no issue." if message.nil? || message.empty?
+              assigns[:labels] ||= extract_labels_from_message(message)
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             if i && assigns.keys.map { |k| k.to_s }.sort == %w[body title]

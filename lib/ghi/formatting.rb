@@ -329,11 +329,21 @@ On <%= repo %>
 
 <%= no_color { format_issue issue, columns - 2 if issue } %>
 EOF
+
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
-      message.insert 0, [
-        issue['title'] || issue[:title], issue['body'] || issue[:body]
-      ].compact.join("\n\n") if issue
+
+      if issue["title"] # no title = new issue
+        labels = ""
+        issue["labels"].each { |l| labels << " ##{l["name"]}" } if issue["labels"]
+        message_title = (issue['title'] || issue[:title]) + labels
+        message_body = issue['body'] || issue[:body] 
+
+        message.insert 0, [
+          message_title, message_body
+        ].compact.join("\n\n") if issue
+      end
+      
       message
     end
 

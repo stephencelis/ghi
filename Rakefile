@@ -11,6 +11,7 @@ task :build do
     lib/ghi/editor.rb
     lib/ghi/web.rb
     lib/ghi/commands.rb
+    lib/ghi/commands/editor_tool.rb
     lib/ghi/commands/command.rb
     lib/ghi/commands/assign.rb
     lib/ghi/commands/close.rb

@@ -2103,11 +2103,21 @@ On <%= repo %>
 
 <%= no_color { format_issue issue, columns - 2 if issue } %>
 EOF
+
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
-      message.insert 0, [
-        issue['title'] || issue[:title], issue['body'] || issue[:body]
-      ].compact.join("\n\n") if issue
+
+      if issue["title"] # no title = new issue
+        labels = ""
+        issue["labels"].each { |l| labels << " ##{l["name"]}" } if issue["labels"]
+        message_title = (issue['title'] || issue[:title]) + labels
+        message_body = issue['body'] || issue[:body] 
+
+        message.insert 0, [
+          message_title, message_body
+        ].compact.join("\n\n") if issue
+      end
+      
       message
     end
 
@@ -2535,6 +2545,20 @@ module GHI
 end
 module GHI
   module Commands
+    module EditorTool
+      def extract_labels_from_message(message)
+        words = message.split
+        hashtags = words.select { |word| word.start_with?("#") }
+        new_message = (words - hashtags).join(" ")
+        message.replace(new_message)
+
+        return labels = hashtags.map! { |label| label[1..-1] }
+      end
+    end
+  end
+end
+module GHI
+  module Commands
     class MissingArgument < RuntimeError
     end
 
@@ -2572,7 +2596,7 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = GHI.config('ghi.repo') || detect_repo
+        @repo = detect_repo || GHI.config('ghi.repo')
         if @repo && !@repo.include?('/')
           @repo = [Authorization.username, @repo].join '/'
         end
@@ -2935,6 +2959,8 @@ end
 module GHI
   module Commands
     class Edit < Command
+      include EditorTool
+
       attr_accessor :editor
 
       def options
@@ -3007,6 +3033,7 @@ EOF
               e = Editor.new "GHI_ISSUE_#{issue}"
               message = e.gets format_editor(i)
               e.unlink "There's no issue." if message.nil? || message.empty?
+              assigns[:labels] ||= extract_labels_from_message(message)
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             if i && assigns.keys.map { |k| k.to_s }.sort == %w[body title]
@@ -3679,6 +3706,8 @@ end
 module GHI
   module Commands
     class Open < Command
+      include EditorTool
+
       attr_accessor :editor
       attr_accessor :web
 
@@ -3723,7 +3752,7 @@ EOF
           opts.separator ''
         end
       end
-
+      
       def execute
         require_repo
         self.action = 'create'
@@ -3755,6 +3784,7 @@ EOF
               e = Editor.new 'GHI_ISSUE'
               message = e.gets format_editor(assigns)
               e.unlink "There's no issue?" if message.nil? || message.empty?
+              assigns[:labels] ||= extract_labels_from_message(message)
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
@@ -3773,6 +3803,8 @@ EOF
         ]
       end
     end
+
+    
   end
 end
 module GHI

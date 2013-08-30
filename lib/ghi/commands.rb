@@ -2,6 +2,7 @@ module GHI
   module Commands
     autoload :Command,   'ghi/commands/command'
 
+    autoload :EditorTool,'ghi/commands/editor_tool'
     autoload :List,      'ghi/commands/list'
     autoload :Open,      'ghi/commands/open'
     autoload :Assign,    'ghi/commands/assign'
