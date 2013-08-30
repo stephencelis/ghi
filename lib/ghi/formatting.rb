@@ -136,6 +136,7 @@ module GHI
           when 'created'    then ' you created'
           when 'mentioned'  then ' that mention you'
           when 'subscribed' then " you're subscribed to"
+          when 'all'        then ' that you can see'
         else
           ' assigned to you'
         end
