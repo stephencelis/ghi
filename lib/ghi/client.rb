@@ -102,7 +102,8 @@ module GHI
         path += "?#{q.join '&'}"
       end
 
-      headers = { 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT }
+      headers = options.fetch :headers, {}
+      headers.update 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT
       req = METHODS[method].new path, headers
       if GHI::Authorization.token
         req['Authorization'] = "token #{GHI::Authorization.token}"

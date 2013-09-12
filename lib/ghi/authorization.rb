@@ -16,13 +16,18 @@ module GHI
 
       def authorize! user = username, pass = password, local = true
         return false unless user && pass
-
-        res = throb(54, "✔\r") {
-          Client.new(user, pass).post(
-            '/authorizations',
+        code ||= nil # 2fa
+        args = code ? [] : [54, "✔\r"]
+        res = throb(*args) {
+          headers = {}
+          headers['X-GitHub-OTP'] = code if code
+          body = {
             :scopes   => %w(public_repo repo),
             :note     => 'ghi',
             :note_url => 'https://github.com/stephencelis/ghi'
+          }
+          Client.new(user, pass).post(
+            '/authorizations', body, :headers => headers
           )
         }
         @token = res.body['token']
@@ -50,6 +55,15 @@ EOF
           end
         end
       rescue Client::Error => e
+        if e.response['X-GitHub-OTP'] =~ /required/
+          puts "Bad code." if code
+          print "Two-factor authentication code: "
+          trap('INT') { abort }
+          code = gets
+          code = '' and puts "\n" unless code
+          retry
+        end
+
         abort "#{e.message}#{CURSOR[:column][0]}"
       end
 
