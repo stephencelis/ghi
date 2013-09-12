@@ -6,7 +6,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20130504
+      PRE     = 20130912
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
@@ -2256,13 +2256,18 @@ module GHI
 
       def authorize! user = username, pass = password, local = true
         return false unless user && pass
-
-        res = throb(54, "✔\r") {
-          Client.new(user, pass).post(
-            '/authorizations',
+        code ||= nil # 2fa
+        args = code ? [] : [54, "✔\r"]
+        res = throb(*args) {
+          headers = {}
+          headers['X-GitHub-OTP'] = code if code
+          body = {
             :scopes   => %w(public_repo repo),
             :note     => 'ghi',
             :note_url => 'https://github.com/stephencelis/ghi'
+          }
+          Client.new(user, pass).post(
+            '/authorizations', body, :headers => headers
           )
         }
         @token = res.body['token']
@@ -2290,6 +2295,15 @@ EOF
           end
         end
       rescue Client::Error => e
+        if e.response['X-GitHub-OTP'] =~ /required/
+          puts "Bad code." if code
+          print "Two-factor authentication code: "
+          trap('INT') { abort }
+          code = gets
+          code = '' and puts "\n" unless code
+          retry
+        end
+
         abort "#{e.message}#{CURSOR[:column][0]}"
       end
 
@@ -2407,7 +2421,8 @@ module GHI
         path += "?#{q.join '&'}"
       end
 
-      headers = { 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT }
+      headers = options.fetch :headers, {}
+      headers.update 'Accept' => CONTENT_TYPE, 'User-Agent' => USER_AGENT
       req = METHODS[method].new path, headers
       if GHI::Authorization.token
         req['Authorization'] = "token #{GHI::Authorization.token}"
@@ -2572,7 +2587,7 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = GHI.config('ghi.repo') || detect_repo
+        @repo = detect_repo || GHI.config('ghi.repo')
         if @repo && !@repo.include?('/')
           @repo = [Authorization.username, @repo].join '/'
         end
