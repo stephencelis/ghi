@@ -1,6 +1,8 @@
 module GHI
   module Commands
     class Open < Command
+      include EditorTool
+
       attr_accessor :editor
       attr_accessor :web
 
@@ -45,7 +47,7 @@ EOF
           opts.separator ''
         end
       end
-
+      
       def execute
         require_repo
         self.action = 'create'
@@ -77,6 +79,7 @@ EOF
               e = Editor.new 'GHI_ISSUE'
               message = e.gets format_editor(assigns)
               e.unlink "There's no issue?" if message.nil? || message.empty?
+              assigns[:labels] ||= extract_labels_from_message(message)
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
@@ -95,5 +98,7 @@ EOF
         ]
       end
     end
+
+    
   end
 end
