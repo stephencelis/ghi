@@ -109,9 +109,12 @@ EOF
       exit 1
     end
 
-    def config key, upcase = true
+    def config key, options = {}
+      upcase = options.fetch :upcase, true
+      flags = options[:flags]
       var = key.gsub('core', 'git').gsub '.', '_'
-      value = ENV[upcase ? var.upcase : var] || `git config #{key}`.chomp
+      var.upcase! if upcase
+      value = ENV[var] || `git config #{flags} #{key}`.chomp
       value unless value.empty?
     end
 

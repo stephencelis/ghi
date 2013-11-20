@@ -114,8 +114,8 @@ module GHI
       end
       req.basic_auth username, password if username && password
 
-      proxy   = GHI.config 'https.proxy', false
-      proxy ||= GHI.config 'http.proxy',  false
+      proxy   = GHI.config 'https.proxy', :upcase => false
+      proxy ||= GHI.config 'http.proxy',  :upcase => false
       if proxy
         proxy = URI.parse proxy
         http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT
