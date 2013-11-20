@@ -6,7 +6,7 @@ module GHI
       MAJOR   = 0
       MINOR   = 9
       PATCH   = 0
-      PRE     = 20130912
+      PRE     = 20131120
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
@@ -120,9 +120,12 @@ EOF
       exit 1
     end
 
-    def config key, upcase = true
+    def config key, options = {}
+      upcase = options.fetch :upcase, true
+      flags = options[:flags]
       var = key.gsub('core', 'git').gsub '.', '_'
-      value = ENV[upcase ? var.upcase : var] || `git config #{key}`.chomp
+      var.upcase! if upcase
+      value = ENV[var] || `git config #{flags} #{key}`.chomp
       value unless value.empty?
     end
 
@@ -2435,8 +2438,8 @@ module GHI
       end
       req.basic_auth username, password if username && password
 
-      proxy   = GHI.config 'https.proxy', false
-      proxy ||= GHI.config 'http.proxy',  false
+      proxy   = GHI.config 'https.proxy', :upcase => false
+      proxy ||= GHI.config 'http.proxy',  :upcase => false
       if proxy
         proxy = URI.parse proxy
         http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT
@@ -2589,7 +2592,7 @@ module GHI
 
       def repo
         return @repo if defined? @repo
-        @repo = detect_repo || GHI.config('ghi.repo')
+        @repo = GHI.config('ghi.repo', :flags => '--local') || detect_repo
         if @repo && !@repo.include?('/')
           @repo = [Authorization.username, @repo].join '/'
         end
