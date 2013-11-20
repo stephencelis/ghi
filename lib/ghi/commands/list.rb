@@ -13,7 +13,7 @@ module GHI
           opts.banner = 'usage: ghi list [options]'
           opts.separator ''
           opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
-          	assigns[:filter] = 'all'
+            assigns[:filter] = 'all'
             @repo = nil
           end
           opts.on(
