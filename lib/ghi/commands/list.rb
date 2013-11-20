@@ -59,11 +59,15 @@ module GHI
           opts.separator 'Global options'
           opts.on(
             '-f', '--filter <by>',
-            filters = %w(assigned created mentioned subscribed),
+            filters = %w[all assigned created mentioned subscribed],
             Hash[filters.map { |f| [f[0, 1], f] }],
-            "'assigned', 'created', 'mentioned', or", "'subscribed'"
+            filters.map { |f| "'#{f}'" }.join(', ')
           ) do |filter|
             assigns[:filter] = filter
+          end
+          opts.on '--mine', 'assigned to you' do
+            assigns[:filter] = 'assigned'
+            assigns[:assignee] = Authorization.username
           end
           opts.separator ''
           opts.separator 'Project options'
@@ -80,6 +84,7 @@ module GHI
             assigns[:assignee] = any_or_none_or assignee
           end
           opts.on '--mine', 'assigned to you' do
+            assigns[:filter] = 'assigned'
             assigns[:assignee] = Authorization.username
           end
           opts.on(
