@@ -76,9 +76,13 @@ module GHI
     end
 
     def truncate string, reserved
-      result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
-      result << "..." if result != string
-      result
+      if assigns[:no_truncate]
+        string
+      else
+        result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
+        result << "..." if result != string
+        result
+      end
     end
 
     def indent string, level = 4, maxwidth = columns

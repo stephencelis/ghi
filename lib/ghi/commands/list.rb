@@ -93,6 +93,9 @@ module GHI
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
           end
+          opts.on '--no-truncate', 'do not truncate by terminal window size' do
+            assigns[:no_truncate] = true
+          end 
           opts.separator ''
         end
       end
