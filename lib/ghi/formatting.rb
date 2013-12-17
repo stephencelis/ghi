@@ -76,6 +76,7 @@ module GHI
     end
 
     def truncate string, reserved
+      return string unless $stdout.tty?
       result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
