@@ -5,8 +5,8 @@ module GHI
     module Version
       MAJOR   = 0
       MINOR   = 9
-      PATCH   = 0
-      PRE     = 20131120
+      PATCH   = 1
+      PRE     = nil
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
@@ -1789,6 +1789,8 @@ module GHI
       attr_accessor :paginate
     end
     self.paginate = true # Default.
+
+    attr_accessor :paging
     include Colors
 
     CURSOR = {
@@ -1833,6 +1835,7 @@ module GHI
         end
 
         puts header if header
+        self.paging = true
       end
 
       loop do
@@ -1851,10 +1854,15 @@ module GHI
     end
 
     def paginate?
-      $stdout.tty? && $stdout == STDOUT && Formatting.paginate
+      ($stdout.tty? && $stdout == STDOUT && Formatting.paginate) || paging?
+    end
+
+    def paging?
+      !!paging
     end
 
     def truncate string, reserved
+      return string unless paginate?
       result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
@@ -2531,9 +2539,12 @@ module GHI
     end
 
     def open path = '', params = {}
+      path = uri_for path, params
+      $stdout.puts path
+      return unless $stdout.tty?
       launcher = 'open'
       launcher = 'xdg-open' if /linux/ =~ RUBY_PLATFORM
-      system "#{launcher} '#{uri_for path, params}'"
+      system "#{launcher} '#{path}'"
     end
 
     def curl path = '', params = {}

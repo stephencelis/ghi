@@ -9,6 +9,8 @@ module GHI
     end
     self.paginate = true # Default.
 
+    attr_accessor :paging
+
     autoload :Colors, 'ghi/formatting/colors'
     include Colors
 
@@ -54,6 +56,7 @@ module GHI
         end
 
         puts header if header
+        self.paging = true
       end
 
       loop do
@@ -72,11 +75,15 @@ module GHI
     end
 
     def paginate?
-      $stdout.tty? && $stdout == STDOUT && Formatting.paginate
+      ($stdout.tty? && $stdout == STDOUT && Formatting.paginate) || paging?
+    end
+
+    def paging?
+      !!paging
     end
 
     def truncate string, reserved
-      return string unless $stdout.tty?
+      return string unless paginate?
       result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
