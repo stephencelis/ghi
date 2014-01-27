@@ -85,8 +85,13 @@ module GHI
 
       def issue
         return @issue if defined? @issue
-        index = args.index { |arg| /^\d+$/ === arg }
-        @issue = (args.delete_at index if index)
+        if index = args.index { |arg| /^\d+$/ === arg }
+          @issue = args.delete_at index
+        else
+          @issue = `git symbolic-ref --short HEAD`[/^\d+/];
+          warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+        end
+        @issue
       end
       alias extract_issue     issue
       alias milestone         issue
