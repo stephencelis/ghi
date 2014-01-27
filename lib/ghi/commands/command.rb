@@ -88,7 +88,7 @@ module GHI
         if index = args.index { |arg| /^\d+$/ === arg }
           @issue = args.delete_at index
         else
-          @issue = `git symbolic-ref --short HEAD`[/^\d+/];
+          @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
           warn "(Inferring issue from branch prefix: ##@issue)" if @issue
         end
         @issue
