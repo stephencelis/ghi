@@ -18,6 +18,8 @@ EOF
   s.email            = 'stephen@stephencelis.com'
   s.homepage         = 'https://github.com/stephencelis/ghi'
 
+  s.add_dependency 'security', '~> 0.1.2'
+    
   s.add_development_dependency 'rake'
   s.add_development_dependency 'ronn'
 end
