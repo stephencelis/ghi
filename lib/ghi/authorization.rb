@@ -11,7 +11,8 @@ module GHI
     class << self
       def token
         return @token if defined? @token
-        @token = GHI.config 'ghi.token'
+        pass = Security::GenericPassword.find(service: 'github.com/ghi')
+        @token = (pass && pass.password) || nil
       end
 
       def authorize! user = username, pass = password, local = true
@@ -32,28 +33,8 @@ module GHI
         }
         @token = res.body['token']
 
-        run = []
-        unless username
-          run << "git config#{' --global' unless local} github.user #{user}"
-        end
-        run << "git config#{' --global' unless local} ghi.token #{token}"
-
-        system run.join('; ')
-
-        unless local
-          at_exit do
-            warn <<EOF
-Your ~/.gitconfig has been modified by way of:
-
-  #{run.join "\n  "}
-
-#{bright { blink { 'Do not check this change into public source control!' } }}
-Alternatively, set the following env var in a private dotfile:
-
-  export GHI_TOKEN="#{token}"
-EOF
-          end
-        end
+        Security::GenericPassword.add('github.com/ghi', user, token)
+        
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
