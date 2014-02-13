@@ -62,6 +62,17 @@ $ ghi list
 ...
 ```
 
+## Additional help
+
+### Enable 256 colours in Ubuntu bash terminal.
+
+* run `tput colors` this should output `8`
+* run `sudo apt-get install ncurses-term`
+* open `nano ~/.bashrc` and add `export TERM=xterm-256color` at the bottom
+* reload bash config `source ~/.bashrc`
+* run `tput colors` this should output `256`
+
+Close and reopen any other open terminals.
 
 ## Screenshot
 
