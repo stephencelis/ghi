@@ -114,7 +114,9 @@ EOF
       flags = options[:flags]
       var = key.gsub('core', 'git').gsub '.', '_'
       var.upcase! if upcase
-      value = ENV[var] || `git config #{flags} #{key}`.chomp
+      value = ENV[var] || `git config #{flags} #{key}`
+      value = `#{value[1..-1]}` if value.start_with? '!'
+      value = value.chomp
       value unless value.empty?
     end
 
