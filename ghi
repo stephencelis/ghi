@@ -5,7 +5,7 @@ module GHI
     module Version
       MAJOR   = 0
       MINOR   = 9
-      PATCH   = 1
+      PATCH   = 2
       PRE     = nil
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
@@ -125,7 +125,9 @@ EOF
       flags = options[:flags]
       var = key.gsub('core', 'git').gsub '.', '_'
       var.upcase! if upcase
-      value = ENV[var] || `git config #{flags} #{key}`.chomp
+      value = ENV[var] || `git config #{flags} #{key}`
+      value = `#{value[1..-1]}` if value.start_with? '!'
+      value = value.chomp
       value unless value.empty?
     end
 
@@ -2286,28 +2288,11 @@ module GHI
         }
         @token = res.body['token']
 
-        run = []
         unless username
-          run << "git config#{' --global' unless local} github.user #{user}"
+          system "git config#{' --global' unless local} github.user #{user}"
         end
-        run << "git config#{' --global' unless local} ghi.token #{token}"
 
-        system run.join('; ')
-
-        unless local
-          at_exit do
-            warn <<EOF
-Your ~/.gitconfig has been modified by way of:
-
-  #{run.join "\n  "}
-
-#{bright { blink { 'Do not check this change into public source control!' } }}
-Alternatively, set the following env var in a private dotfile:
-
-  export GHI_TOKEN="#{token}"
-EOF
-          end
-        end
+        store_token! username, token, local
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
@@ -2329,6 +2314,68 @@ EOF
       def password
         return @password if defined? @password
         @password = GHI.config 'github.password'
+      end
+
+      private
+
+      def store_token! username, token, local
+        if security
+          run  = []
+
+          run << security('delete', username)
+          run << security('add', username, token)
+
+          find = security 'find', username, false
+          run << %(git config#{' --global' unless local} ghi.token "!#{find}")
+
+          system run.join ' ; '
+
+          puts "✔︎ Token saved to keychain."
+          return
+        end
+
+        command = "git config#{' --global' unless local} ghi.token #{token}"
+        system command
+
+        unless local
+          at_exit do
+            warn <<EOF
+Your ~/.gitconfig has been modified by way of:
+
+  #{command}
+
+#{bright { blink { 'Do not check this change into public source control!' } }}
+
+You can increase security by storing the token in a secure place that can be
+fetched from the command line. E.g., on OS X:
+
+  git config --global ghi.token \\
+    "!security -a #{username} -s github.com -l 'ghi token' -w"
+
+Alternatively, set the following env var in a private dotfile:
+
+  export GHI_TOKEN="#{token}"
+EOF
+          end
+        end
+      end
+
+      def security command = nil, username = nil, password = nil
+        if command.nil? && username.nil? && password.nil?
+          return system 'which security >/dev/null'
+        end
+
+        run = [
+          'security',
+          "#{command}-internet-password",
+          "-a #{username}",
+          '-s github.com',
+          "-l 'ghi token'"
+        ]
+        run << %(-w#{" #{password}" if password}) unless password.nil?
+        run << '>/dev/null 2>&1' unless command == 'find'
+
+        run.join ' '
       end
     end
   end
@@ -2653,8 +2700,13 @@ module GHI
 
       def issue
         return @issue if defined? @issue
-        index = args.index { |arg| /^\d+$/ === arg }
-        @issue = (args.delete_at index if index)
+        if index = args.index { |arg| /^\d+$/ === arg }
+          @issue = args.delete_at index
+        else
+          @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
+          warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+        end
+        @issue
       end
       alias extract_issue     issue
       alias milestone         issue
