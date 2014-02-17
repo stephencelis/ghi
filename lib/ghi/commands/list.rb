@@ -14,14 +14,14 @@ module GHI
           opts.banner = 'usage: ghi list [options]'
           opts.separator ''
 
-          parse_globality(opts)
-          parse_state(opts)
-          parse_labeling(opts)
-          parse_sorting(opts)
-          parse_pull_request(opts)
-          parse_dating(opts)
-          parse_verbosity(opts)
-          parse_web(opts)
+          extract_globality(opts)
+          extract_state(opts)
+          extract_labeling(opts)
+          extract_sorting(opts)
+          extract_pull_request(opts)
+          extract_dating(opts)
+          extract_verbosity(opts)
+          extract_web(opts)
 
           opts.separator ''
           opts.separator 'Global options'
@@ -148,14 +148,14 @@ module GHI
         end
       end
 
-      def parse_globality(opts)
+      def extract_globality(opts)
         opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
           assigns[:filter] = 'all'
           @repo = nil
         end
       end
 
-      def parse_state(opts)
+      def extract_state(opts)
         opts.on(
           '-s', '--state <in>', %w(open closed),
           {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
@@ -164,7 +164,7 @@ module GHI
         end
       end
 
-      def parse_labeling(opts)
+      def extract_labeling(opts)
         opts.on(
           '-L', '--label <labelname>...', Array, 'by label(s)'
         ) do |labels|
@@ -178,7 +178,7 @@ module GHI
         end
       end
 
-      def parse_sorting(opts)
+      def extract_sorting(opts)
         opts.on(
           '-S', '--sort <by>', %w(created updated comments),
           {'c'=>'created','u'=>'updated','m'=>'comments'},
@@ -191,12 +191,12 @@ module GHI
         end
       end
 
-      def parse_pull_request(opts)
+      def extract_pull_request(opts)
         opts.on('-p', '--pulls','list only pull requests') { self.pull_requests_only = true }
         opts.on('-P', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
       end
 
-      def parse_dating(opts)
+      def extract_dating(opts)
         opts.on(
           '--since <date>', 'issues more recent than',
           "e.g., '2011-04-30'"
@@ -209,11 +209,11 @@ module GHI
         end
       end
 
-      def parse_verbosity(opts)
+      def extract_verbosity(opts)
         opts.on('-v', '--verbose') { self.verbose = true }
       end
 
-      def parse_web(opts)
+      def extract_web(opts)
         opts.on('-w', '--web') { self.web = true }
       end
 
