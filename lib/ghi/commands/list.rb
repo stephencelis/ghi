@@ -13,50 +13,16 @@ module GHI
         OptionParser.new do |opts|
           opts.banner = 'usage: ghi list [options]'
           opts.separator ''
-          opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
-            assigns[:filter] = 'all'
-            @repo = nil
-          end
-          opts.on(
-            '-s', '--state <in>', %w(open closed),
-            {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
-          ) do |state|
-            assigns[:state] = state
-          end
-          opts.on(
-            '-L', '--label <labelname>...', Array, 'by label(s)'
-          ) do |labels|
-            (assigns[:labels] ||= []).concat labels
-          end
-          opts.on(
-            '-N', '--not-label <labelname>...', Array, 'exclude with label(s)'
-          ) do |labels|
-            (assigns[:exclude_labels] ||= []).concat labels
-          end
-          opts.on(
-            '-S', '--sort <by>', %w(created updated comments),
-            {'c'=>'created','u'=>'updated','m'=>'comments'},
-            "'created', 'updated', or 'comments'"
-          ) do |sort|
-            assigns[:sort] = sort
-          end
-          opts.on '--reverse', 'reverse (ascending) sort order' do
-            self.reverse = !reverse
-          end
-          opts.on('-p', '--pulls','list only pull requests') { self.pull_requests_only = true }
-          opts.on('-P', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
-          opts.on(
-            '--since <date>', 'issues more recent than',
-            "e.g., '2011-04-30'"
-          ) do |date|
-            begin
-              assigns[:since] = DateTime.parse date # TODO: Better parsing.
-            rescue ArgumentError => e
-              raise OptionParser::InvalidArgument, e.message
-            end
-          end
-          opts.on('-v', '--verbose') { self.verbose = true }
-          opts.on('-w', '--web') { self.web = true }
+
+          parse_globality(opts)
+          parse_state(opts)
+          parse_labeling(opts)
+          parse_sorting(opts)
+          parse_pull_request(opts)
+          parse_dating(opts)
+          parse_verbosity(opts)
+          parse_web(opts)
+
           opts.separator ''
           opts.separator 'Global options'
           opts.on(
@@ -181,6 +147,76 @@ module GHI
           opts.on('-q', '--quiet')  { self.quiet = true }
         end
       end
+
+      def parse_globality(opts)
+        opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
+          assigns[:filter] = 'all'
+          @repo = nil
+        end
+      end
+
+      def parse_state(opts)
+        opts.on(
+          '-s', '--state <in>', %w(open closed),
+          {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
+        ) do |state|
+          assigns[:state] = state
+        end
+      end
+
+      def parse_labeling(opts)
+        opts.on(
+          '-L', '--label <labelname>...', Array, 'by label(s)'
+        ) do |labels|
+          (assigns[:labels] ||= []).concat labels
+        end
+
+        opts.on(
+          '-N', '--not-label <labelname>...', Array, 'exclude with label(s)'
+        ) do |labels|
+          (assigns[:exclude_labels] ||= []).concat labels
+        end
+      end
+
+      def parse_sorting(opts)
+        opts.on(
+          '-S', '--sort <by>', %w(created updated comments),
+          {'c'=>'created','u'=>'updated','m'=>'comments'},
+          "'created', 'updated', or 'comments'"
+        ) do |sort|
+          assigns[:sort] = sort
+        end
+        opts.on '--reverse', 'reverse (ascending) sort order' do
+          self.reverse = !reverse
+        end
+      end
+
+      def parse_pull_request(opts)
+        opts.on('-p', '--pulls','list only pull requests') { self.pull_requests_only = true }
+        opts.on('-P', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
+      end
+
+      def parse_dating(opts)
+        opts.on(
+          '--since <date>', 'issues more recent than',
+          "e.g., '2011-04-30'"
+        ) do |date|
+          begin
+            assigns[:since] = DateTime.parse date # TODO: Better parsing.
+          rescue ArgumentError => e
+            raise OptionParser::InvalidArgument, e.message
+          end
+        end
+      end
+
+      def parse_verbosity(opts)
+        opts.on('-v', '--verbose') { self.verbose = true }
+      end
+
+      def parse_web(opts)
+        opts.on('-w', '--web') { self.web = true }
+      end
+
     end
   end
 end
