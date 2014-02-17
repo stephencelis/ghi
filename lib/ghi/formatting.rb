@@ -33,7 +33,7 @@ module GHI
 
     def puts *strings
       strings = strings.flatten.map { |s|
-        s.gsub(/(^| )*@([^@\s]+)/) {
+        s.gsub(/(^| *)@(\w+)/) {
           if $2 == Authorization.username
             bright { fg(:yellow) { "#$1@#$2" } }
           else
