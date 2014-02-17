@@ -19,7 +19,8 @@ module GHI
         end
 
         assigns[:repo] ||= repo if repo
-        morph_params_to_qualifers
+        query = assigns[:q].dup # cached for output string
+        morph_params_to_qualifiers
 
 
         unless quiet
@@ -32,6 +33,7 @@ module GHI
         ) { api.get uri, assigns }
 
         print "\r#{CURSOR[:up][1]}" if header && paginate?
+        #format_state(query_output_string(query))
 
         page header do
           issues = res.body['items']
@@ -53,7 +55,7 @@ module GHI
         assigns[:q] = keywords.join(' ')
       end
 
-      def morph_params_to_qualifers
+      def morph_params_to_qualifiers
         params = [:q, :sort, :order]
         # this should be safe to do, because :q is always the first element in assigns
         copy = assigns.dup
@@ -65,6 +67,16 @@ module GHI
             assigns[:q] << " #{k}:#{v}"
           end
         end
+      end
+
+      def query
+        assigns[:q]
+      end
+
+      def query_output_string(query)
+        keywords = query.split
+        pl = 's' if keywords.size > 1
+        "with the keyword#{pl} #{keywords.join(', ')}"
       end
 
       def uri
