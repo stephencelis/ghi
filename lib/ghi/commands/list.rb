@@ -16,7 +16,8 @@ module GHI
 
           extract_globality(opts)
           extract_state(opts)
-          extract_labeling(opts)
+          extract_label_inclusion(opts)
+          extract_label_exclusion(opts)
           extract_sorting(opts)
           extract_pull_request(opts)
           extract_dating(opts)
@@ -164,13 +165,15 @@ module GHI
         end
       end
 
-      def extract_labeling(opts)
+      def extract_label_inclusion(opts)
         opts.on(
           '-L', '--label <labelname>...', Array, 'by label(s)'
         ) do |labels|
           (assigns[:labels] ||= []).concat labels
         end
+      end
 
+      def extract_label_exclusion(opts)
         opts.on(
           '-N', '--not-label <labelname>...', Array, 'exclude with label(s)'
         ) do |labels|
@@ -216,7 +219,6 @@ module GHI
       def extract_web(opts)
         opts.on('-w', '--web') { self.web = true }
       end
-
     end
   end
 end
