@@ -6,11 +6,15 @@ module GHI
           opts.banner = 'usage: ghi find [options] <keyword(s)>'
           opts.separator ''
           extract_globality(opts)
+          extract_state(opts)
         end
       end
 
       def execute
         begin
+          # because of the keyword extraction we cannot let the OptionParser
+          # handle requests for the help screen
+          detect_help_request
           extract_keywords
           options.parse!(args)
         rescue OptionParser::InvalidOption => e
@@ -49,7 +53,7 @@ module GHI
       def extract_keywords
         keywords = []
         keywords << args.shift until args.empty? || args.first.start_with?('-')
-        abort "No keyword(s) given.\n#{options.banner}" if keywords.empty?
+        abort "No keyword(s) given.\n#{options}" if keywords.empty?
 
         assigns[:q] = keywords.join(' ')
       end
@@ -65,6 +69,12 @@ module GHI
           else
             assigns[:q] << " #{k}:#{v}"
           end
+        end
+      end
+
+      def detect_help_request
+        if args.any? && args.first.match(/^-?-h(elp)?$/)
+          abort options.to_s
         end
       end
 
