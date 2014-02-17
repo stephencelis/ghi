@@ -3,9 +3,9 @@ module GHI
     class Find < List
       def options
         OptionParser.new do |opts|
-          opts.banner = 'usage: ghi find [options] <keywords>'
+          opts.banner = 'usage: ghi find [options] <keyword(s)>'
           opts.separator ''
-          parse_globality(opts)
+          extract_globality(opts)
         end
       end
 
@@ -47,10 +47,9 @@ module GHI
       private
 
       def extract_keywords
-        puts args
         keywords = []
         keywords << args.shift until args.empty? || args.first.start_with?('-')
-        # raise missing_keywords if keywords.empty? || args.empty?
+        abort "No keyword(s) given.\n#{options.banner}" if keywords.empty?
 
         assigns[:q] = keywords.join(' ')
       end
@@ -67,10 +66,6 @@ module GHI
             assigns[:q] << " #{k}:#{v}"
           end
         end
-      end
-
-      def query
-        assigns[:q]
       end
 
       def query_output_string(query)
