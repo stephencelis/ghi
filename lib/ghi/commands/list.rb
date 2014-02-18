@@ -110,13 +110,9 @@ module GHI
               prs, issues = issues.partition { |i| i['pull_request'].values.any? }
               issues = prs if pull_requests_only
             end
-            if assigns[:exclude_labels]
-              issues = issues.reject  do |i|
-                i["labels"].any? do |label|
-                  assigns[:exclude_labels].include? label["name"]
-                end
-              end
-            end
+
+            issues = issues_without_excluded_labels(issues, assigns[:exclude_labels])
+
             if verbose
               puts issues.map { |i| format_issue i }
             else
@@ -218,6 +214,15 @@ module GHI
 
       def extract_web(opts)
         opts.on('-w', '--web') { self.web = true }
+      end
+
+      def issues_without_excluded_labels(issues, exclusions)
+        return issues unless exclusions
+        issues.reject  do |i|
+          i["labels"].any? do |label|
+            exclusions.include? label["name"]
+          end
+        end
       end
     end
   end
