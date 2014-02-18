@@ -128,6 +128,10 @@ module GHI
       end
 
       if repo || find_mode?
+        if fields = params[:in]
+          splitted = fields.split(',')
+          header << " in a #{format_list(splitted, 'or')}"
+        end
         if milestone = params[:milestone]
           case milestone
             when '*'    then header << ' with a milestone'
@@ -490,11 +494,11 @@ EOF
     end
 
     # %w{ a b c } to "a, b, and c"
-    def format_list(arr)
+    def format_list(arr, ending_coordination = 'and')
       return '' unless arr.any?
       last_element = arr.pop
       if arr.any?
-        arr.join(', ') << " and #{last_element}"
+        arr.join(', ') << " #{ending_coordination} #{last_element}"
       else
         last_element
       end

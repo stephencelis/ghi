@@ -11,7 +11,7 @@ module GHI
           extract_label_inclusion(opts)
           extract_label_exclusion(opts)
           extract_pull_request(opts)
-          extract_repository(opts)
+          extract_fields(opts)
 
           opts.separator ''
 
@@ -20,6 +20,7 @@ module GHI
           extract_creator(opts)
           extract_mentioned(opts)
           extract_user_bound_search(opts)
+          extract_repository(opts)
 
           opts.separator ''
 
@@ -38,7 +39,7 @@ module GHI
           options.parse!(args)
         end
 
-        # TODO pagination. It it broken in the search API?
+        # TODO pagination. Is it broken in the search API?
 
         assigns[:repo] = repo if repo
         assigns[:state] ||= 'open'
@@ -122,12 +123,20 @@ module GHI
       end
 
       def to_qualifier(qualifier, value)
-        " #{qualifier}:#{value}"
+        v = value.kind_of?(Array) ? value.join(',') : value
+        " #{qualifier}:#{v}"
       end
 
       def detect_help_request
         if args.any? && args.first.match(/^-?-h(elp)?$/)
           abort options.to_s
+        end
+      end
+
+      def extract_fields(opts)
+        opts.on('-f', '--fields <fields>...', Array,
+                'specifies fields to search in: title, body and/or comment') do |fields|
+          assigns[:in] = fields
         end
       end
 
@@ -164,9 +173,11 @@ module GHI
 
       # this is a little ugly but is needed to fulfill the contract
       # of Formatting#format_issues_header
+      # Might be in order to refactor the handling of Arrays in List
+      # to avoid this.
       def prepared_format_params
         params = assigns.merge(after_filters).map do |k, v|
-          v = v.join(',')if v.kind_of?(Array)
+          v = v.join(',') if v.kind_of?(Array)
           [k, v]
         end
         Hash[params]
