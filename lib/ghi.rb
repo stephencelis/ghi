@@ -131,6 +131,7 @@ EOF
       'claim'    => %w(assign),
       'create'   => %w(open),
       'e'        => %w(edit),
+      'f'        => %w{find},
       'l'        => %w(list),
       'L'        => %w(label),
       'm'        => %w(comment),
