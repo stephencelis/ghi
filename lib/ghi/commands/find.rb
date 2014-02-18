@@ -32,16 +32,16 @@ module GHI
         assigns[:per_page] = 100
         assigns[:repo] = repo
         assigns[:state] ||= 'open'
+
+        unless quiet
+          print header = format_issues_header(prepared_format_params)
+          print "\n" unless paginate?
+        end
+
         handle_pull_request_options
         extract_after_filters
 
         morph_params_to_qualifiers
-
-
-        unless quiet
-          print header = format_issues_header
-          print "\n" unless paginate?
-        end
 
         res = throb(
           0, format_state(assigns[:state], quiet ? CURSOR[:up][1] : '#')
@@ -139,6 +139,16 @@ module GHI
               end
 
         assigns[:type] = str
+      end
+
+      # this is a little ugly but is needed to fulfill the contract
+      # of Formatting#format_issues_header
+      def prepared_format_params
+        params = assigns.merge(after_filters).map do |k, v|
+          v = v.join(',')if v.kind_of?(Array)
+          [k, v]
+        end
+        Hash[params]
       end
 
       def uri
