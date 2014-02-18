@@ -55,7 +55,7 @@ module GHI
 
           issues = issues_without_excluded_labels(issues, after_filters[:exclude_labels])
 
-          puts format_issues(issues, repo.nil?)
+          put_issues(issues)
 
           break unless res.next_page
           res = throb { api.get res.next_page }
