@@ -34,10 +34,6 @@ module GHI
           ) do |filter|
             assigns[:filter] = filter
           end
-          opts.on '--mine', 'assigned to you' do
-            assigns[:filter] = 'assigned'
-            assigns[:assignee] = Authorization.username
-          end
 
           add_section_header(opts, 'Project')
 
