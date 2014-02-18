@@ -3,15 +3,24 @@ module GHI
     class Find < List
       def options
         OptionParser.new do |opts|
-          opts.banner = 'usage: ghi find [options] <keyword(s)>'
+          opts.banner = 'usage: ghi find <keyword(s)> [options]'
           opts.separator ''
+
           extract_globality(opts)
           extract_state(opts)
           extract_label_inclusion(opts)
           extract_label_exclusion(opts)
           extract_pull_request(opts)
           extract_repository(opts)
+          extract_assignee(opts)
+          extract_assigment_to_you(opts)
+          extract_creator(opts)
+          extract_mentioned(opts)
+
+          opts.separator ''
+
           extract_verbosity(opts)
+          extract_quiteness(opts)
         end
       end
 
@@ -22,12 +31,7 @@ module GHI
           detect_help_request
           extract_keywords
           options.parse!(args)
-        rescue OptionParser::InvalidOption => e
-          fallback.parse! e.args
-          retry
         end
-
-        query = assigns[:q].dup # cached for output string
 
         assigns[:per_page] = 100
         assigns[:repo] = repo
@@ -40,6 +44,7 @@ module GHI
 
         handle_pull_request_options
         extract_after_filters
+        fix_key_names
 
         morph_params_to_qualifiers
 
@@ -48,7 +53,6 @@ module GHI
         ) { api.get uri, assigns }
 
         print "\r#{CURSOR[:up][1]}" if header && paginate?
-        #format_state(query_output_string(query))
 
         page header do
           issues = res.body['items']
@@ -119,16 +123,21 @@ module GHI
         end
       end
 
-      def query_output_string(query)
-        keywords = query.split
-        pl = 's' if keywords.size > 1
-        "with the keyword#{pl} #{keywords.join(', ')}"
-      end
-
       def extract_repository(opts)
         opts.on('-r', '--repository <repo>', 'specifies a repository to search') do |repo|
           @repo = repo
         end
+      end
+
+      def extract_assigment_to_you(opts)
+        opts.on '--mine', 'assigned to you' do
+          assigns[:assignee] = Authorization.username
+        end
+      end
+
+
+      def extract_quiteness(opts)
+        opts.on('-q', '--quiet') { self.quiet = true }
       end
 
       def handle_pull_request_options
@@ -149,6 +158,23 @@ module GHI
           [k, v]
         end
         Hash[params]
+      end
+
+      # Some qualifiers/params have different naming in github's
+      # APIs for issues and search.
+      # We cannot use the proper values in the initial option extraction
+      # because we want to use the the API of the Formatting module
+      def fix_key_names
+        changes = {
+          creator: :author,
+          mentioned: :mentions,
+        }
+
+        changes.each do |issue_key, search_key|
+          if value = assigns.delete(issue_key)
+            assigns[search_key] = value
+          end
+        end
       end
 
       def uri
