@@ -182,3 +182,7 @@ module GHI
     end
   end
 end
+
+      def find_mode?
+        true
+      end
