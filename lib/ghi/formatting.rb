@@ -128,6 +128,13 @@ module GHI
             header.sub! repo, "#{repo} milestone ##{milestone}"
           end
         end
+        if keywords = params[:q]
+          # keywords are a string delimited by a space
+          kw = keywords.split.map { |word| "'#{word}'" }
+          pl = kw.size > 1 ? 's' : ''
+          kw_string = format_list(kw)
+          header << " with the keyword#{pl} #{kw_string}"
+        end
         if assignee = params[:assignee]
           header << case assignee
             when '*'    then ', assigned'
@@ -479,6 +486,17 @@ EOF
       end
       ago = interval < 0 ? 'from now' : 'ago' if suffix
       [string, ago].compact.join ' '
+    end
+
+    # %w{ a b c } to "a, b, and c"
+    def format_list(arr)
+      return '' unless arr.any?
+      last_element = arr.pop
+      if arr.any?
+        arr.join(', ') << ' and #{last_element}'
+      else
+        last_element
+      end
     end
 
     def throb position = 0, redraw = CURSOR[:up][1]
