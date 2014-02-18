@@ -30,13 +30,11 @@ module GHI
       end
 
       def execute
-        begin
-          # because of the keyword extraction we cannot let the OptionParser
-          # handle requests for the help screen
-          detect_help_request
-          extract_keywords
-          options.parse!(args)
-        end
+        # because of the keyword extraction we cannot let the OptionParser
+        # handle requests for the help screen
+        detect_help_request
+        extract_keywords
+        options.parse!(args)
 
         # TODO pagination. Is it broken in the search API?
 
