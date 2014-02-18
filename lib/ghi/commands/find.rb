@@ -7,8 +7,11 @@ module GHI
           opts.separator ''
           extract_globality(opts)
           extract_state(opts)
+          extract_label_inclusion(opts)
+          extract_label_exclusion(opts)
           extract_pull_request(opts)
           extract_repository(opts)
+          extract_verbosity(opts)
         end
       end
 
@@ -29,8 +32,8 @@ module GHI
         assigns[:per_page] = 100
         assigns[:repo] = repo
         assigns[:state] ||= 'open'
-
         handle_pull_request_options
+        extract_after_filters
 
         morph_params_to_qualifiers
 
@@ -49,6 +52,9 @@ module GHI
 
         page header do
           issues = res.body['items']
+
+          issues = issues_without_excluded_labels(issues, after_filters[:exclude_labels])
+
           puts format_issues(issues, repo.nil?)
 
           break unless res.next_page
@@ -71,6 +77,8 @@ module GHI
       end
 
       def morph_params_to_qualifiers
+        # labels need different handling due to the qualifier syntax
+        labels = assigns.delete(:labels)
         params = [:q, :sort, :order, :per_page]
         # this should be safe to do, because :q is always the first element in assigns
         copy = assigns.dup
@@ -79,10 +87,31 @@ module GHI
           if params.include?(k)
             assigns[k] = v
           else
-            assigns[:q] << " #{k}:#{v}"
+            assigns[:q] << to_qualifier(k, v)
+          end
+        end
+        add_labels(labels)
+      end
+
+      def add_labels(labels)
+        if labels
+          labels.each do |label|
+            assigns[:q] << to_qualifier(:label, label)
           end
         end
       end
+
+      def extract_after_filters
+        [:exclude_labels].each do |f|
+          filter = assigns.delete(f)
+          after_filters[f] = filter if filter
+        end
+      end
+
+      def to_qualifier(qualifier, value)
+        " #{qualifier}:#{value}"
+      end
+
 
       def detect_help_request
         if args.any? && args.first.match(/^-?-h(elp)?$/)
