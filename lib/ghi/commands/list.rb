@@ -24,8 +24,8 @@ module GHI
           extract_verbosity(opts)
           extract_web(opts)
 
-          opts.separator ''
-          opts.separator 'Global options'
+          add_section_header(opts, 'Global')
+
           opts.on(
             '-f', '--filter <by>',
             filters = %w[all assigned created mentioned subscribed],
@@ -38,8 +38,9 @@ module GHI
             assigns[:filter] = 'assigned'
             assigns[:assignee] = Authorization.username
           end
-          opts.separator ''
-          opts.separator 'Project options'
+
+          add_section_header(opts, 'Project')
+
           opts.on(
             '-M', '--[no-]milestone [<n>]', Integer,
             'with (specified) milestone'
@@ -236,6 +237,11 @@ module GHI
             exclusions.include? label["name"]
           end
         end
+      end
+
+      def add_section_header(opts, name)
+        opts.separator ''
+        opts.separator "#{name} options"
       end
 
       def put_issues(issues)

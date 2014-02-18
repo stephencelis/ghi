@@ -12,15 +12,18 @@ module GHI
           extract_label_exclusion(opts)
           extract_pull_request(opts)
           extract_repository(opts)
-          extract_assignee(opts)
-          extract_assigment_to_you(opts)
-          extract_creator(opts)
-          extract_mentioned(opts)
 
           opts.separator ''
 
           extract_verbosity(opts)
           extract_quiteness(opts)
+
+          add_section_header(opts, 'Project')
+
+          extract_assignee(opts)
+          extract_assigment_to_you(opts)
+          extract_creator(opts)
+          extract_mentioned(opts)
         end
       end
 
