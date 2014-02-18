@@ -532,8 +532,7 @@ EOF
     def header_start(params)
       state = params[:state] ||= 'open'
       if (user = assigns[:user]) && find_mode?
-        user = 'you' if user == Authorization.username
-        "# #{state.capitalize} issues in repos of #{user}"
+        "# #{state.capitalize} issues in repos of #{format_username(user)}"
       else
         "# #{repo || 'Global,'} #{state} issues"
       end
