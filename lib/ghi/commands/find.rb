@@ -1,5 +1,8 @@
 module GHI
   module Commands
+    # Allows looking up issues by keywords.
+    #
+    # Makes use of github's Search API: http://developer.github.com/v3/search/#search-issues
     class Find < List
       def options
         OptionParser.new do |opts|
@@ -25,7 +28,6 @@ module GHI
 
           extract_verbosity(opts)
           extract_quiteness(opts)
-
         end
       end
 
@@ -75,9 +77,6 @@ module GHI
 
       private
 
-      def after_filters
-        @after_filters ||= {}
-      end
 
       def extract_keywords
         keywords = []
@@ -86,6 +85,60 @@ module GHI
 
         assigns[:q] = keywords.join(' ')
       end
+
+      def detect_help_request
+        if args.any? && args.first.match(/^-?-h(elp)?$/)
+          abort options.to_s
+        end
+      end
+
+      # after filters are filters that aren't supported by the Search API and
+      # will be processed after the API request has been made
+      def after_filters
+        @after_filters ||= {}
+      end
+
+      def extract_after_filters
+        [:exclude_labels].each do |f|
+          filter = assigns.delete(f)
+          after_filters[f] = filter if filter
+        end
+      end
+
+      def handle_pull_request_options
+        str = case
+              when exclude_pull_requests then 'issue'
+              when pull_requests_only    then 'pr'
+              else return
+              end
+
+        assigns[:type] = str
+      end
+
+      # The following methods provide additional option extractions unique
+      # to the Search API
+      def extract_fields(opts)
+        opts.on('-f', '--fields <fields>...', Array,
+                'specifies fields to search in: title, body and/or comment') do |fields|
+          assigns[:in] = fields
+        end
+      end
+
+      def extract_quiteness(opts)
+        opts.on('-q', '--quiet') { self.quiet = true }
+      end
+
+      def extract_user_bound_search(opts)
+        opts.on('--repos-of <user>', 'search in all repos of a user') do |user|
+          @repo = nil
+          assigns[:user] = user
+        end
+        opts.on('--my-repos', 'search in all of your repos') do
+          @repo = nil
+          assigns[:user] = Authorization.username
+        end
+      end
+
 
       def morph_params_to_qualifiers
         # labels need different handling due to the qualifier syntax
@@ -112,59 +165,14 @@ module GHI
         end
       end
 
-      def extract_after_filters
-        [:exclude_labels].each do |f|
-          filter = assigns.delete(f)
-          after_filters[f] = filter if filter
-        end
-      end
-
       def to_qualifier(qualifier, value)
         v = value.kind_of?(Array) ? value.join(',') : value
         " #{qualifier}:#{v}"
       end
 
-      def detect_help_request
-        if args.any? && args.first.match(/^-?-h(elp)?$/)
-          abort options.to_s
-        end
-      end
-
-      def extract_fields(opts)
-        opts.on('-f', '--fields <fields>...', Array,
-                'specifies fields to search in: title, body and/or comment') do |fields|
-          assigns[:in] = fields
-        end
-      end
-
-      def extract_quiteness(opts)
-        opts.on('-q', '--quiet') { self.quiet = true }
-      end
-
-      def extract_user_bound_search(opts)
-        opts.on('--repos-of <user>', 'search in all repos of a user') do |user|
-          @repo = nil
-          assigns[:user] = user
-        end
-        opts.on('--my-repos', 'search in all of your repos') do
-          @repo = nil
-          assigns[:user] = Authorization.username
-        end
-      end
-
-      def handle_pull_request_options
-        str = case
-              when exclude_pull_requests then 'issue'
-              when pull_requests_only    then 'pr'
-              else return
-              end
-
-        assigns[:type] = str
-      end
-
-      # this is a little ugly but is needed to fulfill the contract
-      # of Formatting#format_issues_header
-      # Might be in order to refactor the handling of Arrays in List
+      # This is a little ugly but is needed to fulfill the contract
+      # of Formatting#format_issues_header.
+      # It might be in order to refactor the handling of Arrays in List
       # to avoid this.
       def prepared_format_params
         params = assigns.merge(after_filters).map do |k, v|
@@ -174,9 +182,9 @@ module GHI
         Hash[params]
       end
 
-      # Some qualifiers/params have different naming in github's
-      # APIs for issues and search.
-      # We cannot use the proper values in the initial option extraction
+      # Some qualifiers/params have different names in github's
+      # APIs for Issues and Search.
+      # We cannot provide the proper values in the initial option extraction
       # because we want to use the the API of the Formatting module
       def fix_key_names
         changes = {
