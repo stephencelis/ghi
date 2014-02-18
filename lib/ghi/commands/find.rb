@@ -20,7 +20,6 @@ module GHI
           extract_creator(opts)
           extract_mentioned(opts)
           extract_user_bound_search(opts)
-          extract_repository(opts)
 
           opts.separator ''
 
@@ -137,12 +136,6 @@ module GHI
         opts.on('-f', '--fields <fields>...', Array,
                 'specifies fields to search in: title, body and/or comment') do |fields|
           assigns[:in] = fields
-        end
-      end
-
-      def extract_repository(opts)
-        opts.on('-r', '--repository <repo>', 'specifies a repository to search') do |repo|
-          @repo = repo
         end
       end
 
