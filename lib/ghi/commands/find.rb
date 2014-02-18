@@ -46,6 +46,9 @@ module GHI
           print "\n" unless paginate?
         end
 
+        # some preparations to handle the differences in the API's of the
+        # issues (used by List) and search (used by Find)
+        assigns.delete(:filter) # only used in format_issues_header
         handle_pull_request_options
         extract_after_filters
         fix_key_names
@@ -120,7 +123,6 @@ module GHI
         " #{qualifier}:#{value}"
       end
 
-
       def detect_help_request
         if args.any? && args.first.match(/^-?-h(elp)?$/)
           abort options.to_s
@@ -132,13 +134,6 @@ module GHI
           @repo = repo
         end
       end
-
-      def extract_assigment_to_you(opts)
-        opts.on '--mine', 'assigned to you' do
-          assigns[:assignee] = Authorization.username
-        end
-      end
-
 
       def extract_quiteness(opts)
         opts.on('-q', '--quiet') { self.quiet = true }
