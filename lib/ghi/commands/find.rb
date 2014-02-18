@@ -15,15 +15,17 @@ module GHI
 
           opts.separator ''
 
-          extract_verbosity(opts)
-          extract_quiteness(opts)
-
-          add_section_header(opts, 'Project')
-
           extract_assignee(opts)
           extract_assigment_to_you(opts)
           extract_creator(opts)
           extract_mentioned(opts)
+          extract_user_bound_search(opts)
+
+          opts.separator ''
+
+          extract_verbosity(opts)
+          extract_quiteness(opts)
+
         end
       end
 
@@ -48,7 +50,7 @@ module GHI
 
         # some preparations to handle the differences in the API's of the
         # issues (used by List) and search (used by Find)
-        assigns.delete(:filter) # only used in format_issues_header
+        assigns.delete(:filter) # defined by List, we don't need it
         handle_pull_request_options
         extract_after_filters
         fix_key_names
@@ -139,6 +141,17 @@ module GHI
         opts.on('-q', '--quiet') { self.quiet = true }
       end
 
+      def extract_user_bound_search(opts)
+        opts.on('--repos-of <user>', 'search in all repos of a user') do |user|
+          @repo = nil
+          assigns[:user] = user
+        end
+        opts.on('--my-repos', 'search in all of your repos') do
+          @repo = nil
+          assigns[:user] = Authorization.username
+        end
+      end
+
       def handle_pull_request_options
         str = case
               when exclude_pull_requests then 'issue'
@@ -179,10 +192,10 @@ module GHI
       def uri
         "/search/issues"
       end
-    end
-  end
-end
 
       def find_mode?
         true
       end
+    end
+  end
+end
