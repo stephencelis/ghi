@@ -116,11 +116,11 @@ module GHI
       username == Authorization.username ? 'you' : username
     end
 
-    def format_issues_header
+    def format_issues_header(params = assigns)
       state = assigns[:state] ||= 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
       if repo
-        if milestone = assigns[:milestone]
+        if milestone = params[:milestone]
           case milestone
             when '*'    then header << ' with a milestone'
             when 'none' then header << ' without a milestone'
@@ -128,7 +128,7 @@ module GHI
             header.sub! repo, "#{repo} milestone ##{milestone}"
           end
         end
-        if assignee = assigns[:assignee]
+        if assignee = params[:assignee]
           header << case assignee
             when '*'    then ', assigned'
             when 'none' then ', unassigned'
@@ -136,11 +136,11 @@ module GHI
             ", assigned to #{format_username assignee}"
           end
         end
-        if mentioned = assigns[:mentioned]
+        if mentioned = params[:mentioned]
           header << ", mentioning #{format_username mentioned}"
         end
       else
-        header << case assigns[:filter]
+        header << case params[:filter]
           when 'created'    then ' you created'
           when 'mentioned'  then ' that mention you'
           when 'subscribed' then " you're subscribed to"
@@ -149,19 +149,19 @@ module GHI
           ' assigned to you'
         end
       end
-      if creator = assigns[:creator]
+      if creator = params[:creator]
         header << " #{format_username creator} created"
       end
-      if labels = assigns[:labels]
+      if labels = params[:labels]
         header << ", labeled #{labels.gsub ',', ', '}"
       end
-      if excluded_labels = assigns[:exclude_labels]
+      if excluded_labels = params[:exclude_labels]
         header << ", excluding those labeled #{excluded_labels.gsub ',', ', '}"
       end
-      if sort = assigns[:sort]
+      if sort = params[:sort]
         header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
       end
-      format_state assigns[:state], header
+      format_state params[:state], header
     end
 
     # TODO: Show milestones.
