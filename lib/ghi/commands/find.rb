@@ -36,8 +36,9 @@ module GHI
           options.parse!(args)
         end
 
-        assigns[:per_page] = 100
-        assigns[:repo] = repo
+        # TODO pagination. It it broken in the search API?
+
+        assigns[:repo] = repo if repo
         assigns[:state] ||= 'open'
 
         unless quiet
