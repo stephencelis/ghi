@@ -96,11 +96,8 @@ module GHI
 
             issues = issues_without_excluded_labels(issues, assigns[:exclude_labels])
 
-            if verbose
-              puts issues.map { |i| format_issue i }
-            else
-              puts format_issues(issues, repo.nil?)
-            end
+            put_issues(issues)
+
             break unless res.next_page
             res = throb { api.get res.next_page }
           end
@@ -238,6 +235,14 @@ module GHI
           i["labels"].any? do |label|
             exclusions.include? label["name"]
           end
+        end
+      end
+
+      def put_issues(issues)
+        if verbose
+          puts issues.map { |i| format_issue i }
+        else
+          puts format_issues(issues, repo.nil?)
         end
       end
     end
