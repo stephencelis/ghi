@@ -7,6 +7,8 @@ module GHI
           opts.separator ''
           extract_globality(opts)
           extract_state(opts)
+          extract_pull_request(opts)
+          extract_repository(opts)
         end
       end
 
@@ -22,8 +24,14 @@ module GHI
           retry
         end
 
-        assigns[:repo] ||= repo if repo
         query = assigns[:q].dup # cached for output string
+
+        assigns[:per_page] = 100
+        assigns[:repo] = repo
+        assigns[:state] ||= 'open'
+
+        handle_pull_request_options
+
         morph_params_to_qualifiers
 
 
@@ -50,6 +58,10 @@ module GHI
 
       private
 
+      def after_filters
+        @after_filters ||= {}
+      end
+
       def extract_keywords
         keywords = []
         keywords << args.shift until args.empty? || args.first.start_with?('-')
@@ -59,7 +71,7 @@ module GHI
       end
 
       def morph_params_to_qualifiers
-        params = [:q, :sort, :order]
+        params = [:q, :sort, :order, :per_page]
         # this should be safe to do, because :q is always the first element in assigns
         copy = assigns.dup
         assigns.clear
@@ -82,6 +94,22 @@ module GHI
         keywords = query.split
         pl = 's' if keywords.size > 1
         "with the keyword#{pl} #{keywords.join(', ')}"
+      end
+
+      def extract_repository(opts)
+        opts.on('-r', '--repository <repo>', 'specifies a repository to search') do |repo|
+          @repo = repo
+        end
+      end
+
+      def handle_pull_request_options
+        str = case
+              when exclude_pull_requests then 'issue'
+              when pull_requests_only    then 'pr'
+              else return
+              end
+
+        assigns[:type] = str
       end
 
       def uri
