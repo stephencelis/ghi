@@ -46,27 +46,10 @@ module GHI
           ) do |milestone|
             assigns[:milestone] = any_or_none_or milestone
           end
-          opts.on(
-            '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
-          ) do |assignee|
-            assignee = assignee.sub /^@/, '' if assignee
-            assigns[:assignee] = any_or_none_or assignee
-          end
-          opts.on '--mine', 'assigned to you' do
-            assigns[:filter] = 'assigned'
-            assigns[:assignee] = Authorization.username
-          end
-          opts.on(
-            '--creator [<user>]', 'created by you or specified user'
-          ) do |creator|
-            creator = creator.sub /^@/, '' if creator
-            assigns[:creator] = creator || Authorization.username
-          end
-          opts.on(
-            '-U', '--mentioned [<user>]', 'mentioning you or specified user'
-          ) do |mentioned|
-            assigns[:mentioned] = mentioned || Authorization.username
-          end
+          extract_assignee(opts)
+          extract_assigment_to_you(opts)
+          extract_creator(opts)
+          extract_mentioned(opts)
           opts.separator ''
         end
       end
@@ -214,6 +197,39 @@ module GHI
 
       def extract_web(opts)
         opts.on('-w', '--web') { self.web = true }
+      end
+
+      def extract_assignee(opts)
+        opts.on(
+          '-u', '--[no-]assignee [<user>]', 'assigned to specified user'
+        ) do |assignee|
+          assignee = assignee.sub /^@/, '' if assignee
+          assigns[:assignee] = any_or_none_or assignee
+        end
+      end
+
+      def extract_assigment_to_you(opts)
+        opts.on '--mine', 'assigned to you' do
+          assigns[:filter] = 'assigned'
+          assigns[:assignee] = Authorization.username
+        end
+      end
+
+      def extract_creator(opts)
+        opts.on(
+          '--creator [<user>]', 'created by you or specified user'
+        ) do |creator|
+          creator = creator.sub /^@/, '' if creator
+          assigns[:creator] = creator || Authorization.username
+        end
+      end
+
+      def extract_mentioned(opts)
+        opts.on(
+          '-U', '--mentioned [<user>]', 'mentioning you or specified user'
+        ) do |mentioned|
+          assigns[:mentioned] = mentioned || Authorization.username
+        end
       end
 
       def issues_without_excluded_labels(issues, exclusions)
