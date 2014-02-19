@@ -321,7 +321,7 @@ module GHI
 
       class Pygmentizer
         def initialize
-          @style = ENV['GHI_HIGHLIGHT_STYLE'] || 'monokai'
+          @style = GHI.config('ghi.highlight.style') || 'monokai'
         end
 
         def highlight(code_block)
