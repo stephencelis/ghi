@@ -326,8 +326,12 @@ module GHI
 
         def highlight(code_block)
           begin
-            code = pygmentize(code_block)
-            surround(code, '-----------------------')
+            indent = code_block['indent']
+            lang   = code_block['lang']
+            code   = code_block['code']
+
+            output = pygmentize(lang, code)
+            surround(output, "#{indent}-----------------------")
           rescue
             code_block
           end
@@ -335,9 +339,7 @@ module GHI
 
         private
 
-        def pygmentize(code_block_match)
-          lang = code_block_match['lang']
-          code = code_block_match['code']
+        def pygmentize(lang, code)
           Pygments.highlight(unescape(code), formatter: '256', lexer: lang,
                              options: { style: @style })
         end
