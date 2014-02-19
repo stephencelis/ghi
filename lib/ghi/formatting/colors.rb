@@ -37,6 +37,10 @@ module GHI
         escape :inverse, &block
       end
 
+      def highlight(code_block)
+        highlighter.highlight(code_block)
+      end
+
       def no_color
         old_colorize, Colors.colorize = colorize?, false
         yield
@@ -297,6 +301,54 @@ module GHI
         return m2 if h * 2 < 1
         return m1 + (m2 - m1) * (2.0/3 - h) * 6 if h * 3 < 2
         return m1
+      end
+
+      def highlighter
+        @highlighter ||= begin
+          raise unless supports_256_colors?
+          require 'pygments'
+          Pygmentizer.new
+        rescue
+          FakePygmentizer.new
+        end
+      end
+
+      class FakePygmentizer
+        def highlight(code_block)
+          code_block
+        end
+      end
+
+      class Pygmentizer
+        def initialize
+          @style = ENV['GHI_HIGHLIGHT_STYLE'] || 'monokai'
+        end
+
+        def highlight(code_block)
+          begin
+            code = pygmentize(code_block)
+            surround(code, '-----------------------')
+          rescue
+            code_block
+          end
+        end
+
+        private
+
+        def pygmentize(code_block_match)
+          lang = code_block_match['lang']
+          code = code_block_match['code']
+          Pygments.highlight(unescape(code), formatter: '256', lexer: lang,
+                             options: { style: @style })
+        end
+
+        def unescape(str)
+          str.gsub(/\e\[[^m]*m/, '')
+        end
+
+        def surround(str, surrounder)
+          "#{surrounder}\n#{str}\n#{surrounder}"
+        end
       end
     end
   end
