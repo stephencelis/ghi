@@ -340,8 +340,8 @@ module GHI
         private
 
         def pygmentize(lang, code)
-          Pygments.highlight(unescape(code), formatter: '256', lexer: lang,
-                             options: { style: @style })
+          Pygments.highlight(unescape(code), :formatter => '256', :lexer => lang,
+                             :options => { :style => @style })
         end
 
         def unescape(str)
