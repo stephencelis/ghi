@@ -421,7 +421,7 @@ EOF
       string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { '\1' })
 
       # Code blocks
-      string.gsub!(/(?<indent>^\ {#{indent}})(```)(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
+      string.gsub!(/(?<indent>^\ {#{indent}})(```)\s*(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
         highlight(Regexp.last_match)
       end
 
