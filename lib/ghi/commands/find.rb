@@ -40,6 +40,7 @@ module GHI
 
         # TODO pagination. Is it broken in the search API?
 
+        assigns[:per_page] = 100
         assigns[:repo] = repo if repo
         assigns[:state] ||= 'open'
 
