@@ -417,6 +417,9 @@ EOF
         fg(c){'\1' + underline{'\2'} + '\3'}
       )
 
+      # Inline code
+      string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { '\1' })
+
       # Code blocks
       string.gsub!(/(^\ {#{indent}}```)(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
         highlight(Regexp.last_match)
