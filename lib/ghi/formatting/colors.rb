@@ -331,7 +331,7 @@ module GHI
             code   = code_block['code']
 
             output = pygmentize(lang, code)
-            surround(output, "#{indent}-----------------------")
+            with_indentation(output, indent)
           rescue
             code_block
           end
@@ -348,8 +348,10 @@ module GHI
           str.gsub(/\e\[[^m]*m/, '')
         end
 
-        def surround(str, surrounder)
-          "#{surrounder}\n#{str}\n#{surrounder}"
+        def with_indentation(string, indent)
+          string.each_line.map do |line|
+            "#{indent}#{line}"
+          end.join
         end
       end
     end
