@@ -416,16 +416,15 @@ EOF
         %r{\b(<)?(https?://\S+|[^@\s]+@[^@\s]+)(>)?\b},
         fg(c){'\1' + underline{'\2'} + '\3'}
       )
-      # Code.
-      # string.gsub!(
-      #   /
-      #     (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
-      #     (^|[^`])(`[^`]+`)([^`]|$)
-      #   /mx
-      # ) {
-      #   post = $5
-      #   fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
-      # }
+
+      # Inline code
+      string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { '\1' })
+
+      # Code blocks
+      string.gsub!(/(?<indent>^\ {#{indent}})(```)\s*(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
+        highlight(Regexp.last_match)
+      end
+
       string
     end
 

@@ -37,6 +37,10 @@ module GHI
         escape :inverse, &block
       end
 
+      def highlight(code_block)
+        highlighter.highlight(code_block)
+      end
+
       def no_color
         old_colorize, Colors.colorize = colorize?, false
         yield
@@ -228,7 +232,11 @@ module GHI
       end
 
       def escape_256 color
-        "8;5;#{to_256(*to_rgb(color))}" if `tput colors` =~ /256/
+        "8;5;#{to_256(*to_rgb(color))}" if supports_256_colors?
+      end
+
+      def supports_256_colors?
+        `tput colors` =~ /256/
       end
 
       def to_256 r, g, b
@@ -293,6 +301,58 @@ module GHI
         return m2 if h * 2 < 1
         return m1 + (m2 - m1) * (2.0/3 - h) * 6 if h * 3 < 2
         return m1
+      end
+
+      def highlighter
+        @highlighter ||= begin
+          raise unless supports_256_colors?
+          require 'pygments'
+          Pygmentizer.new
+        rescue
+          FakePygmentizer.new
+        end
+      end
+
+      class FakePygmentizer
+        def highlight(code_block)
+          code_block
+        end
+      end
+
+      class Pygmentizer
+        def initialize
+          @style = GHI.config('ghi.highlight.style') || 'monokai'
+        end
+
+        def highlight(code_block)
+          begin
+            indent = code_block['indent']
+            lang   = code_block['lang']
+            code   = code_block['code']
+
+            output = pygmentize(lang, code)
+            with_indentation(output, indent)
+          rescue
+            code_block
+          end
+        end
+
+        private
+
+        def pygmentize(lang, code)
+          Pygments.highlight(unescape(code), :formatter => '256', :lexer => lang,
+                             :options => { :style => @style })
+        end
+
+        def unescape(str)
+          str.gsub(/\e\[[^m]*m/, '')
+        end
+
+        def with_indentation(string, indent)
+          string.each_line.map do |line|
+            "#{indent}#{line}"
+          end.join
+        end
       end
     end
   end

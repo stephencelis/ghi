@@ -74,6 +74,32 @@ $ ghi list
 
 Close and reopen any other open terminals.
 
+### Syntax highlighting of embedded code blocks
+
+In case you use a 256 color terminal, ghi is able to syntax highlight
+[fenced code blocks](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting).
+
+To enable this feature you just need to install the ruby wrapper for
+[pygments](http://pygments.org/):
+
+``` sh
+gem install pygments.rb
+```
+
+Additionally you can specify the used colorset through your `gitconfig` file(s).
+
+``` sh
+git config --global --add ghi.highlight.style colorful
+```
+
+Fire up an `irb/pry` session with the following to see a list of available
+colorsets:
+
+``` ruby
+require 'pygments'
+Pygments.styles
+```
+
 ## Screenshot
 
 ![Example](images/example.png)
