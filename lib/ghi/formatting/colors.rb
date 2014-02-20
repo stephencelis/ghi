@@ -38,6 +38,7 @@ module GHI
       end
 
       def highlight(code_block)
+        return code_block unless colorize?
         highlighter.highlight(code_block)
       end
 
