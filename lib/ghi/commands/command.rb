@@ -109,6 +109,10 @@ module GHI
       def any_or_none_or input
         input ? input : { nil => '*', false => 'none' }[input]
       end
+
+      def sort_by_creation(arr)
+        arr.sort_by { |el| el['created_at'] }
+      end
     end
   end
 end
