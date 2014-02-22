@@ -259,6 +259,7 @@ EOF
       reference = e['commit_id']
       <<EOF
 #{bright { '⁕' }} #{format_event_type(e['event'])} by @#{e['actor']['login']}\
+      return '' if unimportant_event?(e['event'])
 #{" through #{underline { reference[0..6] }}" if reference} \
 #{format_date DateTime.parse(e['created_at'])}
 
@@ -505,3 +506,9 @@ EOF
     end
   end
 end
+
+    private
+
+    def unimportant_event?(event)
+      %w{ subscribed unsubscribed mentioned }.include?(event)
+    end
