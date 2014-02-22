@@ -47,7 +47,7 @@ EOF
         when 'list'
           res = index
           page do
-            elements = sort_by_creation(res.body + events)
+            elements = sort_by_creation(res.body + paged_events(events, res))
             puts format_comments_and_events(elements)
             break unless res.next_page
             res = throb { api.get res.next_page }
@@ -98,7 +98,16 @@ EOF
       end
 
       def events
-        @events ||= api.get(event_uri).body
+        @events ||= begin
+          events = []
+          res = api.get(event_uri, :per_page => 100)
+          loop do
+            events += res.body
+            break unless res.next_page
+            res = api.get res.next_page
+          end
+          events
+        end
       end
 
       private
@@ -133,6 +142,18 @@ EOF
         end
         assigns[:body] = message if message
         e
+      end
+
+      def paged_events(events, comments_res)
+        if comments_res.next_page
+          last_comment_creation = comments_res.body.last['created_at']
+          events_for_this_page, @events = events.partition do |event|
+            event['created_at'] < last_comment_creation
+          end
+          events_for_this_page
+        else
+          events
+        end
       end
     end
   end

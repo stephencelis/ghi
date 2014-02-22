@@ -236,11 +236,11 @@ EOF
 
     def format_comments_and_events elements
       return 'None.' if elements.empty?
-      elements.map do |comment|
-        if comment['event']
-          format_event(comment)
+      elements.map do |element|
+        if element['event']
+          format_event(element)
         else
-          format_comment(comment)
+          format_comment(element)
         end
       end
     end
@@ -256,10 +256,10 @@ EOF
     end
 
     def format_event e, width = columns
+      return '' if unimportant_event?(e['event'])
       reference = e['commit_id']
       <<EOF
 #{bright { '⁕' }} #{format_event_type(e['event'])} by @#{e['actor']['login']}\
-      return '' if unimportant_event?(e['event'])
 #{" through #{underline { reference[0..6] }}" if reference} \
 #{format_date DateTime.parse(e['created_at'])}
 
@@ -504,11 +504,11 @@ EOF
         puts "\r#{CURSOR[:column][position]}#{redraw}#{CURSOR[:show]}"
       end
     end
-  end
-end
 
     private
 
     def unimportant_event?(event)
       %w{ subscribed unsubscribed mentioned }.include?(event)
     end
+  end
+end
