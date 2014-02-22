@@ -47,7 +47,8 @@ EOF
         when 'list'
           res = index
           page do
-            puts format_comments(res.body)
+            elements = sort_by_creation(res.body + events)
+            puts format_comments_and_events(elements)
             break unless res.next_page
             res = throb { api.get res.next_page }
           end
@@ -96,6 +97,10 @@ EOF
         puts 'Comment deleted.'
       end
 
+      def events
+        @events ||= api.get(event_uri).body
+      end
+
       private
 
       def uri
@@ -104,6 +109,10 @@ EOF
         else
           "/repos/#{repo}/issues/#{issue}/comments"
         end
+      end
+
+      def event_uri
+        "/repos/#{repo}/issues/#{issue}/events"
       end
 
       def require_body
