@@ -418,7 +418,7 @@ EOF
       )
 
       # Inline code
-      string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { '\1' })
+      string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { ' \1 ' })
 
       # Code blocks
       string.gsub!(/(?<indent>^\ {#{indent}})(```)\s*(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
