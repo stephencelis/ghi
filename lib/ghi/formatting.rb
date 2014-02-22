@@ -212,6 +212,7 @@ module GHI
 <%= format_date DateTime.parse(i['created_at']) %>. \
 <%= format_state i['state'], format_tag(i['state']), :bg %> \
 <% unless i['comments'] == 0 %>\
+<% if i['merged'] %><%= format_state 'merged', format_tag('merged'), :bg %><% end %> \
 <%= fg('aaaaaa'){
   template = "%d comment"
   template << "s" unless i['comments'] == 1
@@ -306,7 +307,12 @@ EOF
     end
 
     def format_state state, string = state, layer = :fg
-      send(layer, state == 'closed' ? 'ff0000' : '2cc200') { string }
+      color_codes = {
+        'closed' => 'ff0000',
+        'open'   => '2cc200',
+        'merged' => '511c7d',
+      }
+      send(layer, color_codes[state]) { string }
     end
 
     def format_labels labels
