@@ -210,9 +210,9 @@ module GHI
 *i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
+<% if i['merged'] %><%= format_state 'merged', format_tag('merged'), :bg %><% end %> \
 <%= format_state i['state'], format_tag(i['state']), :bg %> \
 <% unless i['comments'] == 0 %>\
-<% if i['merged'] %><%= format_state 'merged', format_tag('merged'), :bg %><% end %> \
 <%= fg('aaaaaa'){
   template = "%d comment"
   template << "s" unless i['comments'] == 1
