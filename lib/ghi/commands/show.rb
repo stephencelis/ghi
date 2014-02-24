@@ -53,7 +53,7 @@ module GHI
       end
 
       def determine_merge_status(pr)
-        pr['merged'] = true if merged?
+        pr['merged'] = true if pr['state'] == 'closed' && merged?
       end
 
       def merged?
