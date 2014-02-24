@@ -45,6 +45,7 @@ EOF
 
         case action
         when 'list'
+          get_requests(:index, :events)
           res = index
           page do
             elements = sort_by_creation(res.body + paged_events(events, res))
@@ -77,7 +78,7 @@ EOF
       protected
 
       def index
-        throb { api.get uri, :per_page => 100 }
+        @index ||= throb { api.get uri, :per_page => 100 }
       end
 
       def create message = 'Commented.'
@@ -111,6 +112,13 @@ EOF
       end
 
       private
+
+      def get_requests(*methods)
+        threads = methods.map do |method|
+          Thread.new { send(method) }
+        end
+        threads.each { |t| t.join }
+      end
 
       def uri
         if comment
