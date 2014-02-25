@@ -237,12 +237,12 @@ EOF
     def format_comments_and_events elements
       return 'None.' if elements.empty?
       elements.map do |element|
-        if element['event']
-          format_event(element)
+        if event = element['event']
+          format_event(element) unless unimportant_event?(event)
         else
           format_comment(element)
         end
-      end
+      end.compact
     end
 
     def format_comment c, width = columns
@@ -256,7 +256,6 @@ EOF
     end
 
     def format_event e, width = columns
-      return '' if unimportant_event?(e['event'])
       reference = e['commit_id']
       <<EOF
 #{bright { '⁕' }} #{format_event_type(e['event'])} by @#{e['actor']['login']}\
