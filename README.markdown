@@ -45,8 +45,9 @@ The most commonly used ghi commands are:
 See 'ghi help <command>' for more information on a specific command.
 ```
 
+## FAQ
 
-## Configuration
+- __Where does ghi look for issues?__
 
 By default, ghi looks for GitHub issues by resolving the current working
 directory's repository: first it looks for an `upstream` remote, then it
@@ -62,34 +63,48 @@ $ ghi list
 ...
 ```
 
-## Additional help
+- __How do I specify a GitHub enterprise host?__
 
-### Enable 256 colours in Ubuntu bash terminal.
+Just run the following inside your terminal and you'll be good to go:
+``` sh
+$ git config github.host address_of_your_enterprise_host
+```
 
-* run `tput colors` this should output `8`
-* run `sudo apt-get install ncurses-term`
-* open `nano ~/.bashrc` and add `export TERM=xterm-256color` at the bottom
-* reload bash config `source ~/.bashrc`
-* run `tput colors` this should output `256`
+- __How do I enable the pretty colored output?__
 
-Close and reopen any other open terminals.
+Make sure your terminal is configured to display 256 colors. You can
+check this by running `tput colors`, which should return `256`.
+In case it doesn't you need to `export TERM=xterm-256color` or `export
+TERM=screen-256color`.
+Ideally you'll want to add this to one of your shell configuration files (e.g. `~/.bashrc`).
 
-### Syntax highlighting of embedded code blocks
+If for whatever reason you cannot set the `TERM` variable globally, it
+is recommended to set an alias `alias ghi='TERM=xterm-256colors ghi'`.
+This runs `ghi` with full color support, but leaves the rest of your
+terminal untouched.
 
-In case you use a 256 color terminal, ghi is able to syntax highlight
-[fenced code blocks](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting).
+Ubuntu users of a version prior to 12.04, beware! Your terminal will not
+support 256 colors by default. Please run `sudo apt-get install
+ncurses-term` before setting the `TERM` variable.
+
+Don't forget to reload your config file (e.g. `source ~/.bashrc`) or
+just reopen your terminal.
+
+- __Can I have syntax highlighting of [fenced code blocks](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting)?__
+
+Yes, you can - if you are using a terminal with 256 colors!
 
 To enable this feature you just need to install the ruby wrapper for
 [pygments](http://pygments.org/):
 
 ``` sh
-gem install pygments.rb
+$ gem install pygments.rb
 ```
 
 Additionally you can specify the used colorset through your `gitconfig` file(s).
 
 ``` sh
-git config --global --add ghi.highlight.style colorful
+$ git config --global ghi.highlight.style colorful
 ```
 
 Fire up an `irb/pry` session with the following to see a list of available
