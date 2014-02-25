@@ -227,6 +227,7 @@ module GHI
 Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 <%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
+<% if block_given? %><%= yield %><% end %>\
 <% if i['body'] && !i['body'].empty? %>
 <%= indent i['body'], 4, width %>
 <% end %>
@@ -349,6 +350,58 @@ EOF
         'referenced' => 'aaaaaa'
       }
       fg(color_codes[event]) { event }
+    end
+
+    def format_pull_info(pr, width = columns)
+      "\n#{format_merge_stats(pr, 4)}#{format_pr_stats(pr, 4)}"
+    end
+
+    def format_pr_stats(pr, indent)
+      indent = ' ' * indent
+      commits   = count_with_plural(pr['commits'].to_i, 'commit')
+      files     = count_with_plural(pr['changed_files'].to_i, 'file') + ' changed'
+      additions = fg('2cc200') { "+#{pr['additions']}"}
+      deletions = fg('ff0000') { "-#{pr['deletions']}"}
+
+      output = [
+        fg('cccc33') { "#{commits}, #{files}" },
+        "#{additions} #{change_viz(pr)} #{deletions}"
+      ]
+
+      output.each_with_object('') do |e, str|
+        str << "#{indent}#{e}\n"
+      end + "\n"
+    end
+
+    def change_viz(pr, size = 18)
+      add, del = pr.values_at('additions', 'deletions').map(&:to_f)
+      all = add + del
+      add_percent = add / all
+      del_percent = del / all
+      rel = [add_percent, del_percent].map { |p| (p * size).round.to_i }
+      sign = '∎'
+      rel.zip(['2cc200', 'ff0000']).map do |multiplicator, color|
+        fg(color) { sign * multiplicator }
+      end.join
+    end
+
+    def format_merge_stats(pr, indent)
+      indent = ' ' * indent
+      if date = pr['merged_at']
+        merger = pr['merged_by']['login']
+        message = "merged by @#{merger} #{format_date DateTime.parse(date)}"
+        "#{indent}#{message}\n\n"
+      else
+        m, m_st = pr.values_at('mergeable', 'mergeable_state')
+        if m && m_st
+          "#{indent}#{fg('2cc200') { "✔ cleanly mergeable" }}\n\n"
+        end
+      end
+    end
+
+    def count_with_plural(count, term)
+      s = count == 1 ? '' : 's'
+      "#{count} #{term}#{s}"
     end
 
     #--
