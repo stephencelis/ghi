@@ -41,13 +41,13 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-a', '--add', 'add labels to issue' do
-            self.action = issue ? 'add' : 'create'
+            self.action = issues_present? ? 'add' : 'create'
           end
           opts.on '-d', '--delete', 'remove labels from issue' do
-            self.action = issue ? 'remove' : 'destroy'
+            self.action = issues_present? ? 'remove' : 'destroy'
           end
           opts.on '-f', '--force', 'replace existing labels' do
-            self.action = issue ? 'replace' : 'update'
+            self.action = issues_present? ? 'replace' : 'update'
           end
           opts.separator ''
         end
@@ -58,16 +58,16 @@ EOF
         require_repo
         options.parse! args.empty? ? %w(-l) : args
 
-        if issue
+        if issues_present?
           self.action ||= 'add'
           self.name = args.shift.to_s.split ','
           self.name.concat args
+          multi_action(action)
         else
           self.action ||= 'create'
           self.name ||= args.shift
+          send action
         end
-
-        send action
       end
 
       protected
@@ -155,6 +155,31 @@ EOF
 
       def base_uri
         "/repos/#{repo}/#{issue ? "issues/#{issue}/labels" : 'labels'}"
+      end
+
+      # This method is usually inherited from Command and extracts a single issue
+      # from args - we override it to handle multiple issues at once.
+      def extract_issue
+        @issues = []
+        args.delete_if do |arg|
+          arg.match(/^\d+$/) ? @issues << arg : break
+        end
+        infer_issue_from_branch_prefix unless @issues.any?
+      end
+
+      def issues_present?
+        @issues.any? || @issue
+      end
+
+      def multi_action(action)
+        if @issues.any?
+          @issues.each do |issue|
+            @issue = issue
+            send action
+          end
+        else
+          send action
+        end
       end
     end
   end
