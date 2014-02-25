@@ -32,6 +32,7 @@ module GHI
             end
           else
             i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+            determine_merge_status(i) if pull_request?(i)
             page do
               puts format_issue(i)
               n = i['comments']
@@ -43,6 +44,21 @@ module GHI
             end
           end
         end
+      end
+
+      private
+
+      def pull_request?(issue)
+        issue['pull_request']['html_url']
+      end
+
+      def determine_merge_status(pr)
+        pr['merged'] = true if pr['state'] == 'closed' && merged?
+      end
+
+      def merged?
+        # API returns with a Not Found error when the PR is not merged
+        api.get "/repos/#{repo}/pulls/#{issue}/merge" rescue false
       end
     end
   end

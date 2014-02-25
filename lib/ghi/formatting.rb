@@ -117,7 +117,7 @@ module GHI
     end
 
     def format_issues_header
-      state = assigns[:state] || 'open'
+      state = assigns[:state] ||= 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
@@ -210,6 +210,7 @@ module GHI
 *i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
+<% if i['merged'] %><%= format_state 'merged', format_tag('merged'), :bg %><% end %> \
 <%= format_state i['state'], format_tag(i['state']), :bg %> \
 <% unless i['comments'] == 0 %>\
 <%= fg('aaaaaa'){
@@ -306,7 +307,12 @@ EOF
     end
 
     def format_state state, string = state, layer = :fg
-      send(layer, state == 'closed' ? 'ff0000' : '2cc200') { string }
+      color_codes = {
+        'closed' => 'ff0000',
+        'open'   => '2cc200',
+        'merged' => '511c7d',
+      }
+      send(layer, color_codes[state]) { string }
     end
 
     def format_labels labels
