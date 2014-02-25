@@ -11,6 +11,7 @@ task :build do
     lib/ghi/web.rb
     lib/ghi/commands.rb
     lib/ghi/commands/command.rb
+    lib/ghi/commands/aliases.rb
     lib/ghi/commands/assign.rb
     lib/ghi/commands/close.rb
     lib/ghi/commands/comment.rb
@@ -25,6 +26,14 @@ task :build do
     lib/ghi/commands/open.rb
     lib/ghi/commands/show.rb
     lib/ghi/commands/status.rb
+    lib/ghi/commands/pull.rb
+    lib/ghi/commands/pull/close.rb
+    lib/ghi/commands/pull/create.rb
+    lib/ghi/commands/pull/edit.rb
+    lib/ghi/commands/pull/fetch.rb
+    lib/ghi/commands/pull/merge.rb
+    lib/ghi/commands/pull/show.rb
+    lib/ghi/commands/pull/diff.rb
     bin/ghi
   )
   files = FileList[*manifest]

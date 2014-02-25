@@ -19,6 +19,8 @@ end
 require 'optparse'
 
 module GHI
+  IGNORE_MARKER = '#|#'
+
   class << self
     attr_reader :current_command
 
@@ -139,44 +141,10 @@ EOF
 
     private
 
-    ALIASES = Hash.new { |_, key|
-      [key] if /^\d+$/ === key
-    }.update(
-      'claim'    => %w(assign),
-      'create'   => %w(open),
-      'e'        => %w(edit),
-      'l'        => %w(list),
-      'L'        => %w(label),
-      'm'        => %w(comment),
-      'M'        => %w(milestone),
-      'new'      => %w(open),
-      'o'        => %w(open),
-      'reopen'   => %w(open),
-      'rm'       => %w(close),
-      's'        => %w(show),
-      'st'       => %w(list),
-      'tag'      => %w(label),
-      'unassign' => %w(assign -d),
-      'update'   => %w(edit)
-    )
-
-    def fetch_alias command, args
-      return command unless fetched = ALIASES[command]
-
-      # If the <command> is an issue number, check the options to see if an
-      # edit or show is desired.
-      if fetched.first =~ /^\d+$/
-        edit_options = Commands::Edit.new([]).options.top.list
-        edit_options.reject! { |arg| !arg.is_a?(OptionParser::Switch) }
-        edit_options.map! { |arg| [arg.short, arg.long] }
-        edit_options.flatten!
-        fetched.unshift((edit_options & args).empty? ? 'show' : 'edit')
-      end
-
-      command = fetched.shift
-      args.unshift(*fetched)
-      command
+    def fetch_alias(command, args)
+      Commands::Aliases.fetch(command, args)
     end
+
   end
 end
 module GHI
@@ -593,7 +561,6 @@ module GHI
         pager ||= ENV['PAGER']
         pager ||= 'less'
         pager  += ' -EKRX -b1' if pager =~ /^less( -[EKRX]+)?$/
-
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'
         end
@@ -776,6 +743,7 @@ module GHI
 Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 <%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
+<% if block_given? %><%= yield %><% end %>\
 <% if i['body'] && !i['body'].empty? %>
 <%= indent i['body'], 4, width %>
 <% end %>
@@ -871,13 +839,13 @@ EOF
       [bg('2cc200'){string[0, i]}, string[i, columns - i]].join
     end
 
+    STATE_COLORS = {
+      'closed' => 'ff0000',
+      'open'   => '2cc200',
+      'merged' => '511c7d',
+    }
     def format_state state, string = state, layer = :fg
-      color_codes = {
-        'closed' => 'ff0000',
-        'open'   => '2cc200',
-        'merged' => '511c7d',
-      }
-      send(layer, color_codes[state]) { string }
+      send(layer, STATE_COLORS[state]) { string }
     end
 
     def format_labels labels
@@ -889,15 +857,161 @@ EOF
       (colorize? ? ' %s ' : '[%s]') % tag
     end
 
+    EVENT_COLORS = {
+      'reopened' => '2cc200',
+      'closed' => 'ff0000',
+      'merged' => '9677b1',
+      'assigned' => 'e1811d',
+      'referenced' => 'aaaaaa'
+    }
     def format_event_type(event)
-      color_codes = {
-        'reopened' => '2cc200',
-        'closed' => 'ff0000',
-        'merged' => '9677b1',
-        'assigned' => 'e1811d',
-        'referenced' => 'aaaaaa'
-      }
-      fg(color_codes[event]) { event }
+      fg(EVENT_COLORS[event]) { event }
+    end
+
+    def format_pull_info(pr, width = columns)
+      "\n#{format_merge_stats(pr, 4)}#{format_pr_stats(pr, 4)}\n"
+    end
+
+    def format_pr_stats(pr, indent)
+      indent = ' ' * indent
+      add, del  = pr.values_at('additions', 'deletions')
+      commits   = count_with_plural(pr['commits'].to_i, 'commit')
+      files     = count_with_plural(pr['changed_files'].to_i, 'file') + ' changed'
+      additions = fg('2cc200') { "+#{add}"}
+      deletions = fg('ff0000') { "-#{del}"}
+
+      output = [
+        fg('cccc33') { "#{commits}, #{files}" },
+        "#{additions} #{change_viz(add, del)} #{deletions}"
+      ]
+
+      output.map { |line| "#{indent}#{line}" }.join("\n")
+    end
+
+    def change_viz(additions, deletions, size = 18)
+      sign = '∎'
+      all = (additions + deletions).to_f
+
+      # when an empty file was submitted (or a binary!) there might be
+      # a total number of 0 line canges. A division of 0 / 0 throws an error,
+      # therefore we just return without further operations
+      return fg('aaaaaa') { sign * size } if all.zero?
+
+      add_percent = additions / all
+      del_percent = deletions / all
+      rel = [add_percent, del_percent].map { |p| (p * size).round.to_i }
+      rel.zip(['2cc200', 'ff0000']).map do |multiplicator, color|
+        fg(color) { sign * multiplicator }
+      end.join
+    end
+
+    def format_merge_stats(pr, indent)
+      indent = ' ' * indent
+      if date = pr['merged_at']
+        merger  = pr['merged_by']['login']
+        message = "merged by @#{merger} #{format_date DateTime.parse(date)}"
+        "#{indent}#{message}\n\n"
+      else
+        str = "#{indent}#{format_merge_head_and_base(pr)}\n"
+        "#{str}#{indent}#{format_mergeability}\n\n"
+      end
+    end
+
+    def format_mergeability
+      if clean?
+        if needs_rebase?
+          fg('e1811d') { "✔ able to merge, but needs a rebase" }
+        else
+          fg('2cc200') { "✔ able to merge" }
+        end
+      elsif dirty?
+        fg('ff0000') { "✗ pull request is dirty" }
+      end
+    end
+
+    def format_merge_head_and_base(pr)
+      head, base = pr.values_at('head', 'base').map { |br| br['label'] }
+      "#{fg('cccc33') { base }} ⬅ #{fg('cccc33') { head } }"
+    end
+
+    def count_with_plural(count, term)
+      s = count == 1 ? '' : 's'
+      "#{count} #{term}#{s}"
+    end
+
+    def format_commits(commits)
+      header = format_commits_header(commits)
+      body   = commits.map { |commit| format_commit(commit) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_commits_header(commits)
+      n = commits.size
+      count   = count_with_plural(n, 'commit')
+      authors = commits.map { |commit| commit['author']['login'] }.uniq
+      authors = enumerative_concat(authors, 'and')
+      fg('cccc33') { "#{count} by #{authors}" }
+    end
+
+    def enumerative_concat(arr, last_coordination)
+      return arr.first if arr.one?
+      "#{arr[0..-2].join(', ')} #{last_coordination} #{authors[-1]}"
+    end
+
+    def format_commit(commit, indent = 4, width = columns)
+      indent = ' ' * indent
+      sha   = commit['sha'][0..6]
+      title = commit['commit']['message'].split("\n\n").first
+      "#{indent}* #{sha} | #{truncate(title, 20)}"
+    end
+
+    def format_files(files)
+      header = format_files_header(files)
+      body   = files.map { |file| format_file(file) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_files_header(files)
+      add = summate_changes(files, 'additions')
+      del = summate_changes(files, 'deletions')
+      count   = count_with_plural(files.size, 'file')
+      changes = "#{add} additions and #{del} deletions"
+      fg('cccc33') { "#{count}, with #{changes}" }
+    end
+
+    def summate_changes(container, type)
+      container.map { |element| element[type] }.inject(:+)
+    end
+
+    # Truncation will look ugly when we run out of space.
+    # It's an edge case probably not worth playing around with
+    def format_file(file, width = columns)
+      space = 16
+      max_fn_width = columns - space
+      name = sprintf("%-#{max_fn_width}s", truncate(file['filename'], space))
+      state = format_file_status(file['state'])
+      add, del, changes = file.values_at('additions', 'deletions', 'changes')
+      bar = change_viz(add, del, 5)
+      changes = sprintf("%5s", changes)
+      "#{state} #{name} #{changes} #{bar}"
+    end
+
+    FILE_STATUS_SIGNS = {
+      'added'    => %w(2cc200 +),
+      'modified' => %w(yellow ~),
+      'removed'  => %w(ff0000 -),
+    }
+    def format_file_status(state)
+      col, sign = FILE_STATUS_SIGNS[state]
+      fg(col) { sign }
+    end
+
+    def format_diff(diff)
+      diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
+      diff.gsub!(/^(@@ .* @@)/, fg('387593') { '\1' })
+      diff.gsub!(/^(\+($|[^\+]?.*))/, fg('8abb3b') { '\1' })
+      diff.gsub!(/^(-($|[^-]?.*))/,  fg('ff7f66') { '\1' })
+      diff
     end
 
     #--
@@ -1404,6 +1518,149 @@ module GHI
       dir = `git rev-parse --git-dir 2>/dev/null`.chomp
       dir unless dir.empty?
     end
+
+    # Possibly new editor interface
+    #
+    # Currently only used by the pull command, but could be the base
+    # for a bigger refactoring. Adds flexibility.
+    public
+
+    def start(template = '')
+      File.open path, 'a+' do |f|
+        f << template if File.zero? path
+        f.rewind
+        system "#{editor} #{f.path}"
+        parse(f.path)
+      end
+    end
+
+    # TODO
+    # allow a hash here as well:
+    #   key: what's required
+    #   val: custom error message as string or proc
+    def require_content_for(*contents)
+      guarded do
+        contents.each do |c|
+          unless content[c] && ! content[c].empty?
+            raise "#{c.capitalize} must not be empty!"
+          end
+        end
+      end
+    end
+
+    def check_uniqueness(a, b)
+      guarded do
+        x, y = content.values_at(a, b)
+        raise "#{a} must not be the same as #{b}" if x == y
+      end
+    end
+
+    def check_for_changes(old)
+      if old.all? { |keyword, old_content| content[keyword] == old_content }
+        unlink "Nothing changed."
+      end
+    end
+
+    def content
+      @content ||= {}
+    end
+
+    # New comments need a special format:
+    #
+    # @
+    # Comment we want to add
+    # @
+    #
+    # The comment body needs to surrounded by a single @ on a new line. No
+    # whitespace before or after!
+    # Just place your body right behind the line you want to comment.
+    #
+    # The API wants to know
+    # - the file the comment is on. (path)
+    # - line position inside the changes of a particular file.(position)
+    # - a message of course (body)
+    # - the head's sha (commit_id) - added later on in the Pull subclass.
+    #
+    # We split the diff into individual files and retrieve these parts
+    # in a Hash (key: filename, value: diff).
+    # We go through each diff then and look for comments. All findings
+    # are saved into Hash objects, an array of these is the return value
+    # of this method.
+    def extract_new_comments
+      marker = /^@$/
+      txt = content[:body]
+      unlink "No new comments present." unless txt.match(marker)
+
+      result = []
+      diff_per_file = split_diff_per_file(txt)
+      diff_per_file.map do |file, diff|
+        while index = diff =~ marker
+          comment = { 'path' => file }
+          # The marker itself and its \n is included, therefore
+          # we need the index - 1
+          # The position is also zero based - count - 1 sets this right.
+          comment['position'] = diff[0..index - 2].lines.count - 1
+          if diff.sub!(/^@\n(.*?)^@$/m) { comment['body'] = $1.strip; '' }
+            result << comment
+          else
+            raise "Invalid comment format present!"
+          end
+        end
+      end
+      result
+    end
+
+    private
+
+    def split_diff_per_file(txt)
+      parts = txt.split(/^diff --git a\/.* b\/.*?\n/).delete_if(&:empty?)
+      # Throw out the rest of the diff information, but extract the
+      # relative path to the file we might comment one
+      parts.map! { |part| [part.sub(/.*--- .*\n\+\+\+ b\/(.*?)\n/m, ''), $1].reverse }
+      Hash[parts]
+    end
+
+    def guarded
+      begin
+        yield
+      rescue => e
+        puts e
+        print "Type e to enter your editor again, any other key discards your input and aborts: "
+        if $stdin.gets.chomp == 'e'
+          start
+          retry
+        else
+          unlink "Aborted."
+        end
+      end
+    end
+
+    def parse(file)
+      txt = File.read(file)
+      strip_lines_to_ignore(txt)
+      extract_keywords(txt, :title, :head, :base)
+      content[:body] = txt.strip
+    end
+
+    def extract_keywords(txt, *keywords)
+      keywords.each do |kw|
+        extract_keyword(txt, kw)
+      end
+    end
+
+    def extract_keyword(txt, kw, array = false)
+      return unless txt.sub!(/^@ghi-#{kw}@(.*)(\n|$)/, '')
+      val = $1.strip
+      val = val.split(', ') if array
+      content[kw] = val
+    end
+
+    def strip_lines_to_ignore(txt)
+      txt.gsub!(/^#{Regexp.quote(IGNORE_MARKER)}.*(\n|\z)/, '')
+      # The next line is kept for backwards compatibility
+      txt.gsub!(/(?:^#.*$\n?)+\s*\z/, '')
+      txt.strip!
+    end
   end
 end
 require 'open-uri'
@@ -1479,7 +1736,7 @@ module GHI
       attr_accessor :action
       attr_accessor :verbose
 
-      def initialize args
+      def initialize args = []
         @args = args.map! { |a| a.dup }
       end
 
@@ -1535,8 +1792,8 @@ GitHub repository or by appending your command with the user/repo:
       end
 
       def detect_repo
-        remote   = remotes.find { |r| r[:remote] == 'upstream' }
-        remote ||= remotes.find { |r| r[:remote] == 'origin' }
+        remote   = upstream
+        remote ||= origin
         remote ||= remotes.find { |r| r[:user]   == Authorization.username }
         Command.detected_repo = true and remote[:repo] if remote
       end
@@ -1573,6 +1830,18 @@ GitHub repository or by appending your command with the user/repo:
         warn "(Inferring issue from branch prefix: ##@issue)" if @issue
       end
 
+      def current_branch
+        `git symbolic-ref --short HEAD 2>/dev/null`.chomp
+      end
+
+      def origin
+        remotes.find { |r| r[:remote] == 'origin' }
+      end
+
+      def upstream
+        remotes.find { |r| r[:remote] == 'upstream' }
+      end
+
       def require_issue
         raise MissingArgument, 'Issue required.' unless issue
       end
@@ -1588,6 +1857,102 @@ GitHub repository or by appending your command with the user/repo:
 
       def sort_by_creation(arr)
         arr.sort_by { |el| el['created_at'] }
+      end
+
+      def output_issue_comments(n)
+        return if n.zero?
+        puts "#{n} comment#{'s' unless n == 1}:\n\n"
+        Comment.execute %W(-l #{issue} -- #{repo})
+      end
+
+      def issue_uri
+        "/repos/#{repo}/issues/#{issue}"
+      end
+
+      def pull_uri
+        "/repos/#{repo}/pulls/#{issue}"
+      end
+
+      # Takes code blocks that will execute multithreaded. Returns an
+      # array of each threads return value.
+      # Code blocks need to handle their errors themselves!
+      def do_threaded(*blks)
+        threads = blks.map { |blk| Thread.new { blk.call } }
+        threads.map { |t| t.join; t.value }
+      end
+
+      # Subclasses should implement this and call super - their template string
+      # will be prepended by the IGNORE_MARKER.
+      def template_explanation(str)
+        str.lines.map { |line| "#{IGNORE_MARKER} #{line}".strip }.join("\n")
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Aliases < Command
+      def execute
+        puts 'Usage: ghi <alias> [<args>]'
+        puts ''
+        puts format_aliases
+        puts ''
+        puts "See 'ghi <alias> --help' for more information on a specific command"
+      end
+
+      private
+
+      def format_aliases(indent = 4)
+        indent = ' ' * indent
+        ALIASES.map do |al, cmd|
+          "#{indent}#{sprintf("%-15s", al)}#{cmd.join(' ')}"
+        end.join("\n")
+      end
+
+      ALIASES = Hash.new { |_, key|
+        [key] if /^\d+$/ === key
+      }.update(
+        'claim'    => %w(assign),
+        'create'   => %w(open),
+        'e'        => %w(edit),
+        'l'        => %w(list),
+        'L'        => %w(label),
+        'm'        => %w(comment),
+        'M'        => %w(milestone),
+        'new'      => %w(open),
+        'o'        => %w(open),
+        'p'        => %w(pull),
+        'pc'       => %w(pull create),
+        'pd'       => %w(pull diff),
+        'pe'       => %w(pull edit),
+        'pf'       => %w(pull fetch),
+        'pm'       => %w(pull merge),
+        'ps'       => %w(pull show),
+        'reopen'   => %w(open),
+        'rm'       => %w(close),
+        's'        => %w(show),
+        'st'       => %w(list),
+        'tag'      => %w(label),
+        'unassign' => %w(assign -d),
+        'update'   => %w(edit)
+      )
+
+      def self.fetch command, args
+        return command unless fetched = ALIASES[command]
+
+        # If the <command> is an issue number, check the options to see if an
+        # edit or show is desired.
+        if fetched.first =~ /^\d+$/
+          edit_options = Commands::Edit.new([]).options.top.list
+          edit_options.reject! { |arg| !arg.is_a?(OptionParser::Switch) }
+          edit_options.map! { |arg| [arg.short, arg.long] }
+          edit_options.flatten!
+          fetched.unshift((edit_options & args).empty? ? 'show' : 'edit')
+        end
+
+        command = fetched.shift
+        args.unshift(*fetched)
+        command
       end
     end
   end
@@ -2173,8 +2538,10 @@ The most commonly used ghi commands are:
    status      Determine whether or not issues are enabled for this repo
    enable      Enable issues for the current repo
    disable     Disable issues for the current repo
+   pull        Manage your pull requests
 
 See 'ghi help <command>' for more information on a specific command.
+Type 'ghi aliases' to see a list of aliases you can use to save some typing.
 EOF
           exit
         end
@@ -2916,7 +3283,7 @@ module GHI
           opts.banner = 'usage: ghi show <issueno>'
           opts.separator ''
           opts.on('-p', '--patch') { self.patch = true }
-          opts.on('-w', '--web') { self.web = true }
+          opts.on('-w', '--web', 'View the issue in your web browser') { self.web = true }
         end
       end
 
@@ -2939,34 +3306,40 @@ module GHI
               break
             end
           else
-            i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-            determine_merge_status(i) if pull_request?(i)
-            page do
-              puts format_issue(i)
-              n = i['comments']
-              if n > 0
-                puts "#{n} comment#{'s' unless n == 1}:\n\n"
-                Comment.execute %W(-l #{issue} -- #{repo})
-              end
-              break
-            end
+            # At this point we don't know whether the issue is a real issue
+            # or a pull request.
+            # We request both at the same time: If a pull request shows up,
+            # we create an instance of Pull::Show and present the PR, otherwise
+            # we show the plain issue or the error message.
+            i, pr = try_getting_issue_and_pr
+            pr ? show_pull_request(pr) : show_issue(i)
           end
         end
       end
 
       private
 
-      def pull_request?(issue)
-        issue.key?('pull_request')
+      def try_getting_issue_and_pr
+        i  = lambda { throb { api.get issue_uri }.body }
+        pr = lambda { api.get(pull_uri).body rescue nil }
+
+        do_threaded(i, pr)
       end
 
-      def determine_merge_status(pr)
-        pr['merged'] = true if pr['state'] == 'closed' && merged?
+      def show_pull_request(pr)
+        obj = Pull::Show.new
+        obj.pr    = pr
+        obj.repo  = repo
+        obj.issue = issue
+        obj.show_pull_request
       end
 
-      def merged?
-        # API returns with a Not Found error when the PR is not merged
-        api.get "/repos/#{repo}/pulls/#{issue}/merge" rescue false
+      def show_issue(i)
+        page do
+          puts format_issue(i)
+          output_issue_comments(i['comments'])
+          break
+        end
       end
     end
   end
@@ -2999,6 +3372,747 @@ module GHI
           puts "Issues are not enabled for this repo"
         end
 
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull < Command
+      SUBCOMMANDS = %w{ show diff fetch merge create edit close }
+      SUBCOMMANDS.each do |cmd|
+      end
+
+      attr_writer :pr
+
+      def execute
+        handle_help_request
+        parse_subcommand
+      end
+
+      # common operations of all subcommands before they start
+      # their individual execution
+      def subcommand_execute(no_issue_needed = false)
+        handle_help_request
+        unless no_issue_needed
+          require_issue
+          extract_issue
+        end
+        options.parse!(args)
+      end
+
+      def handle_help_request
+        if args.first.to_s.match(/--?h(elp)?/)
+          abort help
+        end
+      end
+
+      def help
+        <<EOF
+Usage: ghi pull <subcommand> <pull_request_no> [options]
+
+----- Subcommands -----
+
+#{SUBCOMMANDS.map { |cmd| to_const(cmd).help }.compact.join("\n")}
+EOF
+      end
+      # fall back to satisfy ghi's rescue operations to print a help screen
+      alias options help
+
+      def parse_subcommand
+        subcommand = args.shift
+        if SUBCOMMANDS.include?(subcommand)
+          obj = to_const(subcommand).new(args)
+          obj.repo = repo
+          obj.execute
+        else
+          abort "Invalid Syntax\n#{help}"
+        end
+      end
+
+      def pr
+        @pr ||= throb { api.get pull_uri }.body
+      end
+
+      def show_pull_request
+        honor_the_issue_contract
+        page do
+          puts format_issue(pr) { format_pull_info(pr) }
+          output_issue_comments(pr['comments'])
+          break
+        end
+      end
+
+      private
+
+      def compare_uri
+        "/repos/#{repo}/compare/#{base}...#{head}"
+      end
+
+      def head
+        pr['head']['label']
+      end
+
+      def base
+        pr['base']['label']
+      end
+
+      def dirty?
+        !pr['mergeable'] && pr['mergeable_state'] == 'dirty'
+      end
+
+      def clean?
+        pr['mergeable'] && pr['mergeable_state'] == 'clean'
+      end
+
+      def needs_rebase?
+        compare_head_and_base['status'] == 'diverged'
+      end
+
+      def compare_head_and_base
+        @comparison ||= api.get(compare_uri).body
+      end
+
+      # dirty hack - this allows us to use the same format_issue
+      # method as all other issues do
+      def honor_the_issue_contract
+        pr['pull_request'] = { 'html_url' => true }
+        pr['labels'] = []
+      end
+
+      def to_const(str)
+        self.class.const_get(str.capitalize)
+      end
+
+      def self.help
+        new([]).options.to_s
+      end
+
+      def get_html(path)
+        Web.new(repo).curl path
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Close < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "close - closes a pull request without merging"
+          opts.separator ''
+          opts.on('-s', '--show', 'show the PR after closing') { @show = true }
+        end
+      end
+
+      def execute
+        subcommand_execute
+
+        begin
+          @pr = close_pull_request
+          puts 'Unmerged pull request closed.'
+          show_pull_request if @show
+        rescue
+          # TODO
+        end
+      end
+
+      private
+
+      def close_pull_request
+        throb { api.patch(pull_uri, state: 'closed') }.body
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Create < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "create - creates a new pull request from your editor"
+          opts.separator ''
+          opts.on('-s', '--show', 'show the PR after successful creation') { @show = true }
+        end
+      end
+
+      def execute
+        subcommand_execute(true)
+
+        editor.start(template)
+        # Note that we won't allow an empty body! While it's technically
+        # possible, this might be a good chance to enforce good habits...
+        editor.require_content_for(:title, :base, :head, :body)
+        editor.check_uniqueness(:base, :head)
+        editor.unlink
+
+        begin
+          new_pr = create_pull_request
+          @issue = new_pr['number']
+          puts "Pull request ##{issue} successfully created."
+
+          # GitHub needs to analyze the new pull request - we have to
+          # call the API again to receive it with all stats updated.
+          #
+          # show_pull_request does this by calling pr - which usually
+          # caches such an API call. It cannot have been called at this
+          # point, a fresh request is therefore made.
+          show_pull_request if @show
+        rescue
+          # TODO
+          # Possible errors:
+          #   head wasn't pushed
+          #   base doesn't exist
+          #   PR already exists
+          puts "Something went wrong."
+        end
+      end
+
+      private
+
+      def create_pull_request
+        throb { api.post create_uri, editor.content }.body
+      end
+
+      def create_uri
+        "/repos/#{repo}/pulls"
+      end
+
+      # We cannot name these method head and base - something like that
+      # already exists. In most cases it makes no difference, as they
+      # will contain the same info anyway. However if a user edits this
+      # information in his editor, they are out of sync and a subsequent
+      # show operation will be wrong.
+      def new_head
+        @head ||= "#{origin[:user]}:#{current_branch}"
+      end
+
+      def new_base
+        @base ||= "master"
+      end
+
+      def title
+        current_branch.capitalize.split('_').join(' ')
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PULL_REQUEST.ghi')
+      end
+
+      def template
+        <<EOF
+@ghi-title@ #{title}
+@ghi-head@  #{new_head}
+@ghi-base@  #{new_base}
+
+#{template_explanation}
+EOF
+      end
+
+      def template_explanation
+super <<EOF
+Please explain the pull request. You can edit title, head and base but don't
+touch the keywords itself. head is the name of the branch where your changes
+are implemented. For cross-repository pull requests in the same network,
+namespace head with a user like this: username:branch.  base is the name of the
+branch you want your changes pulled into. Do not prefix the base with username.
+Note that the base must be present on the repo on which you wanna open the pull
+request.  If upstream is present in git remote, then it will be used for
+opening pull request, otherwise origin will be used.  Use the empty section as
+the message's body. Trailing lines starting with '#{IGNORE_MARKER}' (like
+these) will be ignored, and empty messages will not be submitted.
+Make sure you pushed your branch to GitHub before you continue!
+Pull requests are formatted with GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
+EOF
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Edit < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "edit - edits the title and body of your pull request"
+          opts.separator ''
+          opts.on('-s', '--show', 'show the PR after successful edition') { @show = true }
+        end
+      end
+
+      def execute
+        subcommand_execute
+
+        editor.start(template)
+        # Note that we won't allow an empty body! While it's technically
+        # possible, this might be a good chance to enforce good habits...
+        editor.require_content_for(:title, :body)
+        editor.check_for_changes(title: title, body: body)
+        editor.unlink
+
+        begin
+          @pr = edit_pull_request
+          puts "Pull request successfully edited."
+          show_pull_request if @show
+        rescue
+          # TODO
+        end
+      end
+
+      private
+
+      def edit_pull_request
+        throb { api.patch(pull_uri, editor.content) }.body
+      end
+
+      def title
+        pr['title']
+      end
+
+      def body
+        pr['body']
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PULL_REQUEST_EDIT.ghi')
+      end
+
+      def template
+<<EOF
+@ghi-title@ #{title}
+
+#{body}
+#{template_explanation}
+EOF
+      end
+
+      def template_explanation
+super <<EOF
+Edit you pull request. You can edit the title, but please don't touch
+the keyword itself.  Trailing lines starting with '#{IGNORE_MARKER}' (like these)
+will be ignored, and empty messages will not be submitted. Pull requests are
+formatted with GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
+EOF
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Fetch < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "fetch - creates local branches out of pull requests"
+          opts.separator ''
+          opts.on('-b', '--branch <branch>', 'target branch, default: <pr_no>_PR, e.g. 128_PR') do |branch|
+            @branch = branch
+          end
+          opts.on('-c', '--checkout', 'move to your new branch after fetching') do
+            @checkout = true
+          end
+        end
+      end
+
+      def execute
+        subcommand_execute
+
+        fetch_branch
+        checkout_branch if @checkout
+      end
+
+      private
+
+      def branch
+        @branch ||= "#{issue}_PR"
+      end
+
+      # TODO should this point to upstream and just fallback to origin?
+      def fetch_branch
+        `git fetch origin refs/pull/#{issue}/head:#{branch}`
+      end
+
+      def checkout_branch
+        `git checkout #{branch}`
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Merge < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
+          opts.separator ''
+          opts.on('-p', '--pull', 'pulls locally after a successful merge') do
+            @pull = true
+          end
+          opts.on('-r', '--rebase', 'pulls locally through rebase') do
+            @rebase = true
+          end
+          opts.on('-m', '--message', "the merge commit message body - default: PR title") do |message|
+            abort "Commit message must not be empty" if message.empty?
+            @commit_messge = message
+          end
+          opts.on('-e', '--edit', 'edit the commit message with your editor') do
+            @edit = true
+          end
+        end
+      end
+
+      def execute
+        subcommand_execute
+
+        obtain_message_from_editor if @edit
+        abort already_merged if merged?
+        abort dirty_pull_request unless mergeable?
+        ask_for_continuation if needs_rebase?
+
+        begin
+          merge_pull_request
+          puts fg('2cc200') { 'Merge successful!'}
+          pull_changes if pull_requested?
+        rescue
+          abort "Automatic merging impossible."
+        end
+      end
+
+      private
+
+      def ask_for_continuation
+        print rebase_warning
+        abort "\nThanks! Your commit history is grateful." unless $stdin.gets.chomp == 'Y'
+      end
+
+      def rebase_warning
+        # Beware and add the last whitespace separately. If we just leave it trailing
+        # in the heredoc, editor, git-hooks etc. might eat it away.
+<<EOF.strip + ' '
+\b#{fg('e1811d') { "#{head} and #{base} have diverged!" }}
+
+To retain a clean commit history it is recommended to rebase before merging.
+Do you really want to do this? (type Y to continue)
+EOF
+      end
+
+      def already_merged
+        "Pull request has already been merged.\n" + more_info
+      end
+
+      def dirty_pull_request
+        "Cannot merge a dirty pull request.\n" + more_info
+      end
+
+      def more_info
+        "See 'ghi pull show #{issue}' for further information."
+      end
+
+      def commit_message
+        @commit_message ||= pr['title']
+      end
+
+      def merge_pull_request
+        throb { api.put merge_uri, commit_message: commit_message }
+      end
+
+      def pull_changes
+        cmd = 'pull' if @pull
+        cmd = 'pull --rebase' if @rebase
+        branch = pr['base']['ref']
+
+        `git checkout #{branch}`
+        `git #{cmd} origin #{branch}`
+      end
+
+      def merge_uri
+        "#{pull_uri}/merge"
+      end
+
+      def merged?
+        pr['merged']
+      end
+
+      def mergeable?
+        pr['mergeable']
+      end
+
+      def pull_requested?
+        abort "...but don't know whether you want to pull or rebase." if @rebase && @pull
+        @rebase || @pull
+      end
+
+      def obtain_message_from_editor
+        editor.start(template + template_explanation)
+        editor.require_content_for(:body)
+        editor.unlink
+        @commit_message = editor.content[:body]
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PULL_REQUEST_MERGE.ghi')
+      end
+
+      def template
+        "#{pr['title']}\n"
+      end
+
+      def template_explanation
+        super <<EOF
+Edit the merge commits body. Its title is automatically set by GitHub:
+'#{gh_merge_title}'. Trailing lines starting with '#{IGNORE_MARKER}'
+(like these) will be ignored, and empty message won't be submitted.
+EOF
+      end
+
+      def gh_merge_title
+        "Merge pull request ##{issue} from #{base.sub(':', '/')}"
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    class Pull::Show < Pull
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "show - displays details of a pull request"
+          opts.separator ''
+          opts.on('-c', '--commits', 'show associated commits') { commits; abort }
+          opts.on('-f', '--files', 'show changed files') { files; abort }
+          opts.on('-p', '--patch', 'show patch') { patch; abort}
+          opts.on('-d', '--diff', 'alias of `ghi pull diff <pr_no>`') { reroute_to_diff; abort }
+        end
+      end
+
+      def execute
+        subcommand_execute
+        show_pull_request
+      end
+
+      def commits
+        show_additional_data(:commits)
+      end
+
+      def files
+        show_additional_data(:files)
+      end
+
+      def patch
+        output_from_html(:patch)
+      end
+
+      def reroute_to_diff
+        Diff.new([issue]).execute
+      end
+
+      def show_additional_data(type)
+        res = throb { api.get "#{pull_uri}/#{type}" }.body
+        page do
+          puts send("format_#{type}", res)
+          break
+        end
+      end
+
+      def web_uri(type)
+        "pull/#{issue}.#{type}"
+      end
+
+      def output_from_html(type)
+        res = throb { get_html web_uri(type)}
+        page do
+          # use the original $stdout.puts, as puts is monkey patched
+          # to highlight usernames - not cool when you display code only
+          $stdout.puts format_diff(res)
+          break
+        end
+      end
+    end
+  end
+end
+module GHI
+  module Commands
+    # This was extracted out of Pull::Show, it naturally shares a couple of
+    # methods with it and is therefore a subclass.
+    class Pull::Diff < Pull::Show
+      def options
+        OptionParser.new do |opts|
+          opts.banner = "diff - view and comment on pull request diffs"
+          opts.separator ''
+          opts.on('-n', '--no-comments', 'show diff without review comments') { diff; abort}
+          opts.on('-c', '--comment', 'opens your editor to create review comments') { comment; abort }
+        end
+      end
+
+      def execute
+        subcommand_execute
+        diff_with_comments
+      end
+
+      def diff
+        output_from_html(:diff)
+      end
+
+      def diff_with_comments
+        # It might seem pointless to store this method call in a local variable,
+        # but it isn't. The page method's throbber has some rendering issues when
+        # the method call is executed inside the page block - rather weird.
+        diff = commented_diff
+        page { puts diff; break }
+      end
+
+      def comment
+        # We need to know the current pull requests head to create comments.
+        # Let's do it while the user spends time in the editor, he won't notice.
+        ed = lambda { editor.start(no_color { diff_with_explanation }) }
+        pr = lambda { api.get(pull_uri).body['head']['sha'] rescue nil }
+        _, sha = do_threaded(ed, pr)
+
+        # Check the comments in Editor for the following.
+        comments = editor.extract_new_comments
+
+        throb do
+          threads = comments.map do |comment|
+            Thread.new do
+              comment['commit_id'] = sha
+              api.post(review_comments_uri, comment)
+            end
+          end
+          threads.each(&:join)
+        end
+
+        # Unlink afterwards, in case there is an error from GitHub's side -
+        # something like a server error. If it really fails, the user can
+        # just repeat the command and won't loose the changes he's made.
+        editor.unlink
+        puts "#{count_with_plural(comments.size, 'comment')} created."
+      end
+
+      private
+
+      def commented_diff(comment_marker = '')
+        # Make sure the lazy evaluation of repo has been run before -
+        # we'll get an ugly race condition otherwise
+        require_repo
+
+        # Get the diff and the review comments in parallel
+        diff_call = lambda { throb { get_html web_uri('diff') } }
+        comm_call = lambda { api.get(review_comments_uri).body }
+        diff, comments = do_threaded(diff_call, comm_call)
+
+        # Review comments also contain outdated comments - we don't
+        # need them
+        delete_outdated_comments(comments)
+
+        # We want to insert something into the diff at specific positions.
+        # These positions are identified by diff hunks. We can look up these
+        # hunks in the diff to know where we have to insert the comment.
+        # However as soon as we start to insert stuff, the diff itself is
+        # invalidated: Looking up positions by hunks therefore won't work
+        # anymore.
+        # This can be avoided when the order of insertion is right: We need
+        # to do it from the bottom up, so that the upper parts don't go out
+        # of sync with the original diff.
+        # We sort them by their position and their creation date inside the
+        # diff.
+        # We also group the per hunk, which is a little more efficient when
+        # multiple comments of the same code piece need to be displayed.
+        grouped_comment_ids = group_by_diff_hunk(comments)
+
+        # To get the formatting we want, only placeholders are inserted at
+        # first. Right after that the diff is formatted.
+        # Then we'll replace the placeholders with formatted comments -
+        # syntax highlighting and all enabled.
+        insert_place_holders(diff, grouped_comment_ids)
+        formatted = format_diff(diff)
+        replace_placeholders(formatted, comments, comment_marker)
+        formatted
+      end
+
+      def delete_outdated_comments(comments)
+        comments.keep_if { |comment| comment['position'] }
+      end
+
+      def group_by_diff_hunk(comments)
+        sorted= comments.sort_by do |c|
+          [c['position'], c['created_at'].size]
+        end
+        sorted.each_with_object(hash_with_default_array) do |comment, h|
+          h[comment['diff_hunk']] << comment['id']
+        end
+      end
+
+      def insert_place_holders(diff, comments)
+        # insert from the bottom up, so we don't destroy the indices
+        comments.keys.reverse.each do |hunk|
+          # + 1 because we want to place our placeholder right after the new
+          # line that follows our hunk
+          index = diff.index(hunk) + hunk.size + 1
+          ids = comments[hunk]
+          placeholders = ids.map { |id| placeholder(id) }.join
+          diff.insert(index, placeholders)
+        end
+      end
+
+      # Surround the placeholders with \n's, so that it sits on his own line.
+      # This avoids breaking the regular formatting of a diff.
+      def placeholder(id)
+        "\n@ghi-comment-#{id}@\n"
+      end
+
+      def replace_placeholders(diff, comments, comment_marker)
+        comments.each do |comment|
+          ph = placeholder(comment['id'])
+          c  = "\n" + format_comment(comment).chop # one newline less
+          c  = prepend_each_line(c, comment_marker)
+          diff.sub!(ph, c)
+        end
+      end
+
+      def prepend_each_line(lines, marker)
+        lines.lines.map { |line| "#{marker} #{line}".strip }.join("\n") + "\n"
+      end
+
+      def hash_with_default_array
+        Hash.new { |h, k| h[k] = [] }
+      end
+
+      def review_comments_uri
+        "#{pull_uri}/comments"
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PR_DIFF_COMMENTS.diff')
+      end
+
+      def diff_with_explanation
+        # The diff --git portion allows editors like vim to autodetect
+        # the filetype. This would happen anyway, but with the explanation
+        # string in place, it won't work.
+        "#{template_explanation}\n#{commented_diff(IGNORE_MARKER)}"
+      end
+
+      def template_explanation
+super <<EOF
+Review the diff. Lines leading with '#{IGNORE_MARKER}' like these will be ignored.
+Place your message right after the line you want to comment. Use the
+following format:
+
++  def method
++    puts 'You really should create a comment right after this method'
++  end
+@
+Your comment goes here!
+@
+
+Make sure the delimiting '@' is the only character on the line!
+Create as many comments as you like.
+Your messages are formmatted with GitHub Flavored Markdown (GFM).
+
+
+EOF
       end
     end
   end
