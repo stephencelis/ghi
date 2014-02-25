@@ -15,7 +15,7 @@ module GHI
           opts.banner = <<EOF
 usage: ghi label <labelname> [-c <color>] [-r <newname>]
    or: ghi label -D <labelname>
-   or: ghi label <issueno> [-a] [-d] [-f]
+   or: ghi label <issueno(s)> [-a] [-d] [-f] <label>
    or: ghi label -l [<issueno>]
 EOF
           opts.separator ''
