@@ -45,9 +45,11 @@ EOF
 
         case action
         when 'list'
+          get_requests(:index, :events)
           res = index
           page do
-            puts format_comments(res.body)
+            elements = sort_by_creation(res.body + paged_events(events, res))
+            puts format_comments_and_events(elements)
             break unless res.next_page
             res = throb { api.get res.next_page }
           end
@@ -76,7 +78,7 @@ EOF
       protected
 
       def index
-        throb { api.get uri, :per_page => 100 }
+        @index ||= throb { api.get uri, :per_page => 100 }
       end
 
       def create message = 'Commented.'
@@ -96,7 +98,27 @@ EOF
         puts 'Comment deleted.'
       end
 
+      def events
+        @events ||= begin
+          events = []
+          res = api.get(event_uri, :per_page => 100)
+          loop do
+            events += res.body
+            break unless res.next_page
+            res = api.get res.next_page
+          end
+          events
+        end
+      end
+
       private
+
+      def get_requests(*methods)
+        threads = methods.map do |method|
+          Thread.new { send(method) }
+        end
+        threads.each { |t| t.join }
+      end
 
       def uri
         if comment
@@ -104,6 +126,10 @@ EOF
         else
           "/repos/#{repo}/issues/#{issue}/comments"
         end
+      end
+
+      def event_uri
+        "/repos/#{repo}/issues/#{issue}/events"
       end
 
       def require_body
@@ -124,6 +150,18 @@ EOF
         end
         assigns[:body] = message if message
         e
+      end
+
+      def paged_events(events, comments_res)
+        if comments_res.next_page
+          last_comment_creation = comments_res.body.last['created_at']
+          events_for_this_page, @events = events.partition do |event|
+            event['created_at'] < last_comment_creation
+          end
+          events_for_this_page
+        else
+          events
+        end
       end
     end
   end

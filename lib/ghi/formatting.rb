@@ -234,9 +234,15 @@ Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 EOF
     end
 
-    def format_comments comments
-      return 'None.' if comments.empty?
-      comments.map { |comment| format_comment comment }
+    def format_comments_and_events elements
+      return 'None.' if elements.empty?
+      elements.map do |element|
+        if event = element['event']
+          format_event(element) unless unimportant_event?(event)
+        else
+          format_comment(element)
+        end
+      end.compact
     end
 
     def format_comment c, width = columns
@@ -245,6 +251,16 @@ EOF
 #{format_date DateTime.parse(c['created_at'])}:
 #{indent c['body'], 4, width}
 
+
+EOF
+    end
+
+    def format_event e, width = columns
+      reference = e['commit_id']
+      <<EOF
+#{bright { '⁕' }} #{format_event_type(e['event'])} by @#{e['actor']['login']}\
+#{" through #{underline { reference[0..6] }}" if reference} \
+#{format_date DateTime.parse(e['created_at'])}
 
 EOF
     end
@@ -322,6 +338,17 @@ EOF
 
     def format_tag tag
       (colorize? ? ' %s ' : '[%s]') % tag
+    end
+
+    def format_event_type(event)
+      color_codes = {
+        'reopened' => '2cc200',
+        'closed' => 'ff0000',
+        'merged' => '9677b1',
+        'assigned' => 'e1811d',
+        'referenced' => 'aaaaaa'
+      }
+      fg(color_codes[event]) { event }
     end
 
     #--
@@ -475,6 +502,12 @@ EOF
         thread.kill
         puts "\r#{CURSOR[:column][position]}#{redraw}#{CURSOR[:show]}"
       end
+    end
+
+    private
+
+    def unimportant_event?(event)
+      %w{ subscribed unsubscribed mentioned }.include?(event)
     end
   end
 end
