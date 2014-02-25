@@ -88,14 +88,18 @@ module GHI
         if index = args.index { |arg| /^\d+$/ === arg }
           @issue = args.delete_at index
         else
-          @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
-          warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+          infer_issue_from_branch_prefix
         end
         @issue
       end
       alias extract_issue     issue
       alias milestone         issue
       alias extract_milestone issue
+
+      def infer_issue_from_branch_prefix
+        @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
+        warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+      end
 
       def require_issue
         raise MissingArgument, 'Issue required.' unless issue
