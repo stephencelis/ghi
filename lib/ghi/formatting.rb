@@ -117,7 +117,7 @@ module GHI
     end
 
     def format_issues_header
-      state = assigns[:state] || 'open'
+      state = assigns[:state] ||= 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
