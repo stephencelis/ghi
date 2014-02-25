@@ -35,11 +35,7 @@ module GHI
             determine_merge_status(i) if pull_request?(i)
             page do
               puts format_issue(i)
-              n = i['comments']
-              if n > 0
-                puts "#{n} comment#{'s' unless n == 1}:\n\n"
-                Comment.execute %W(-l #{issue} -- #{repo})
-              end
+              output_issue_comments(i['comments'])
               break
             end
           end

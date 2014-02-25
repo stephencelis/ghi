@@ -113,6 +113,12 @@ module GHI
       def sort_by_creation(arr)
         arr.sort_by { |el| el['created_at'] }
       end
+
+      def output_issue_comments(n)
+        return if n.zero?
+        puts "#{n} comment#{'s' unless n == 1}:\n\n"
+        Comment.execute %W(-l #{issue} -- #{repo})
+      end
     end
   end
 end
