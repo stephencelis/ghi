@@ -74,18 +74,30 @@ $ git config github.host address_of_your_enterprise_host
 
 Make sure your terminal is configured to display 256 colors. You can
 check this by running `tput colors`, which should return `256`.
-In case it doesn't you need to `export TERM=xterm-256color` or `export
-TERM=screen-256color`.
+
+In case it doesn't you need to set the environmental variable `TERM`:
+``` sh
+export TERM=xterm-256color # or screen-256color
+```
 Ideally you'll want to add this to one of your shell configuration files (e.g. `~/.bashrc`).
+``` sh
+echo "export TERM=xterm256color" >> ~/.bashrc
+```
 
 If for whatever reason you cannot set the `TERM` variable globally, it
-is recommended to set an alias `alias ghi='TERM=xterm-256colors ghi'`.
+is recommended to set an alias:
+``` sh
+$ alias ghi='TERM=xterm-256color ghi'
+```
 This runs `ghi` with full color support, but leaves the rest of your
 terminal untouched.
 
 Ubuntu users of a version prior to 12.04, beware! Your terminal will not
-support 256 colors by default. Please run `sudo apt-get install
-ncurses-term` before setting the `TERM` variable.
+support 256 colors by default. You need to get an additional library
+before before setting the `TERM` variable.
+``` sh
+$ sudo apt-get install ncurses-term
+```
 
 Don't forget to reload your config file (e.g. `source ~/.bashrc`) or
 just reopen your terminal.
