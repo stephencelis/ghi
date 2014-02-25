@@ -173,12 +173,22 @@ EOF
 
       def multi_action(action)
         if @issues.any?
-          @issues.each do |issue|
-            @issue = issue
-            send action
+          override_issue_reader
+          threads = @issues.map do |issue|
+            Thread.new do
+              Thread.current[:issue] = issue
+              send action
+            end
           end
+          threads.each(&:join)
         else
           send action
+        end
+      end
+
+      def override_issue_reader
+        def issue
+          Thread.current[:issue]
         end
       end
     end
