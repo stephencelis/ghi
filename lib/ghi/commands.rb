@@ -17,5 +17,6 @@ module GHI
     autoload :Unassign,  'ghi/commands/unassign'
     autoload :Version,   'ghi/commands/version'
     autoload :Pull,      'ghi/commands/pull'
+    autoload :Aliases,   'ghi/commands/aliases'
   end
 end

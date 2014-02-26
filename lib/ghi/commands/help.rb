@@ -37,6 +37,7 @@ The most commonly used ghi commands are:
    milestone   Manage project milestones
 
 See 'ghi help <command>' for more information on a specific command.
+Type 'ghi aliases' to see a list of aliases you can use to save some typing.
 EOF
           exit
         end
