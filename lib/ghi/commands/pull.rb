@@ -19,6 +19,8 @@ module GHI
       def show
         require_issue
         extract_issue
+        # all options terminate after execution
+        show_options.parse!(args)
 
         res = throb { api.get show_uri }
         pr  = res.body
@@ -31,8 +33,6 @@ module GHI
         end
       end
 
-
-      # dirty hack - this allows us to use the same format_issue
       def show_options
         OptionParser.new do |opts|
           opts.banner = "show"
@@ -42,6 +42,8 @@ module GHI
           opts.on('-d', '--diff', 'show diff') { show_diff; abort }
         end
       end
+
+      # dirty hack - this allows us to use the same format_issue
       # method as all other issues do
       def honor_the_issue_contract(pr)
         pr['pull_request'] = { 'html_url' => true }
@@ -52,6 +54,14 @@ module GHI
 
       def show_uri
         "/repos/#{repo}/pulls/#{issue}"
+      end
+
+      def diff_uri
+        "#{repo}/pulls/#{issue}.diff"
+      end
+
+      def commits_uri
+        "#{show_uri}/commits"
       end
     end
   end

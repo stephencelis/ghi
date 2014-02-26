@@ -404,6 +404,34 @@ EOF
       "#{count} #{term}#{s}"
     end
 
+    def format_commits(commits)
+      header = format_commits_header(commits)
+      body   = commits.map { |commit| format_commit(commit) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_commits_header(commits)
+      n = commits.size
+      count = count_with_plural(n, 'commit')
+      authors = commits.map { |commit| commit['author']['login'] }.uniq
+      authors = enumerative_concat(authors, 'and')
+      fg('cccc33') do
+        "#{count} by #{authors}"
+      end
+    end
+
+    def enumerative_concat(arr, last_coordination)
+      return arr.first if arr.one?
+      "#{arr[0..-2].join(', ')} #{last_coordination} #{authors[-1]}"
+    end
+
+    def format_commit(commit, indent = 4, width = columns)
+      indent = ' ' * indent
+      sha = commit['sha'][0..6]
+      title = commit['commit']['message'].split("\n\n").first
+      "#{indent}* #{sha} | #{title}"
+    end
+
     #--
     # Helpers:
     #++
