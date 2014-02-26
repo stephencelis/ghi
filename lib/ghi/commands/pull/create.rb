@@ -23,6 +23,10 @@ module GHI
           show_pull_request(pr_number) if @show
         rescue
           # TODO
+          # Possible errors:
+          #   head wasn't pushed
+          #   base doesn't exist
+          #   PR already exists
           puts "Something went wrong"
         end
       end
