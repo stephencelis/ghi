@@ -441,6 +441,13 @@ EOF
       "#{indent}* #{sha} | #{truncate(title, 20)}"
     end
 
+    def format_diff(diff)
+      diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
+      diff.gsub!(/^(@@ .* @@)/, fg('387593') { '\1' })
+      diff.gsub!(/^(\+[^\+]?.*)/, fg('8abb3b') { '\1' })
+      diff.gsub!(/^(-[^-]?.*)/,  fg('ff7f66') { '\1' })
+    end
+
     #--
     # Helpers:
     #++

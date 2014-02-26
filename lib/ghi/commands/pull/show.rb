@@ -38,7 +38,7 @@ module GHI
       def diff
         diff = throb { get_html diff_uri}
         page do
-          puts diff
+          puts format_diff(diff)
         end
       end
 
