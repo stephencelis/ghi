@@ -138,6 +138,7 @@ EOF
       'new'      => %w(open),
       'o'        => %w(open),
       'p'        => %w(pull),
+      'pf'       => %w(pull fetch),
       'ps'       => %w(pull show),
       'reopen'   => %w(open),
       'rm'       => %w(close),
