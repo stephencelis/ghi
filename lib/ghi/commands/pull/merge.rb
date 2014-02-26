@@ -10,7 +10,7 @@ module GHI
           opts.on('-r', '--rebase', 'pulls the new commits locally through rebase') do |rebase|
             @rebase = true
           end
-          opts.on('-m', '--message', "message used in the merge commits body - defaults to the PR's title") do |message|
+          opts.on('-m', '--message', "used in the merge commits body - defaults to PR title") do |message|
             abort "Commit message must not be empty" if message.empty?
             @commit_messge = message
           end
