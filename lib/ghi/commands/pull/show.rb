@@ -36,17 +36,16 @@ module GHI
       end
 
       def diff
-        diff = throb { get_html diff_uri}
-        page do
-          puts format_diff(diff)
-        end
+        output_from_html(diff_uri)
       end
 
       def patch
-        patch = throb { get_html patch_uri }
-        page do
-          puts patch
-        end
+        output_from_html(patch_uri)
+      end
+
+      def output_from_html(path)
+        res = throb { get_html path }
+        page { puts format_diff(res) }
       end
 
       def diff_uri
