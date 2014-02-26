@@ -1,11 +1,25 @@
 module GHI
   module Commands
     class Pull < Command
-      def options
+      def execute
+        handle_help_request
+        parse_subcommand
       end
 
-      def execute
-        parse_subcommand
+      def handle_help_request
+        if args.first.match(/--?h(elp)?/)
+          abort help
+        end
+      end
+
+      def help
+        <<EOF
+Usage: ghi pull <subcommand> <pull_request_no> [options]
+
+----- Subcommands -----
+
+#{SUBCOMMANDS.map { |cmd| send "#{cmd}_help" }.compact.join("\n")}
+EOF
       end
 
       SUBCOMMANDS = %w{ show create edit fetch close merge }
@@ -35,8 +49,7 @@ module GHI
 
       def show_options
         OptionParser.new do |opts|
-          opts.banner = "show"
-          opts.separator ''
+          opts.banner = "show - displays details of a pull request"
           opts.on('-c', '--commits', 'show associated commits') { show_commits; abort }
           opts.on('-d', '--diff', 'show diff') { show_diff; abort }
         end
@@ -69,6 +82,13 @@ module GHI
 
       def commits_uri
         "#{show_uri}/commits"
+      end
+
+      # the rescue is just a transitional helper until all methods are implemented
+      SUBCOMMANDS.each do |cmd|
+        define_method("#{cmd}_help") do
+          send "#{cmd}_options".to_s rescue nil
+        end
       end
     end
   end
