@@ -26,6 +26,8 @@ module GHI
 
         begin
           merge_pull_request
+          puts fg('2cc200') { 'Merge successful!'}
+          pull_changes if pull_requested?
         rescue
           abort "Automatic merging impossible."
         end
@@ -67,6 +69,15 @@ module GHI
         throb { api.put merge_uri, commit_message: commit_message }
       end
 
+      def pull_changes
+        cmd = 'pull' if @pull
+        cmd = 'pull --rebase' if @rebase
+        branch = pr['base']['ref']
+
+        `git checkout #{branch}`
+        `git #{cmd} origin #{branch}`
+      end
+
       def merge_uri
         "#{pull_uri}/merge"
       end
@@ -77,6 +88,11 @@ module GHI
 
       def mergeable?
         pr['mergeable']
+      end
+
+      def pull_requested?
+        abort "...but don't know whether you want to pull or rebase." if @rebase && @pull
+        @rebase || @pull
       end
     end
   end
