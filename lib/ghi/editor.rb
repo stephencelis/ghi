@@ -77,6 +77,12 @@ module GHI
       abort "#{a} must not be the same as #{b}" if x == y
     end
 
+    def check_for_changes(old)
+      if old.all? { |keyword, old_content| content[keyword] == old_content }
+        unlink "Nothing changed."
+      end
+    end
+
     def content
       @content ||= {}
     end
