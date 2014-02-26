@@ -392,11 +392,20 @@ EOF
         message = "merged by @#{merger} #{format_date DateTime.parse(date)}"
         "#{indent}#{message}\n\n"
       else
+        str = "#{indent}#{format_merge_head_and_base(pr)}\n"
+
         m, m_st = pr.values_at('mergeable', 'mergeable_state')
         if m && m_st
-          "#{indent}#{fg('2cc200') { "✔ cleanly mergeable" }}\n\n"
+          str << "#{indent}#{fg('2cc200') { "✔ cleanly mergeable" }}"
         end
+
+        str << "\n\n"
       end
+    end
+
+    def format_merge_head_and_base(pr)
+      head, base = pr.values_at('head', 'base').map { |br| br['label'] }
+      "#{fg('cccc33') { base }} ⬅ #{fg('cccc33') { head } }"
     end
 
     def count_with_plural(count, term)
