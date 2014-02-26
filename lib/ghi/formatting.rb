@@ -399,15 +399,19 @@ EOF
         "#{indent}#{message}\n\n"
       else
         str = "#{indent}#{format_merge_head_and_base(pr)}\n"
+        str + indent + format_mergeability + "\n\n"
+      end
+    end
 
-        m, m_st = pr.values_at('mergeable', 'mergeable_state')
-        if m && m_st == 'clean'
-          str << "#{indent}#{fg('2cc200') { "✔ able to merge" }}"
-        elsif !m && m_st == 'dirty'
-          str << "#{indent}#{fg('ff0000') { "✗ pull request is dirty" }}"
+    def format_mergeability
+      if clean?
+        if needs_rebase?
+          "#{fg('e1811d') { "✔ able to merge, but needs a rebase" }}"
+        else
+          "#{fg('2cc200') { "✔ able to merge" }}"
         end
-
-        str << "\n\n"
+      elsif dirty?
+        "#{fg('ff0000') { "✗ pull request is dirty" }}"
       end
     end
 
