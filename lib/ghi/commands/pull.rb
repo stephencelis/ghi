@@ -26,6 +26,8 @@ Usage: ghi pull <subcommand> <pull_request_no> [options]
 #{SUBCOMMANDS.map { |cmd| to_const(cmd).help }.compact.join("\n")}
 EOF
       end
+      # fall back to satisfy ghi's rescue operations to print a help screen
+      alias options help
 
       def parse_subcommand
         subcommand = args.shift
