@@ -402,7 +402,7 @@ EOF
 
         m, m_st = pr.values_at('mergeable', 'mergeable_state')
         if m && m_st
-          str << "#{indent}#{fg('2cc200') { "✔ cleanly mergeable" }}"
+          str << "#{indent}#{fg('2cc200') { "✔ able to merge" }}"
         end
 
         str << "\n\n"
