@@ -438,17 +438,7 @@ EOF
       indent = ' ' * indent
       sha = commit['sha'][0..6]
       title = commit['commit']['message'].split("\n\n").first
-      "#{indent}* #{sha} | #{truncate(title, width - 20)}"
-    end
-
-    def truncate(str, size)
-      if str.size > size
-        res = str[0..(size - 3)]
-        last_whitespace = res.rindex(' ')
-        str[0..last_whitespace] + '...'
-      else
-        str
-      end
+      "#{indent}* #{sha} | #{truncate(title, 20)}"
     end
 
     #--
