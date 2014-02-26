@@ -1,7 +1,7 @@
 module GHI
   module Commands
     class Pull < Command
-      SUBCOMMANDS = %w{ show create edit fetch close merge }
+      SUBCOMMANDS = %w{ show fetch merge create edit close }
       SUBCOMMANDS.each do |cmd|
         autoload cmd.capitalize, "ghi/commands/pull/#{cmd}"
       end
