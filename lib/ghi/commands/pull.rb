@@ -90,7 +90,7 @@ EOF
 
       # dirty hack - this allows us to use the same format_issue
       # method as all other issues do
-      def honor_the_issue_contract(pr)
+      def honor_the_issue_contract
         pr['pull_request'] = { 'html_url' => true }
         pr['labels'] = []
       end

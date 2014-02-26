@@ -12,9 +12,11 @@ module GHI
 
       def execute
         subcommand_execute
+        honor_the_issue_contract
+        show_pull_request
+      end
 
-        honor_the_issue_contract(pr)
-
+      def show_pull_request
         page do
           puts format_issue(pr) { format_pull_info(pr) }
           output_issue_comments(pr['comments'])
