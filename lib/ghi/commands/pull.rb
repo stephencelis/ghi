@@ -13,10 +13,12 @@ module GHI
 
       # common operations of all subcommands before they start
       # their individual execution
-      def subcommand_execute
+      def subcommand_execute(no_issue_needed = false)
         handle_help_request
-        require_issue
-        extract_issue
+        unless no_issue_needed
+          require_issue
+          extract_issue
+        end
         # all options terminate after execution
         options.parse!(args)
       end
