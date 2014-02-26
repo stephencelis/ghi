@@ -20,7 +20,7 @@ module GHI
           res = throb { api.post pull_uri.chop, editor.content }.body
           pr_number = res['number']
           puts fg('2cc200') { "Pull request ##{pr_number} successfully created!" }
-          show_pull_request(pr_number) if @show
+          show_created_pull_request(pr_number) if @show
         rescue
           # TODO
           # Possible errors:
@@ -33,12 +33,8 @@ module GHI
 
       private
 
-      def show_pull_request(no)
-        exec 'ghi pull show #{no}'
-      end
-
-      def editor
-        @editor ||= Editor.new('GHI_PULL_REQUEST')
+      def show_created_pull_request(no)
+        exec "ghi pull show #{no}"
       end
 
       def create_uri
@@ -55,6 +51,10 @@ module GHI
 
       def title
         current_branch.capitalize.split('_').join(' ')
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PULL_REQUEST')
       end
 
       def template
