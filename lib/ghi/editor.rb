@@ -98,7 +98,8 @@ module GHI
 
     def extract_keyword(txt, kw, array = false)
       txt.sub!(/^@ghi-#{kw}@(.*)(\n|$)/, '')
-      val = $1.to_s.strip
+      return unless $1
+      val = $1.strip
       val = val.split(', ') if array
       content[kw] = val
     end
