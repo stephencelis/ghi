@@ -57,17 +57,12 @@ module GHI
         current_branch.capitalize.split('_').join(' ')
       end
 
-      def body
-        ''
-      end
-
       def template
         <<EOF
 @ghi-title@ #{title}
 @ghi-head@  #{head}
 @ghi-base@  #{base}
 
-#{body}
 #{template_explanation}
 EOF
       end
