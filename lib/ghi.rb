@@ -137,6 +137,8 @@ EOF
       'M'        => %w(milestone),
       'new'      => %w(open),
       'o'        => %w(open),
+      'p'        => %w(pull),
+      'ps'       => %w(pull show),
       'reopen'   => %w(open),
       'rm'       => %w(close),
       's'        => %w(show),
