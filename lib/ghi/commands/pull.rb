@@ -58,6 +58,34 @@ EOF
         "/repos/#{repo}/pulls/#{issue}"
       end
 
+      def compare_uri
+        "/repos/#{repo}/compare/#{base}...#{head}"
+      end
+
+      def head
+        pr['head']['label']
+      end
+
+      def base
+        pr['base']['label']
+      end
+
+      def dirty?
+        !pr['mergeable'] && pr['mergeable_state'] == 'dirty'
+      end
+
+      def clean?
+        pr['mergeable'] && pr['mergeable_state'] == 'clean'
+      end
+
+      def needs_rebase?
+        compare_head_and_base['status'] == 'diverged'
+      end
+
+      def compare_head_and_base
+        @comparison ||= api.get(compare_uri).body
+      end
+
       # dirty hack - this allows us to use the same format_issue
       # method as all other issues do
       def honor_the_issue_contract(pr)
