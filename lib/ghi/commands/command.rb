@@ -63,8 +63,8 @@ module GHI
       end
 
       def detect_repo
-        remote   = remotes.find { |r| r[:remote] == 'upstream' }
-        remote ||= remotes.find { |r| r[:remote] == 'origin' }
+        remote   = upstream
+        remote ||= origin
         remote ||= remotes.find { |r| r[:user]   == Authorization.username }
         Command.detected_repo = true and remote[:repo] if remote
       end
@@ -88,7 +88,7 @@ module GHI
         if index = args.index { |arg| /^\d+$/ === arg }
           @issue = args.delete_at index
         else
-          @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
+          @issue = current_branch[/^\d+/];
           warn "(Inferring issue from branch prefix: ##@issue)" if @issue
         end
         @issue
@@ -96,6 +96,18 @@ module GHI
       alias extract_issue     issue
       alias milestone         issue
       alias extract_milestone issue
+
+      def current_branch
+        `git symbolic-ref --short HEAD 2>/dev/null`.chomp
+      end
+
+      def origin
+        remotes.find { |r| r[:remote] == 'origin' }
+      end
+
+      def upstream
+        remotes.find { |r| r[:remote] == 'upstream' }
+      end
 
       def require_issue
         raise MissingArgument, 'Issue required.' unless issue
