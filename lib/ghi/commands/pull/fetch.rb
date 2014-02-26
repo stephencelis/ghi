@@ -14,9 +14,7 @@ module GHI
       end
 
       def execute
-        require_issue
-        extract_issue
-        options.parse!(args)
+        subcommand_execute
 
         fetch_branch
         checkout_branch if @checkout

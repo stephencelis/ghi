@@ -11,6 +11,16 @@ module GHI
         parse_subcommand
       end
 
+      # common operations of all subcommands before they start
+      # their individual execution
+      def subcommand_execute
+        handle_help_request
+        require_issue
+        extract_issue
+        # all options terminate after execution
+        options.parse!(args)
+      end
+
       def handle_help_request
         if args.first.match(/--?h(elp)?/)
           abort help

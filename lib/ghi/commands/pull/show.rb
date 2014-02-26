@@ -11,10 +11,7 @@ module GHI
       end
 
       def execute
-        require_issue
-        extract_issue
-        # all options terminate after execution
-        options.parse!(args)
+        subcommand_execute
 
         res = throb { api.get pull_uri }
         pr  = res.body
