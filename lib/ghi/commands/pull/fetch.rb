@@ -28,6 +28,7 @@ module GHI
         @branch ||= "#{issue}_PR"
       end
 
+      # TODO should this point to upstream and just fallback to origin?
       def fetch_branch
         `git fetch origin refs/pull/#{issue}/head:#{branch}`
       end
