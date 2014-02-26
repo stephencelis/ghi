@@ -4,18 +4,23 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "create - creates a new pull request from your editor"
+          opts.on('-s', '--show', 'show the PR after successful creation') { @show = true }
         end
       end
 
       def execute
+        subcommand_execute(true)
+
         editor.start(template)
         editor.require_content_for(:title, :base, :head, :body)
         editor.check_uniqueness(:base, :head)
         editor.unlink
 
         begin
-          #res = throb { api.post pull_uri.chop, editor.content }.body
-          puts fg('2cc200') { "Pull request ##{res['number']} successfully created!" }
+          res = throb { api.post pull_uri.chop, editor.content }.body
+          pr_number = res['number']
+          puts fg('2cc200') { "Pull request ##{pr_number} successfully created!" }
+          show_pull_request(pr_number) if @show
         rescue
           # TODO
           puts "Something went wrong"
@@ -23,6 +28,10 @@ module GHI
       end
 
       private
+
+      def show_pull_request(no)
+        exec 'ghi pull show #{no}'
+      end
 
       def editor
         @editor ||= Editor.new('GHI_PULL_REQUEST')
