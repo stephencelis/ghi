@@ -38,7 +38,6 @@ module GHI
           opts.banner = "show"
           opts.separator ''
           opts.on('-c', '--commits', 'show associated commits') { show_commits; abort }
-          opts.on('-f', '--files', 'show changed files') { show_files; abort }
           opts.on('-d', '--diff', 'show diff') { show_diff; abort }
         end
       end
