@@ -49,7 +49,7 @@ module GHI
         ].join("\n")
       end
 
-      def already_merged_message
+      def already_merged
         "Pull request has already been merged.\n" + more_info
       end
 
