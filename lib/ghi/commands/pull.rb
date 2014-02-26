@@ -27,6 +27,8 @@ EOF
         subcommand = args.shift
         if SUBCOMMANDS.include?(subcommand)
           send subcommand
+        else
+          abort "Invalid Syntax\n#{help}"
         end
       end
 
