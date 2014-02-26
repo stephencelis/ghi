@@ -56,6 +56,10 @@ EOF
       def self.help
         new([]).options.to_s
       end
+
+      def get_html(path)
+        Web.new(repo).curl path
+      end
     end
   end
 end

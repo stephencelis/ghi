@@ -35,13 +35,18 @@ module GHI
       end
 
       def diff
-        # this is actually a html page - easily parsed but our api
-        # wants JSON.
+        diff = throb { get_html diff_uri}
+        page do
+          puts diff
+        end
       end
 
-
       def diff_uri
-        "#{repo}/pulls/#{issue}.diff"
+        "pull/#{issue}.diff"
+      end
+
+      def patch_uri
+        "pull/#{issue}.patch"
       end
 
       def commits_uri
