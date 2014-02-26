@@ -48,6 +48,10 @@ EOF
         end
       end
 
+      def pr
+        @pr ||= throb { api.get pull_uri }.body
+      end
+
       private
 
       def pull_uri

@@ -13,8 +13,6 @@ module GHI
       def execute
         subcommand_execute
 
-        res = throb { api.get pull_uri }
-        pr  = res.body
         honor_the_issue_contract(pr)
 
         page do
