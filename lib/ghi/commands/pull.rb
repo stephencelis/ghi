@@ -24,7 +24,7 @@ module GHI
       end
 
       def handle_help_request
-        if args.first.match(/--?h(elp)?/)
+        if args.first.to_s.match(/--?h(elp)?/)
           abort help
         end
       end
