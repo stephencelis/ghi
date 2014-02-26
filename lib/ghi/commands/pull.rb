@@ -43,6 +43,14 @@ module GHI
         end
       end
 
+      def show_commits
+        commits = throb { api.get commits_uri }.body
+        page do
+          puts format_commits(commits)
+          break
+        end
+      end
+
       # dirty hack - this allows us to use the same format_issue
       # method as all other issues do
       def honor_the_issue_contract(pr)
