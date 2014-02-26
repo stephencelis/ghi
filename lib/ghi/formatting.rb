@@ -401,8 +401,10 @@ EOF
         str = "#{indent}#{format_merge_head_and_base(pr)}\n"
 
         m, m_st = pr.values_at('mergeable', 'mergeable_state')
-        if m && m_st
+        if m && m_st == 'clean'
           str << "#{indent}#{fg('2cc200') { "✔ able to merge" }}"
+        elsif !m && m_st == 'dirty'
+          str << "#{indent}#{fg('ff0000') { "✗ pull request is dirty" }}"
         end
 
         str << "\n\n"
