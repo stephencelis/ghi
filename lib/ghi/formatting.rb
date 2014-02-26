@@ -442,6 +442,7 @@ EOF
     end
 
     def format_diff(diff)
+      # FIXME: Minor inconsistencies in colored output
       diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
       diff.gsub!(/^(@@ .* @@)/, fg('387593') { '\1' })
       diff.gsub!(/^(\+[^\+]?.*)/, fg('8abb3b') { '\1' })
