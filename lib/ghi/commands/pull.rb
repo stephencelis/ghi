@@ -1,6 +1,11 @@
 module GHI
   module Commands
     class Pull < Command
+      SUBCOMMANDS = %w{ show create edit fetch close merge }
+      SUBCOMMANDS.each do |cmd|
+        autoload cmd.capitalize, "ghi/commands/pull/#{cmd}"
+      end
+
       def execute
         handle_help_request
         parse_subcommand
@@ -18,51 +23,23 @@ Usage: ghi pull <subcommand> <pull_request_no> [options]
 
 ----- Subcommands -----
 
-#{SUBCOMMANDS.map { |cmd| send "#{cmd}_help" }.compact.join("\n")}
+#{SUBCOMMANDS.map { |cmd| to_const(cmd).help }.compact.join("\n")}
 EOF
       end
 
-      SUBCOMMANDS = %w{ show create edit fetch close merge }
       def parse_subcommand
         subcommand = args.shift
         if SUBCOMMANDS.include?(subcommand)
-          send subcommand
+          to_const(subcommand).new(args).execute
         else
           abort "Invalid Syntax\n#{help}"
         end
       end
 
-      def show
-        require_issue
-        extract_issue
-        # all options terminate after execution
-        show_options.parse!(args)
+      private
 
-        res = throb { api.get show_uri }
-        pr  = res.body
-        honor_the_issue_contract(pr)
-
-        page do
-          puts format_issue(pr) { format_pull_info(pr) }
-          output_issue_comments(pr['comments'])
-          break
-        end
-      end
-
-      def show_options
-        OptionParser.new do |opts|
-          opts.banner = "show - displays details of a pull request"
-          opts.on('-c', '--commits', 'show associated commits') { show_commits; abort }
-          opts.on('-d', '--diff', 'show diff') { show_diff; abort }
-        end
-      end
-
-      def show_commits
-        commits = throb { api.get commits_uri }.body
-        page do
-          puts format_commits(commits)
-          break
-        end
+      def pull_uri
+        "/repos/#{repo}/pulls/#{issue}"
       end
 
       # dirty hack - this allows us to use the same format_issue
@@ -72,25 +49,12 @@ EOF
         pr['labels'] = []
       end
 
-      private
-
-      def show_uri
-        "/repos/#{repo}/pulls/#{issue}"
+      def to_const(str)
+        self.class.const_get(str.capitalize)
       end
 
-      def diff_uri
-        "#{repo}/pulls/#{issue}.diff"
-      end
-
-      def commits_uri
-        "#{show_uri}/commits"
-      end
-
-      # the rescue is just a transitional helper until all methods are implemented
-      SUBCOMMANDS.each do |cmd|
-        define_method("#{cmd}_help") do
-          send "#{cmd}_options".to_s rescue nil
-        end
+      def self.help
+        new([]).options.to_s
       end
     end
   end
