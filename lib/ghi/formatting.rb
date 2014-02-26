@@ -374,12 +374,18 @@ EOF
     end
 
     def change_viz(pr, size = 18)
+      sign = '∎'
       add, del = pr.values_at('additions', 'deletions').map(&:to_f)
       all = add + del
+
+      # when only an empty file was submitted (or a binary!) there might be
+      # a total number of 0 line canges. A division of 0 / 0 throws an error,
+      # therefore we just return without further operations
+      return fg('aaaaaa') { sign * size } if all.zero?
+
       add_percent = add / all
       del_percent = del / all
       rel = [add_percent, del_percent].map { |p| (p * size).round.to_i }
-      sign = '∎'
       rel.zip(['2cc200', 'ff0000']).map do |multiplicator, color|
         fg(color) { sign * multiplicator }
       end.join
