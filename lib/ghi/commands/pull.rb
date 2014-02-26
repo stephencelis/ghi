@@ -33,6 +33,15 @@ module GHI
 
 
       # dirty hack - this allows us to use the same format_issue
+      def show_options
+        OptionParser.new do |opts|
+          opts.banner = "show"
+          opts.separator ''
+          opts.on('-c', '--commits', 'show associated commits') { show_commits; abort }
+          opts.on('-f', '--files', 'show changed files') { show_files; abort }
+          opts.on('-d', '--diff', 'show diff') { show_diff; abort }
+        end
+      end
       # method as all other issues do
       def honor_the_issue_contract(pr)
         pr['pull_request'] = { 'html_url' => true }
