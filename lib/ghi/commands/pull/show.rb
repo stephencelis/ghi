@@ -6,6 +6,7 @@ module GHI
           opts.banner = "show - displays details of a pull request"
           opts.on('-c', '--commits', 'show associated commits') { commits; abort }
           opts.on('-d', '--diff', 'show diff') { diff; abort }
+          opts.on('-p', '--patch', 'show patch') { patch; abort}
         end
       end
 
@@ -38,6 +39,13 @@ module GHI
         diff = throb { get_html diff_uri}
         page do
           puts diff
+        end
+      end
+
+      def patch
+        patch = throb { get_html patch_uri }
+        page do
+          puts patch
         end
       end
 
