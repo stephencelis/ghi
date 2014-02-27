@@ -43,7 +43,7 @@ module GHI
       private
 
       def create_pull_request
-        throb { api.post pull_uri.chop, editor.content }.body
+        throb { api.post create_uri, editor.content }.body
       end
 
       def create_uri
