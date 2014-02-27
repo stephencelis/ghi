@@ -51,7 +51,7 @@ module GHI
     # for a bigger refactoring. Adds flexibility.
     public
 
-    def start(template)
+    def start(template = '')
       File.open path, 'a+' do |f|
         f << template if File.zero? path
         f.rewind
@@ -61,30 +61,24 @@ module GHI
     end
 
     # TODO
-    # It's questionable what these methods should do when a check
-    # doesn't pass. unlink with an argument aborts and removes the
-    # temporary file, however if a user has just written a lengthy
-    # description for a pull request and a typo prevents him from
-    # pushing it, it might be helpful if he can resume where he left.
-    # It would probably be best if the abort/unlink method actually
-    # prompts the user if he wants to edit - in this case we reopen the
-    # editor - otherwise we regularily remove the file.
-
-    # TODO
     # allow a hash here as well:
     #   key: what's required
-    #   val: error message as string or proc
+    #   val: custom error message as string or proc
     def require_content_for(*contents)
-      contents.each do |c|
-        unless content[c] && ! content[c].empty?
-          unlink "#{c.capitalize} must not be empty!"
+      guarded do
+        contents.each do |c|
+          unless content[c] && ! content[c].empty?
+            raise "#{c.capitalize} must not be empty!"
+          end
         end
       end
     end
 
     def check_uniqueness(a, b)
-      x, y = content.values_at(a, b)
-      unlink "#{a} must not be the same as #{b}" if x == y
+      guarded do
+        x, y = content.values_at(a, b)
+        raise "#{a} must not be the same as #{b}" if x == y
+      end
     end
 
     def check_for_changes(old)
@@ -98,6 +92,21 @@ module GHI
     end
 
     private
+
+    def guarded
+      begin
+        yield
+      rescue => e
+        puts e
+        print "Type e to enter your editor again, any other key discards your input and aborts: "
+        if $stdin.gets.chomp == 'e'
+          start
+          retry
+        else
+          unlink "Aborted."
+        end
+      end
+    end
 
     def parse(file)
       txt = File.read(file)
