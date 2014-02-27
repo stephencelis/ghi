@@ -12,16 +12,7 @@ module GHI
 
       def execute
         subcommand_execute
-        honor_the_issue_contract
         show_pull_request
-      end
-
-      def show_pull_request
-        page do
-          puts format_issue(pr) { format_pull_info(pr) }
-          output_issue_comments(pr['comments'])
-          break
-        end
       end
 
       def commits
@@ -42,7 +33,10 @@ module GHI
 
       def output_from_html(path)
         res = throb { get_html path }
-        page { puts format_diff(res) }
+        page do
+          puts format_diff(res)
+          break
+        end
       end
 
       def diff_uri

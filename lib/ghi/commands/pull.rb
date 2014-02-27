@@ -88,6 +88,15 @@ EOF
         @comparison ||= api.get(compare_uri).body
       end
 
+      def show_pull_request
+        honor_the_issue_contract
+        page do
+          puts format_issue(pr) { format_pull_info(pr) }
+          output_issue_comments(pr['comments'])
+          break
+        end
+      end
+
       # dirty hack - this allows us to use the same format_issue
       # method as all other issues do
       def honor_the_issue_contract
