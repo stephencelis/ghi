@@ -19,7 +19,6 @@ module GHI
           require_issue
           extract_issue
         end
-        # all options terminate after execution
         options.parse!(args)
       end
 
