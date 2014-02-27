@@ -23,7 +23,7 @@ module GHI
       attr_accessor :action
       attr_accessor :verbose
 
-      def initialize args
+      def initialize args = []
         @args = args.map! { |a| a.dup }
       end
 
