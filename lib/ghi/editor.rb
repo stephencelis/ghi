@@ -91,6 +91,43 @@ module GHI
       @content ||= {}
     end
 
+    def cut_diff_comments
+      content[:body].gsub!(/^#\|#.*?\n/, '')
+    end
+
+    def extract_new_comments
+      marker = /^@$/
+      txt = content[:body]
+      unlink "No new comments present." unless txt.match(marker)
+
+      result = []
+      # First step: Split the diff into individual files.
+      diff_per_file = split_diff_per_file(txt)
+      diff_per_file.map do |file, diff|
+        while index = diff =~ marker
+          comment = { 'path' => file }
+          # The marker itself and its \n is included, therefore
+          # we need the index - 1
+          # The position is also zero based - count - 1 sets this right.
+          comment['position'] = diff[0..index - 2].lines.count - 1
+          if diff.sub!(/^@\n(.*?)^@\n/m) { comment['body'] = $1.strip; '' }
+            result << comment
+          else
+            raise "Invalid comment format present!"
+          end
+        end
+      end
+      result
+    end
+
+    def split_diff_per_file(txt)
+      parts = txt.split(/^diff --git a\/.* b\/.*?\n/).delete_if(&:empty?)
+      # Throw out the rest of the diff information, but extract the
+      # relative path to the file we might comment one
+      parts.map! { |part| [part.sub(/.*--- .*\n\+\+\+ b\/(.*?)\n/m, ''), $1].reverse }
+      Hash[parts]
+    end
+
     private
 
     def guarded
