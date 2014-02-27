@@ -43,7 +43,9 @@ module GHI
       def output_from_html(type)
         res = throb { get_html "pull/#{issue}.#{type}" }
         page do
-          puts format_diff(res)
+          # use the original $stdout.puts, as puts is monkey patched
+          # to highlight usernames - not cool when you display code only
+          $stdout.puts format_diff(res)
           break
         end
       end
