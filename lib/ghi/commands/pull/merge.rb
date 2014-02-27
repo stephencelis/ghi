@@ -1,6 +1,9 @@
 module GHI
   module Commands
     class Pull::Merge < Pull
+      # TODO
+      # It might be better to make -m a switch which enters the editor when true.
+
       def options
         OptionParser.new do |opts|
           opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
