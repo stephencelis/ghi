@@ -31,30 +31,42 @@ module GHI
               break
             end
           else
-            i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-            determine_merge_status(i) if pull_request?(i)
-            page do
-              puts format_issue(i)
-              output_issue_comments(i['comments'])
-              break
-            end
+            # At this point we don't know whether the issue is a real issue
+            # or a pull request.
+            # We request both at the same time: If a pull request shows up,
+            # we create an instance of Pull::Show and present the PR, otherwise
+            # we show the plain issue or the error message.
+            i, pr = try_getting_issue_and_pr
+            pr ? show_pull_request(pr) : show_issue(i)
           end
         end
       end
 
       private
 
-      def pull_request?(issue)
-        issue['pull_request']['html_url']
+      def try_getting_issue_and_pr
+        i_lambda  = lambda { throb { api.get issue_uri }.body }
+        pr_lambda = lambda { api.get(pull_uri).body rescue nil }
+        threads = [i_lambda, pr_lambda].map { |blk| Thread.new { blk.call } }
+
+        threads.map do |t|
+          t.join
+          t.value
+        end
       end
 
-      def determine_merge_status(pr)
-        pr['merged'] = true if pr['state'] == 'closed' && merged?
+      def show_pull_request(pr)
+        obj = Pull::Show.new
+        obj.pr = pr
+        obj.show_pull_request
       end
 
-      def merged?
-        # API returns with a Not Found error when the PR is not merged
-        api.get "/repos/#{repo}/pulls/#{issue}/merge" rescue false
+      def show_issue(i)
+        page do
+          puts format_issue(i)
+          output_issue_comments(i['comments'])
+          break
+        end
       end
     end
   end
