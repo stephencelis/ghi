@@ -4,10 +4,10 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
-          opts.on('-p', '--pull', 'pulls the new commits locally after a successful merge') do |pull|
+          opts.on('-p', '--pull', 'pulls the new commits locally after a successful merge') do
             @pull = true
           end
-          opts.on('-r', '--rebase', 'pulls the new commits locally through rebase') do |rebase|
+          opts.on('-r', '--rebase', 'pulls the new commits locally through rebase') do
             @rebase = true
           end
           opts.on('-m', '--message', "used in the merge commits body - defaults to PR title") do |message|
