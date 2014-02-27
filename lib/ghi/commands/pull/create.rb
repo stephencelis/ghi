@@ -17,35 +17,47 @@ module GHI
         editor.unlink
 
         begin
-          res = throb { api.post pull_uri.chop, editor.content }.body
-          pr_number = res['number']
-          puts fg('2cc200') { "Pull request ##{pr_number} successfully created!" }
-          show_created_pull_request(pr_number) if @show
+          new_pr = create_pull_request
+          @issue = new_pr['number']
+          puts "Pull request ##{issue} successfully created."
+
+          # GitHub needs to analyze the new pull request - we have to
+          # call the API again to receive it with all stats updated.
+          #
+          # show_pull_request does this by calling pr - which usually
+          # caches such an API call. It cannot have been called at this
+          # point, a fresh request is therefore made.
+          show_pull_request if @show
         rescue
           # TODO
           # Possible errors:
           #   head wasn't pushed
           #   base doesn't exist
           #   PR already exists
-          puts "Something went wrong"
+          puts "Something went wrong."
         end
       end
 
       private
 
-      def show_created_pull_request(no)
-        exec "ghi pull show #{no}"
+      def create_pull_request
+        throb { api.post pull_uri.chop, editor.content }.body
       end
 
       def create_uri
         "/repos/#{repo}/pulls"
       end
 
-      def head
+      # We cannot name these method head and base - something like that
+      # already exists. In most cases it makes no difference, as they
+      # will contain the same info anyway. However if a user edits this
+      # information in his editor, they are out of sync and a subsequent
+      # show operation will be wrong.
+      def new_head
         @head ||= "#{origin[:user]}:#{current_branch}"
       end
 
-      def base
+      def new_base
         @base ||= "#{(upstream || origin)[:user]}:master"
       end
 
@@ -60,8 +72,8 @@ module GHI
       def template
         <<EOF
 @ghi-title@ #{title}
-@ghi-head@  #{head}
-@ghi-base@  #{base}
+@ghi-head@  #{new_head}
+@ghi-base@  #{new_base}
 
 #{template_explanation}
 EOF
