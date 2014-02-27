@@ -323,13 +323,13 @@ EOF
       [bg('2cc200'){string[0, i]}, string[i, columns - i]].join
     end
 
+    STATE_COLORS = {
+      'closed' => 'ff0000',
+      'open'   => '2cc200',
+      'merged' => '511c7d',
+    }
     def format_state state, string = state, layer = :fg
-      color_codes = {
-        'closed' => 'ff0000',
-        'open'   => '2cc200',
-        'merged' => '511c7d',
-      }
-      send(layer, color_codes[state]) { string }
+      send(layer, STATE_COLORS[state]) { string }
     end
 
     def format_labels labels
@@ -341,15 +341,15 @@ EOF
       (colorize? ? ' %s ' : '[%s]') % tag
     end
 
+    EVENT_COLORS = {
+      'reopened' => '2cc200',
+      'closed' => 'ff0000',
+      'merged' => '9677b1',
+      'assigned' => 'e1811d',
+      'referenced' => 'aaaaaa'
+    }
     def format_event_type(event)
-      color_codes = {
-        'reopened' => '2cc200',
-        'closed' => 'ff0000',
-        'merged' => '9677b1',
-        'assigned' => 'e1811d',
-        'referenced' => 'aaaaaa'
-      }
-      fg(color_codes[event]) { event }
+      fg(EVENT_COLORS[event]) { event }
     end
 
     def format_pull_info(pr, width = columns)
@@ -470,19 +470,24 @@ EOF
     # Truncation will look ugly when we run out of space.
     # It's an edge case probably not worth playing around with
     def format_file(file, width = columns)
-      status = {
-        'added'    => fg('2cc200') { '+' },
-        'modified' => fg('yellow') { '~' },
-        'removed'  => fg('ff0000') { '-' },
-      }
       space = 16
       max_fn_width = columns - space
       name = sprintf("%-#{max_fn_width}s", truncate(file['filename'], space))
-      state = status[file['status']]
+      state = format_file_status(file['state'])
       add, del, changes = file.values_at('additions', 'deletions', 'changes')
       bar = change_viz(add, del, 5)
       changes = sprintf("%5s", changes)
       "#{state} #{name} #{changes} #{bar}"
+    end
+
+    FILE_STATUS_SIGNS = {
+      'added'    => %w(2cc200 +),
+      'modified' => %w(yellow ~),
+      'removed'  => %w(ff0000 -),
+    }
+    def format_file_status(state)
+      col, sign = FILE_STATUS_SIGNS[state]
+      fg(col) { sign }
     end
 
     def format_diff(diff)
