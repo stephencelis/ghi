@@ -1,9 +1,6 @@
 module GHI
   module Commands
     class Pull::Merge < Pull
-      # TODO
-      # It might be better to make -m a switch which enters the editor when true.
-
       def options
         OptionParser.new do |opts|
           opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
@@ -17,12 +14,16 @@ module GHI
             abort "Commit message must not be empty" if message.empty?
             @commit_messge = message
           end
+          opts.on('-e', '--edit', 'edit the commit message with your editor') do
+            @edit = true
+          end
         end
       end
 
       def execute
         subcommand_execute
 
+        obtain_message_from_editor if @edit
         abort already_merged if merged?
         abort dirty_pull_request unless mergeable?
         ask_for_continuation if needs_rebase?
@@ -98,6 +99,30 @@ EOF
       def pull_requested?
         abort "...but don't know whether you want to pull or rebase." if @rebase && @pull
         @rebase || @pull
+      end
+
+      def obtain_message_from_editor
+        editor.start(template)
+        editor.require_content_for(:body)
+        editor.unlink
+        @commit_message = editor.content[:body]
+      end
+
+      def editor
+        @editor ||= Editor.new('GHI_PULL_REQUEST_MERGE')
+      end
+
+      def template
+<<EOF
+#{pr['title']}
+# Edit the merge commits body. Its title is automatically set by GitHub:
+# '#{gh_merge_title}'. Trailing lines starting with '#'
+# (like these) will be ignored, and empty message won't be submitted.
+EOF
+      end
+
+      def gh_merge_title
+        "Merge pull request ##{issue} from #{base.sub(':', '/')}"
       end
     end
   end
