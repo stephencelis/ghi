@@ -17,9 +17,9 @@ module GHI
         editor.unlink
 
         begin
-          edit_pull_request
+          @pr = edit_pull_request
           puts "Pull request successfully edited."
-          show_edited_pull_request if @show
+          show_pull_request if @show
         rescue
           # TODO
         end
@@ -28,11 +28,7 @@ module GHI
       private
 
       def edit_pull_request
-        throb { api.patch(pull_uri, editor.content) }
-      end
-
-      def show_edited_pull_request
-        exec "ghi pull show #{issue}"
+        throb { api.patch(pull_uri, editor.content) }.body
       end
 
       def title

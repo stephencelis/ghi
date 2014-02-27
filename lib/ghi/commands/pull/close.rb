@@ -1,20 +1,20 @@
 module GHI
   module Commands
-    class Pull::Close < Pull::Show
+    class Pull::Close < Pull
       def options
-        "close - closes a pull request without merging"
+        OptionParser.new do |opts|
+          opts.banner = "close - closes a pull request without merging"
+          opts.on('-s', '--show', 'show the PR after closing') { @show = true }
+        end
       end
 
       def execute
-        handle_help_request
-        require_issue
-        extract_issue
+        subcommand_execute
 
         begin
           @pr = close_pull_request
-          honor_the_issue_contract
-          show_pull_request
           puts 'Unmerged pull request closed.'
+          show_pull_request if @show
         rescue
           # TODO
         end
