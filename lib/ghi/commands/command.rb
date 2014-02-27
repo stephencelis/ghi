@@ -131,6 +131,14 @@ module GHI
         puts "#{n} comment#{'s' unless n == 1}:\n\n"
         Comment.execute %W(-l #{issue} -- #{repo})
       end
+
+      def issue_uri
+        "/repos/#{repo}/issues/#{issue}"
+      end
+
+      def pull_uri
+        "/repos/#{repo}/pulls/#{issue}"
+      end
     end
   end
 end

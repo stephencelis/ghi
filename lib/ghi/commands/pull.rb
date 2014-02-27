@@ -55,10 +55,6 @@ EOF
 
       private
 
-      def pull_uri
-        "/repos/#{repo}/pulls/#{issue}"
-      end
-
       def compare_uri
         "/repos/#{repo}/compare/#{base}...#{head}"
       end
