@@ -16,39 +16,31 @@ module GHI
       end
 
       def commits
-        commits = throb { api.get commits_uri }.body
+        show_additional_data(:commits)
+      end
+
+      def diff
+        output_from_html(:diff)
+      end
+
+      def patch
+        output_from_html(:patch)
+      end
+
+      def show_additional_data(type)
+        res = throb { api.get "#{pull_uri}/#{type}" }.body
         page do
-          puts format_commits(commits)
+          puts send("format_#{type}", res)
           break
         end
       end
 
-      def diff
-        output_from_html(diff_uri)
-      end
-
-      def patch
-        output_from_html(patch_uri)
-      end
-
-      def output_from_html(path)
-        res = throb { get_html path }
+      def output_from_html(type)
+        res = throb { get_html "pull/#{issue}.#{type}" }
         page do
           puts format_diff(res)
           break
         end
-      end
-
-      def diff_uri
-        "pull/#{issue}.diff"
-      end
-
-      def patch_uri
-        "pull/#{issue}.patch"
-      end
-
-      def commits_uri
-        "#{pull_uri}/commits"
       end
     end
   end
