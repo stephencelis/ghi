@@ -8,7 +8,7 @@ module GHI
           opts.banner = 'usage: ghi show <issueno>'
           opts.separator ''
           opts.on('-p', '--patch') { self.patch = true }
-          opts.on('-w', '--web') { self.web = true }
+          opts.on('-w', '--web', 'View the issue in your web browser') { self.web = true }
         end
       end
 
