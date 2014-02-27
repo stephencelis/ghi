@@ -397,7 +397,7 @@ EOF
         "#{indent}#{message}\n\n"
       else
         str = "#{indent}#{format_merge_head_and_base(pr)}\n"
-        str + indent + format_mergeability + "\n\n"
+        "#{str}#{indent}#{format_mergeability}\n\n"
       end
     end
 
