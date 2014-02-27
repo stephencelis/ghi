@@ -12,6 +12,8 @@ module GHI
         subcommand_execute
 
         editor.start(template)
+        # Note that we won't allow an empty body! While it's technically
+        # possible, this might be a good chance to enforce good habits...
         editor.require_content_for(:title, :body)
         editor.check_for_changes(title: title, body: body)
         editor.unlink
