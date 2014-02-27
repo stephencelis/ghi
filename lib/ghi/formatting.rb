@@ -358,31 +358,31 @@ EOF
 
     def format_pr_stats(pr, indent)
       indent = ' ' * indent
+      add, del  = pr.values_at('additions', 'deletions')
       commits   = count_with_plural(pr['commits'].to_i, 'commit')
       files     = count_with_plural(pr['changed_files'].to_i, 'file') + ' changed'
-      additions = fg('2cc200') { "+#{pr['additions']}"}
-      deletions = fg('ff0000') { "-#{pr['deletions']}"}
+      additions = fg('2cc200') { "+#{add}"}
+      deletions = fg('ff0000') { "-#{del}"}
 
       output = [
         fg('cccc33') { "#{commits}, #{files}" },
-        "#{additions} #{change_viz(pr)} #{deletions}"
+        "#{additions} #{change_viz(add, del)} #{deletions}"
       ]
 
       output.map { |line| "#{indent}#{line}" }.join("\n")
     end
 
-    def change_viz(pr, size = 18)
+    def change_viz(addition, deletions, size = 18)
       sign = '∎'
-      add, del = pr.values_at('additions', 'deletions').map(&:to_f)
-      all = add + del
+      all = (additions + deletions).to_f
 
       # when an empty file was submitted (or a binary!) there might be
       # a total number of 0 line canges. A division of 0 / 0 throws an error,
       # therefore we just return without further operations
       return fg('aaaaaa') { sign * size } if all.zero?
 
-      add_percent = add / all
-      del_percent = del / all
+      add_percent = additions / all
+      del_percent = deletions / all
       rel = [add_percent, del_percent].map { |p| (p * size).round.to_i }
       rel.zip(['2cc200', 'ff0000']).map do |multiplicator, color|
         fg(color) { sign * multiplicator }
