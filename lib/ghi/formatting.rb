@@ -353,7 +353,7 @@ EOF
     end
 
     def format_pull_info(pr, width = columns)
-      "\n#{format_merge_stats(pr, 4)}#{format_pr_stats(pr, 4)}"
+      "\n#{format_merge_stats(pr, 4)}#{format_pr_stats(pr, 4)}\n"
     end
 
     def format_pr_stats(pr, indent)
@@ -368,9 +368,7 @@ EOF
         "#{additions} #{change_viz(pr)} #{deletions}"
       ]
 
-      output.each_with_object('') do |e, str|
-        str << "#{indent}#{e}\n"
-      end + "\n"
+      output.map { |line| "#{indent}#{line}" }.join("\n")
     end
 
     def change_viz(pr, size = 18)
@@ -378,7 +376,7 @@ EOF
       add, del = pr.values_at('additions', 'deletions').map(&:to_f)
       all = add + del
 
-      # when only an empty file was submitted (or a binary!) there might be
+      # when an empty file was submitted (or a binary!) there might be
       # a total number of 0 line canges. A division of 0 / 0 throws an error,
       # therefore we just return without further operations
       return fg('aaaaaa') { sign * size } if all.zero?
@@ -394,7 +392,7 @@ EOF
     def format_merge_stats(pr, indent)
       indent = ' ' * indent
       if date = pr['merged_at']
-        merger = pr['merged_by']['login']
+        merger  = pr['merged_by']['login']
         message = "merged by @#{merger} #{format_date DateTime.parse(date)}"
         "#{indent}#{message}\n\n"
       else
@@ -406,12 +404,12 @@ EOF
     def format_mergeability
       if clean?
         if needs_rebase?
-          "#{fg('e1811d') { "✔ able to merge, but needs a rebase" }}"
+          fg('e1811d') { "✔ able to merge, but needs a rebase" }
         else
-          "#{fg('2cc200') { "✔ able to merge" }}"
+          fg('2cc200') { "✔ able to merge" }
         end
       elsif dirty?
-        "#{fg('ff0000') { "✗ pull request is dirty" }}"
+        fg('ff0000') { "✗ pull request is dirty" }
       end
     end
 
@@ -433,12 +431,10 @@ EOF
 
     def format_commits_header(commits)
       n = commits.size
-      count = count_with_plural(n, 'commit')
+      count   = count_with_plural(n, 'commit')
       authors = commits.map { |commit| commit['author']['login'] }.uniq
       authors = enumerative_concat(authors, 'and')
-      fg('cccc33') do
-        "#{count} by #{authors}"
-      end
+      fg('cccc33') { "#{count} by #{authors}" }
     end
 
     def enumerative_concat(arr, last_coordination)
@@ -448,7 +444,7 @@ EOF
 
     def format_commit(commit, indent = 4, width = columns)
       indent = ' ' * indent
-      sha = commit['sha'][0..6]
+      sha   = commit['sha'][0..6]
       title = commit['commit']['message'].split("\n\n").first
       "#{indent}* #{sha} | #{truncate(title, 20)}"
     end
