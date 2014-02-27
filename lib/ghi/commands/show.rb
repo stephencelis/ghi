@@ -45,14 +45,10 @@ module GHI
       private
 
       def try_getting_issue_and_pr
-        i_lambda  = lambda { throb { api.get issue_uri }.body }
-        pr_lambda = lambda { api.get(pull_uri).body rescue nil }
-        threads = [i_lambda, pr_lambda].map { |blk| Thread.new { blk.call } }
+        i  = lambda { throb { api.get issue_uri }.body }
+        pr = lambda { api.get(pull_uri).body rescue nil }
 
-        threads.map do |t|
-          t.join
-          t.value
-        end
+        do_threaded(i, pr)
       end
 
       def show_pull_request(pr)

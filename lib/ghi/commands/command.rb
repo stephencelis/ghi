@@ -139,6 +139,14 @@ module GHI
       def pull_uri
         "/repos/#{repo}/pulls/#{issue}"
       end
+
+      # Takes code blocks that will execute multithreaded. Returns an
+      # array of each threads return value.
+      # Code blocks need to handle their errors themselves!
+      def do_threaded(*blks)
+        threads = blks.map { |blk| Thread.new { blk.call } }
+        threads.map { |t| t.join; t.value }
+      end
     end
   end
 end
