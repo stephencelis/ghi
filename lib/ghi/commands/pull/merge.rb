@@ -41,12 +41,14 @@ module GHI
       end
 
       def rebase_warning
-        [
-          "\b" + fg('e1811d') { "#{head} and #{base} have diverged!" },
-          '',
-          "To retain a clean commit history it is recommended to rebase before merging.",
-          'Do you really want to do this? (type Y to continue) '
-        ].join("\n")
+        # Beware and add the last whitespace separately. If we just leave it trailing
+        # in the heredoc, editor, git-hooks etc. might eat it away.
+<<EOF.strip + ' '
+\b#{fg('e1811d') { "#{head} and #{base} have diverged!" }}
+
+To retain a clean commit history it is recommended to rebase before merging.
+Do you really want to do this? (type Y to continue)
+EOF
       end
 
       def already_merged
