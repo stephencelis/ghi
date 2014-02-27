@@ -5,6 +5,7 @@ module GHI
         OptionParser.new do |opts|
           opts.banner = "show - displays details of a pull request"
           opts.on('-c', '--commits', 'show associated commits') { commits; abort }
+          opts.on('-f', '--files', 'show changed files') { files; abort }
           opts.on('-d', '--diff', 'show diff') { diff; abort }
           opts.on('-p', '--patch', 'show patch') { patch; abort}
         end
@@ -17,6 +18,10 @@ module GHI
 
       def commits
         show_additional_data(:commits)
+      end
+
+      def files
+        show_additional_data(:files)
       end
 
       def diff

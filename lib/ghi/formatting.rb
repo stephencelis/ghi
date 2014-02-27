@@ -449,6 +449,37 @@ EOF
       "#{indent}* #{sha} | #{truncate(title, 20)}"
     end
 
+    def format_files(files)
+      header = format_files_header(files)
+      body   = files.map { |file| format_file(file) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_files_header(files)
+      add = summate_changes(files, 'additions')
+      del = summate_changes(files, 'deletions')
+      count   = count_with_plural(files.size, 'file')
+      changes = "#{add} additions and #{del} deletions"
+      fg('cccc33') { "#{count}, with #{changes}" }
+    end
+
+    def summate_changes(container, type)
+      container.map { |element| element[type] }.inject(:+)
+    end
+
+    def format_file(file)
+      status = {
+        'added'    => fg('2cc200') { '+' },
+        'modified' => fg('yellow') { '~' },
+        'removed'  => fg('ff0000') { '-' },
+      }
+      name = sprintf("%-50s", file['filename'])
+      state = status[file['status']]
+      add, del, changes = file.values_at('additions', 'deletions', 'changes')
+      bar = change_viz(add, del, 5)
+      "#{state} #{name}#{changes} #{bar}"
+    end
+
     def format_diff(diff)
       # FIXME: Minor inconsistencies in colored output
       diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
