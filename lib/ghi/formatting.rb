@@ -467,17 +467,22 @@ EOF
       container.map { |element| element[type] }.inject(:+)
     end
 
-    def format_file(file)
+    # Truncation will look ugly when we run out of space.
+    # It's an edge case probably not worth playing around with
+    def format_file(file, width = columns)
       status = {
         'added'    => fg('2cc200') { '+' },
         'modified' => fg('yellow') { '~' },
         'removed'  => fg('ff0000') { '-' },
       }
-      name = sprintf("%-50s", file['filename'])
+      space = 16
+      max_fn_width = columns - space
+      name = sprintf("%-#{max_fn_width}s", truncate(file['filename'], space))
       state = status[file['status']]
       add, del, changes = file.values_at('additions', 'deletions', 'changes')
       bar = change_viz(add, del, 5)
-      "#{state} #{name}#{changes} #{bar}"
+      changes = sprintf("%5s", changes)
+      "#{state} #{name} #{changes} #{bar}"
     end
 
     def format_diff(diff)
