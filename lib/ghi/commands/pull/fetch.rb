@@ -4,10 +4,10 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "fetch - creates local branches out of pull requests"
-          opts.on('-b', '--branch <branch>', 'target branch, defaults to <pull_reqest_no>_PR') do |branch|
+          opts.on('-b', '--branch <branch>', 'target branch, default: <pr_no>_PR, e.g. 128_PR') do |branch|
             @branch = branch
           end
-          opts.on('-c', '--checkout', 'checkout to your new branch after fetching') do
+          opts.on('-c', '--checkout', 'move to your new branch after fetching') do
             @checkout = true
           end
         end

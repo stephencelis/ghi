@@ -7,13 +7,13 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
-          opts.on('-p', '--pull', 'pulls the new commits locally after a successful merge') do
+          opts.on('-p', '--pull', 'pulls locally after a successful merge') do
             @pull = true
           end
-          opts.on('-r', '--rebase', 'pulls the new commits locally through rebase') do
+          opts.on('-r', '--rebase', 'pulls locally through rebase') do
             @rebase = true
           end
-          opts.on('-m', '--message', "used in the merge commits body - defaults to PR title") do |message|
+          opts.on('-m', '--message', "the merge commit message body - default: PR title") do |message|
             abort "Commit message must not be empty" if message.empty?
             @commit_messge = message
           end
