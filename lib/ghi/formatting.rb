@@ -372,7 +372,7 @@ EOF
       output.map { |line| "#{indent}#{line}" }.join("\n")
     end
 
-    def change_viz(addition, deletions, size = 18)
+    def change_viz(additions, deletions, size = 18)
       sign = '∎'
       all = (additions + deletions).to_f
 
