@@ -59,7 +59,7 @@ EOF
 super <<EOF
 Edit you pull request. You can edit the title, but please don't touch
 the keyword itself.  Trailing lines starting with '#{IGNORE_MARKER}' (like these)
-will be ignored, and empty messages will not be submitted. Issues are
+will be ignored, and empty messages will not be submitted. Pull requests are
 formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
