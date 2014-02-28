@@ -50,7 +50,6 @@ module GHI
         pager ||= ENV['PAGER']
         pager ||= 'less'
         pager  += ' -EKRX -b1' if pager =~ /^less( -[EKRX]+)?$/
-
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'
         end
@@ -491,11 +490,10 @@ EOF
     end
 
     def format_diff(diff)
-      # FIXME: Minor inconsistencies in colored output
       diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
       diff.gsub!(/^(@@ .* @@)/, fg('387593') { '\1' })
-      diff.gsub!(/^(\+[^\+]?.*)/, fg('8abb3b') { '\1' })
-      diff.gsub!(/^(-[^-]?.*)/,  fg('ff7f66') { '\1' })
+      diff.gsub!(/^(\+($|[^\+]?.*))/, fg('8abb3b') { '\1' })
+      diff.gsub!(/^(-($|[^-]?.*))/,  fg('ff7f66') { '\1' })
       diff
     end
 
