@@ -6,15 +6,13 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "diff - view and comment on pull request diffs"
-          opts.on('-n', '--no-comments', 'show diff without review comments') { @action = :diff}
-          opts.on('-c', '--comment', 'opens your editor to create review comment') { @action = :comment}
+          opts.on('-n', '--no-comments', 'show diff without review comments') { diff; abort}
+          opts.on('-c', '--comment', 'opens your editor to create review comment') { comment; abort }
         end
       end
 
       def execute
         subcommand_execute
-        return send(@action) if @action
-
         diff_with_comments
       end
 
