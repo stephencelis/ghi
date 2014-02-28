@@ -122,8 +122,10 @@ module GHI
         end
       end
 
+      # Surround the placeholders with \n's, so that it sits on his own line.
+      # This avoids breaking the regular formatting of a diff.
       def placeholder(id)
-        "@ghi-comment-#{id}@"
+        "\n@ghi-comment-#{id}@\n"
       end
 
       def replace_placeholders(diff, comments, comment_marker)
