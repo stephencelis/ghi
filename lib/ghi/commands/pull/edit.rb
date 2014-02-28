@@ -58,7 +58,7 @@ EOF
       def template_explanation
 super <<EOF
 Edit you pull request. You can edit the title, but please don't touch
-the keyword itself.  Trailing lines starting with '#' (like these)
+the keyword itself.  Trailing lines starting with '#{IGNORE_MARKER}' (like these)
 will be ignored, and empty messages will not be submitted. Issues are
 formatted with GitHub Flavored Markdown (GFM):
 

@@ -161,7 +161,7 @@ module GHI
 
       def template_explanation
 super <<EOF
-Review the diff. Lines leading with '#|#' like these will be ignored.
+Review the diff. Lines leading with '#{IGNORE_MARKER}' like these will be ignored.
 Place your message right after the line you want to comment. Use the
 following format:
 

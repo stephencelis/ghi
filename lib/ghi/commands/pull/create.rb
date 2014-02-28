@@ -86,7 +86,7 @@ EOF
 super <<EOF
 Please explain the pull request. You can edit title, head and base but
 don't touch the keywords itself. Use the empty section as the message's
-body. Trailing lines starting with '#' (like these) will be ignored,
+body. Trailing lines starting with '#{IGNORE_MARKER}' (like these) will be ignored,
 and empty messages will not be submitted. Issues are formatted with
 GitHub Flavored Markdown (GFM):
 
