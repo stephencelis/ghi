@@ -7,9 +7,7 @@ module GHI
           opts.on('-c', '--commits', 'show associated commits') { commits; abort }
           opts.on('-f', '--files', 'show changed files') { files; abort }
           opts.on('-p', '--patch', 'show patch') { patch; abort}
-          opts.on('-d', '--diff', 'show diff with review comments') { diff_with_comments; abort }
-          opts.on('-D', '--no-comment-diff', 'show diff without review comments') { diff; abort }
-          opts.on('-C', '--comment', 'description') { comment; abort }
+          opts.on('-d', '--diff', 'alias of `ghi pull diff <pr_no>`') { reroute_to_diff; abort }
         end
       end
 
@@ -28,6 +26,10 @@ module GHI
 
       def patch
         output_from_html(:patch)
+      end
+
+      def reroute_to_diff
+        Diff.new([issue]).execute
       end
 
       def show_additional_data(type)
