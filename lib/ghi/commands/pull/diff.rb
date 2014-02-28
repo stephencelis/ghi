@@ -149,14 +149,14 @@ module GHI
       end
 
       def editor
-        @editor ||= Editor.new('GHI_PR_DIFF_COMMENTS')
+        @editor ||= Editor.new('GHI_PR_DIFF_COMMENTS.diff')
       end
 
       def diff_with_explanation
         # The diff --git portion allows editors like vim to autodetect
         # the filetype. This would happen anyway, but with the explanation
         # string in place, it won't work.
-        "diff --git\n" + template_explanation + "\n" + commented_diff(IGNORE_MARKER)
+        "#{template_explanation}\n#{commented_diff(IGNORE_MARKER)}"
       end
 
       def template_explanation
