@@ -87,8 +87,9 @@ super <<EOF
 Please explain the pull request. You can edit title, head and base but
 don't touch the keywords itself. Use the empty section as the message's
 body. Trailing lines starting with '#{IGNORE_MARKER}' (like these) will be ignored,
-and empty messages will not be submitted. Issues are formatted with
-GitHub Flavored Markdown (GFM):
+and empty messages will not be submitted.
+Make sure you pushed your branch to GitHub before you continue!
+Pull requests are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 EOF
