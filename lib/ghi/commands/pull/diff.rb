@@ -37,7 +37,6 @@ module GHI
         _, sha = do_threaded(ed, pr)
 
         # Check the comments in Editor for the following.
-        editor.cut_diff_comments
         comments = editor.extract_new_comments
 
         throb do

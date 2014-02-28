@@ -91,12 +91,6 @@ module GHI
       @content ||= {}
     end
 
-    # We prepended each commented line with a special marker. Cut them out
-    # to regain proper positioning inside the diff
-    def cut_diff_comments
-      content[:body].gsub!(/^#\|#.*?\n/, '')
-    end
-
     # New comments need a special format:
     #
     # @
@@ -169,7 +163,7 @@ module GHI
 
     def parse(file)
       txt = File.read(file)
-      strip_explanation_lines(txt)
+      strip_lines_to_ignore(txt)
       extract_keywords(txt, :title, :head, :base)
       content[:body] = txt.strip
     end
@@ -187,10 +181,9 @@ module GHI
       content[kw] = val
     end
 
-    # Use IGNORE_MARKER later here, for now let's keep it to avoid
-    # breaking old things.
-    # #cut_diff_comments can be deleted then too.
-    def strip_explanation_lines(txt)
+    def strip_lines_to_ignore(txt)
+      txt.gsub!(/^#{Regexp.quote(IGNORE_MARKER)}.*(\n|\z)/, '')
+      # The next line is kept for backwards compatibility
       txt.gsub!(/(?:^#.*$\n?)+\s*\z/, '')
       txt.strip!
     end
