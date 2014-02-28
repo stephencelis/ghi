@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "show - displays details of a pull request"
+          opts.separator ''
           opts.on('-c', '--commits', 'show associated commits') { commits; abort }
           opts.on('-f', '--files', 'show changed files') { files; abort }
           opts.on('-p', '--patch', 'show patch') { patch; abort}

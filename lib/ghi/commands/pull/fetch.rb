@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "fetch - creates local branches out of pull requests"
+          opts.separator ''
           opts.on('-b', '--branch <branch>', 'target branch, default: <pr_no>_PR, e.g. 128_PR') do |branch|
             @branch = branch
           end

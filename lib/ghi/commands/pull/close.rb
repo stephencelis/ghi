@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "close - closes a pull request without merging"
+          opts.separator ''
           opts.on('-s', '--show', 'show the PR after closing') { @show = true }
         end
       end

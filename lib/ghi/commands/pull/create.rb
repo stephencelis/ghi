@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "create - creates a new pull request from your editor"
+          opts.separator ''
           opts.on('-s', '--show', 'show the PR after successful creation') { @show = true }
         end
       end

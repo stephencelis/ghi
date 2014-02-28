@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "edit - edits the title and body of your pull request"
+          opts.separator ''
           opts.on('-s', '--show', 'show the PR after successful edition') { @show = true }
         end
       end

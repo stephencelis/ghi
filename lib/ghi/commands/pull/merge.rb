@@ -4,6 +4,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = "merge - tries to automatically merge a pull request, like GitHub's Merge Button"
+          opts.separator ''
           opts.on('-p', '--pull', 'pulls locally after a successful merge') do
             @pull = true
           end
