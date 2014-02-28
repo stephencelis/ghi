@@ -103,22 +103,25 @@ EOF
       end
 
       def obtain_message_from_editor
-        editor.start(template)
+        editor.start(template + template_explanation)
         editor.require_content_for(:body)
         editor.unlink
         @commit_message = editor.content[:body]
       end
 
       def editor
-        @editor ||= Editor.new('GHI_PULL_REQUEST_MERGE')
+        @editor ||= Editor.new('GHI_PULL_REQUEST_MERGE.ghi')
       end
 
       def template
-<<EOF
-#{pr['title']}
-# Edit the merge commits body. Its title is automatically set by GitHub:
-# '#{gh_merge_title}'. Trailing lines starting with '#'
-# (like these) will be ignored, and empty message won't be submitted.
+        "#{pr['title']}\n"
+      end
+
+      def template_explanation
+        super <<EOF
+Edit the merge commits body. Its title is automatically set by GitHub:
+'#{gh_merge_title}'. Trailing lines starting with '#{IGNORE_MARKER}'
+(like these) will be ignored, and empty message won't be submitted.
 EOF
       end
 
