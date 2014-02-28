@@ -69,7 +69,7 @@ module GHI
       end
 
       def editor
-        @editor ||= Editor.new('GHI_PULL_REQUEST')
+        @editor ||= Editor.new('GHI_PULL_REQUEST.ghi')
       end
 
       def template
