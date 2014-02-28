@@ -21,6 +21,9 @@ module GHI
       end
 
       def diff_with_comments
+        # It might seem pointless to store this method call in a local variable,
+        # but it isn't. The page method's throbber has some rendering issues when
+        # the method call is executed inside the page block - rather weird.
         diff = commented_diff
         page { puts diff }
       end
