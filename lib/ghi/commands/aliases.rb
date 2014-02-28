@@ -32,6 +32,7 @@ module GHI
         'o'        => %w(open),
         'p'        => %w(pull),
         'pc'       => %w(pull create),
+        'pd'       => %w(pull diff),
         'pe'       => %w(pull edit),
         'pf'       => %w(pull fetch),
         'pm'       => %w(pull merge),
