@@ -147,6 +147,12 @@ module GHI
         threads = blks.map { |blk| Thread.new { blk.call } }
         threads.map { |t| t.join; t.value }
       end
+
+      # Subclasses should implement this and call super - their template string
+      # will be prepended by the IGNORE_MARKER.
+      def template_explanation(str)
+        str.lines.map { |line| "#{IGNORE_MARKER} #{line}".strip }.join("\n")
+      end
     end
   end
 end

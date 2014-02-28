@@ -187,6 +187,9 @@ module GHI
       content[kw] = val
     end
 
+    # Use IGNORE_MARKER later here, for now let's keep it to avoid
+    # breaking old things.
+    # #cut_diff_comments can be deleted then too.
     def strip_explanation_lines(txt)
       txt.gsub!(/(?:^#.*$\n?)+\s*\z/, '')
       txt.strip!

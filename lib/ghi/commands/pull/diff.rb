@@ -137,9 +137,7 @@ module GHI
       end
 
       def prepend_each_line(lines, marker)
-        lines.each_line.map do |line|
-          "#{marker}#{line}"
-        end.join
+        lines.lines.map { |line| "#{marker} #{line}".strip }.join("\n") + "\n"
       end
 
       def hash_with_default_array
@@ -158,27 +156,27 @@ module GHI
         # The diff --git portion allows editors like vim to autodetect
         # the filetype. This would happen anyway, but with the explanation
         # string in place, it won't work.
-        "diff --git\n" + template_explanation + commented_diff('#|# ')
+        "diff --git\n" + template_explanation + "\n" + commented_diff(IGNORE_MARKER)
       end
 
       def template_explanation
-<<EOF
-#|# Review the diff. Lines leading with '#|#' like these will be ignored.
-#|# Place your message right after the line you want to comment. Use the
-#|# following format:
-#|#
-#|# +  def method
-#|# +    puts 'You really should create a comment right after this method'
-#|# +  end
-#|# @
-#|# Your comment goes here!
-#|# @
-#|#
-#|# Make sure the delimiting '@' is the only character on the line!
-#|# Create as many comments as you like.
-#|# Your messages are formmatted with GitHub Flavored Markdown (GFM).
-#|#
-#|#
+super <<EOF
+Review the diff. Lines leading with '#|#' like these will be ignored.
+Place your message right after the line you want to comment. Use the
+following format:
+
++  def method
++    puts 'You really should create a comment right after this method'
++  end
+@
+Your comment goes here!
+@
+
+Make sure the delimiting '@' is the only character on the line!
+Create as many comments as you like.
+Your messages are formmatted with GitHub Flavored Markdown (GFM).
+
+
 EOF
       end
     end

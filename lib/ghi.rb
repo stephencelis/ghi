@@ -8,6 +8,8 @@ module GHI
   autoload :Formatting,    'ghi/formatting'
   autoload :Web,           'ghi/web'
 
+  IGNORE_MARKER = '#|#'
+
   class << self
     def execute args
       STDOUT.sync = true

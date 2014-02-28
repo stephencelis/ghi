@@ -83,14 +83,14 @@ EOF
       end
 
       def template_explanation
-<<EOF
-# Please explain the pull request. You can edit title, head and base but
-# don't touch the keywords itself. Use the empty section as the message's
-# body. Trailing lines starting with '#' (like these) will be ignored,
-# and empty messages will not be submitted. Issues are formatted with
-# GitHub Flavored Markdown (GFM):
-#
-#   http://github.github.com/github-flavored-markdown
+super <<EOF
+Please explain the pull request. You can edit title, head and base but
+don't touch the keywords itself. Use the empty section as the message's
+body. Trailing lines starting with '#' (like these) will be ignored,
+and empty messages will not be submitted. Issues are formatted with
+GitHub Flavored Markdown (GFM):
+
+  http://github.github.com/github-flavored-markdown
 EOF
       end
     end
