@@ -35,19 +35,43 @@ module GHI
       end
 
       def diff_with_comments
-        # make sure the lazy evaluation of repo has been run before -
-        # we'll get an ugly race condition otherwise
         diff = commented_diff
         page { puts diff }
       end
 
       def commented_diff(comment_marker = '')
+        # Make sure the lazy evaluation of repo has been run before -
+        # we'll get an ugly race condition otherwise
         require_repo
+
+        # Get the diff and the review comments in parallel
         diff_call = lambda { throb { get_html web_uri('diff') } }
         comm_call = lambda { api.get(review_comments_uri).body }
         diff, comments = do_threaded(diff_call, comm_call)
+
+        # Review comments also contain outdated comments - we don't
+        # need them
         delete_outdated_comments(comments)
+
+        # We want to insert something into the diff at specific positions.
+        # These positions are identified by diff hunks. We can look up these
+        # hunks in the diff to know where we have to insert the comment.
+        # However as soon as we start to insert stuff, the diff itself is
+        # invalidated: Looking up positions by hunks therefore won't work
+        # anymore.
+        # This can be avoided when the order of insertion is right: We need
+        # to do it from the bottom up, so that the upper parts don't go out
+        # of sync with the original diff.
+        # We sort them by their position and their creation date inside the
+        # diff.
+        # We also group the per hunk, which is a little more efficient when
+        # multiple comments of the same code piece need to be displayed.
         grouped_comment_ids = group_by_diff_hunk(comments)
+
+        # To get the formatting we want, only placeholders are inserted at
+        # first. Right after that the diff is formatted.
+        # Then we'll replace the placeholders with formatted comments -
+        # syntax highlighting and all enabled.
         insert_place_holders(diff, grouped_comment_ids)
         formatted = format_diff(diff)
         replace_placeholders(formatted, comments, comment_marker)
@@ -60,7 +84,7 @@ module GHI
 
       def group_by_diff_hunk(comments)
         sorted= comments.sort_by do |c|
-          [c['file'], c['diff_hunk'].size]
+          [c['position'], c['created_at'].size]
         end
         sorted.each_with_object(hash_with_default_array) do |comment, h|
           h[comment['diff_hunk']] << comment['id']
@@ -108,9 +132,10 @@ module GHI
         ed = lambda { editor.start(no_color { commented_diff('#|# ') }) }
         pr = lambda { api.get(pull_uri).body['head']['sha'] rescue nil }
         _, sha = do_threaded(ed, pr)
+
+        # Check the comments in Editor for the following.
         editor.cut_diff_comments
         comments = editor.extract_new_comments
-        editor.unlink
 
         throb do
           threads = comments.map do |comment|
@@ -121,6 +146,11 @@ module GHI
           end
           threads.each(&:join)
         end
+
+        # Unlink afterwards, in case there is an error from GitHub's side -
+        # something like a server error. If it really fails, the user can
+        # just repeat the command and won't loose the changes he's made.
+        editor.unlink
         puts "#{count_with_plural(comments.size, 'comment')} created."
       end
 

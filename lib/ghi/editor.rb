@@ -91,17 +91,39 @@ module GHI
       @content ||= {}
     end
 
+    # We prepended each commented line with a special marker. Cut them out
+    # to regain proper positioning inside the diff
     def cut_diff_comments
       content[:body].gsub!(/^#\|#.*?\n/, '')
     end
 
+    # New comments need a special format:
+    #
+    # @
+    # Comment we want to add
+    # @
+    #
+    # The comment body needs to surrounded by a single @ on a new line. No
+    # whitespace before or after!
+    # Just place your body right behind the line you want to comment.
+    #
+    # The API wants to know
+    # - the file the comment is on. (path)
+    # - line position inside the changes of a particular file.(position)
+    # - a message of course (body)
+    # - the head's sha (commit_id) - added later on in the Pull subclass.
+    #
+    # We split the diff into individual files and retrieve these parts
+    # in a Hash (key: filename, value: diff).
+    # We go through each diff then and look for comments. All findings
+    # are saved into Hash objects, an array of these is the return value
+    # of this method.
     def extract_new_comments
       marker = /^@$/
       txt = content[:body]
       unlink "No new comments present." unless txt.match(marker)
 
       result = []
-      # First step: Split the diff into individual files.
       diff_per_file = split_diff_per_file(txt)
       diff_per_file.map do |file, diff|
         while index = diff =~ marker
@@ -120,6 +142,8 @@ module GHI
       result
     end
 
+    private
+
     def split_diff_per_file(txt)
       parts = txt.split(/^diff --git a\/.* b\/.*?\n/).delete_if(&:empty?)
       # Throw out the rest of the diff information, but extract the
@@ -127,8 +151,6 @@ module GHI
       parts.map! { |part| [part.sub(/.*--- .*\n\+\+\+ b\/(.*?)\n/m, ''), $1].reverse }
       Hash[parts]
     end
-
-    private
 
     def guarded
       begin
