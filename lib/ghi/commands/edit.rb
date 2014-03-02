@@ -112,7 +112,7 @@ EOF
               if ref = %x{
                 git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null
               }.chomp!
-                ref.split('/').last if $? == 0
+                ref.split('/', 2).last if $? == 0
               end
             end
             assigns[:head] ||= head
