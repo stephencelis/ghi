@@ -47,7 +47,18 @@ module GHI
           retry
         end
 
-        abort "#{e.message}#{CURSOR[:column][0]}"
+        if e.errors.any? { |err| err['code'] == 'already_exists' }
+          message = <<EOF.chomp
+A ghi token already exists!
+
+Please revoke all previously-generated ghi personal access tokens here:
+
+  https://github.com/settings/applications
+EOF
+        else
+          message = e.message
+        end
+        abort "#{message}#{CURSOR[:column][0]}"
       end
 
       def username
