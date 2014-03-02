@@ -1,1 +1,5 @@
+# RubyGems
 *.gem
+
+# Bundler
+Gemfile.lock
