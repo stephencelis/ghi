@@ -15,7 +15,7 @@ module GHI
           opts.banner = <<EOF
 usage: ghi label <labelname> [-c <color>] [-r <newname>]
    or: ghi label -D <labelname>
-   or: ghi label <issueno> [-a] [-d] [-f]
+   or: ghi label <issueno(s)> [-a] [-d] [-f] <label>
    or: ghi label -l [<issueno>]
 EOF
           opts.separator ''
@@ -41,13 +41,13 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-a', '--add', 'add labels to issue' do
-            self.action = issue ? 'add' : 'create'
+            self.action = issues_present? ? 'add' : 'create'
           end
           opts.on '-d', '--delete', 'remove labels from issue' do
-            self.action = issue ? 'remove' : 'destroy'
+            self.action = issues_present? ? 'remove' : 'destroy'
           end
           opts.on '-f', '--force', 'replace existing labels' do
-            self.action = issue ? 'replace' : 'update'
+            self.action = issues_present? ? 'replace' : 'update'
           end
           opts.separator ''
         end
@@ -58,16 +58,16 @@ EOF
         require_repo
         options.parse! args.empty? ? %w(-l) : args
 
-        if issue
+        if issues_present?
           self.action ||= 'add'
           self.name = args.shift.to_s.split ','
           self.name.concat args
+          multi_action(action)
         else
           self.action ||= 'create'
           self.name ||= args.shift
+          send action
         end
-
-        send action
       end
 
       protected
@@ -155,6 +155,41 @@ EOF
 
       def base_uri
         "/repos/#{repo}/#{issue ? "issues/#{issue}/labels" : 'labels'}"
+      end
+
+      # This method is usually inherited from Command and extracts a single issue
+      # from args - we override it to handle multiple issues at once.
+      def extract_issue
+        @issues = []
+        args.delete_if do |arg|
+          arg.match(/^\d+$/) ? @issues << arg : break
+        end
+        infer_issue_from_branch_prefix unless @issues.any?
+      end
+
+      def issues_present?
+        @issues.any? || @issue
+      end
+
+      def multi_action(action)
+        if @issues.any?
+          override_issue_reader
+          threads = @issues.map do |issue|
+            Thread.new do
+              Thread.current[:issue] = issue
+              send action
+            end
+          end
+          threads.each(&:join)
+        else
+          send action
+        end
+      end
+
+      def override_issue_reader
+        def issue
+          Thread.current[:issue]
+        end
       end
     end
   end
