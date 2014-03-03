@@ -26,7 +26,7 @@ module GHI
         # but it isn't. The page method's throbber has some rendering issues when
         # the method call is executed inside the page block - rather weird.
         diff = commented_diff
-        page { puts diff }
+        page { puts diff; break }
       end
 
       def comment
