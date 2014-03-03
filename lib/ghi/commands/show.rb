@@ -53,7 +53,9 @@ module GHI
 
       def show_pull_request(pr)
         obj = Pull::Show.new
-        obj.pr = pr
+        obj.pr    = pr
+        obj.repo  = repo
+        obj.issue = issue
         obj.show_pull_request
       end
 
