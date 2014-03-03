@@ -45,7 +45,9 @@ EOF
       def parse_subcommand
         subcommand = args.shift
         if SUBCOMMANDS.include?(subcommand)
-          to_const(subcommand).new(args).execute
+          obj = to_const(subcommand).new(args)
+          obj.repo = repo
+          obj.execute
         else
           abort "Invalid Syntax\n#{help}"
         end
