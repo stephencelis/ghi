@@ -127,6 +127,15 @@ require 'pygments'
 Pygments.styles
 ```
 
+- __Can I use a custom $EDITOR for ghi?__
+
+You can define a custom editor by specifying `ghi.editor` in your git
+config (or export `$GHI_EDITOR` in your environment).
+
+``` sh
+$ git config --global ghi.editor vim
+```
+
 ## Screenshot
 
 ![Example](images/example.png)
