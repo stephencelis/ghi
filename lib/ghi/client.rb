@@ -45,7 +45,7 @@ module GHI
       end
     end
 
-    CONTENT_TYPE = 'application/vnd.github+json'
+    CONTENT_TYPE = 'application/vnd.github.beta+json'
     USER_AGENT = 'ghi/%s (%s; +%s)' % [
       GHI::Commands::Version::VERSION,
       RUBY_DESCRIPTION,
