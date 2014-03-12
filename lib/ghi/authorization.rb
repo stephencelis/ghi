@@ -18,12 +18,15 @@ module GHI
         return false unless user && pass
         code ||= nil # 2fa
         args = code ? [] : [54, "✔\r"]
+        note = %w[ghi]
+        note << "(#{GHI.repo})" if local
+        note << "on #{Socket.gethostname}"
         res = throb(*args) {
           headers = {}
           headers['X-GitHub-OTP'] = code if code
           body = {
             :scopes   => %w(public_repo repo),
-            :note     => 'ghi',
+            :note     => note.join(' '),
             :note_url => 'https://github.com/stephencelis/ghi'
           }
           Client.new(user, pass).post(
