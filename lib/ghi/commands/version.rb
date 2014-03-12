@@ -3,7 +3,7 @@ module GHI
     module Version
       MAJOR   = 0
       MINOR   = 9
-      PATCH   = 2
+      PATCH   = 3
       PRE     = nil
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'

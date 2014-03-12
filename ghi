@@ -5,7 +5,7 @@ module GHI
     module Version
       MAJOR   = 0
       MINOR   = 9
-      PATCH   = 2
+      PATCH   = 3
       PRE     = nil
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
@@ -1521,6 +1521,11 @@ module GHI
         escape :inverse, &block
       end
 
+      def highlight(code_block)
+        return code_block unless colorize?
+        highlighter.highlight(code_block)
+      end
+
       def no_color
         old_colorize, Colors.colorize = colorize?, false
         yield
@@ -1712,7 +1717,11 @@ module GHI
       end
 
       def escape_256 color
-        "8;5;#{to_256(*to_rgb(color))}" if `tput colors` =~ /256/
+        "8;5;#{to_256(*to_rgb(color))}" if supports_256_colors?
+      end
+
+      def supports_256_colors?
+        `tput colors` =~ /256/
       end
 
       def to_256 r, g, b
@@ -1778,6 +1787,58 @@ module GHI
         return m1 + (m2 - m1) * (2.0/3 - h) * 6 if h * 3 < 2
         return m1
       end
+
+      def highlighter
+        @highlighter ||= begin
+          raise unless supports_256_colors?
+          require 'pygments'
+          Pygmentizer.new
+        rescue
+          FakePygmentizer.new
+        end
+      end
+
+      class FakePygmentizer
+        def highlight(code_block)
+          code_block
+        end
+      end
+
+      class Pygmentizer
+        def initialize
+          @style = GHI.config('ghi.highlight.style') || 'monokai'
+        end
+
+        def highlight(code_block)
+          begin
+            indent = code_block['indent']
+            lang   = code_block['lang']
+            code   = code_block['code']
+
+            output = pygmentize(lang, code)
+            with_indentation(output, indent)
+          rescue
+            code_block
+          end
+        end
+
+        private
+
+        def pygmentize(lang, code)
+          Pygments.highlight(unescape(code), :formatter => '256', :lexer => lang,
+                             :options => { :style => @style })
+        end
+
+        def unescape(str)
+          str.gsub(/\e\[[^m]*m/, '')
+        end
+
+        def with_indentation(string, indent)
+          string.each_line.map do |line|
+            "#{indent}#{line}"
+          end.join
+        end
+      end
     end
   end
 end
@@ -1814,7 +1875,7 @@ module GHI
 
     def puts *strings
       strings = strings.flatten.map { |s|
-        s.gsub(/(^| )*@([^@\s]+)/) {
+        s.gsub(/(^| *)@(\w+)/) {
           if $2 == Authorization.username
             bright { fg(:yellow) { "#$1@#$2" } }
           else
@@ -1898,7 +1959,7 @@ module GHI
     end
 
     def format_issues_header
-      state = assigns[:state] || 'open'
+      state = assigns[:state] ||= 'open'
       header = "# #{repo || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
@@ -1991,6 +2052,7 @@ module GHI
 *i.values_at('number', 'title')], 0, width } } %>
 @<%= i['user']['login'] %> opened this <%= p ? 'pull request' : 'issue' %> \
 <%= format_date DateTime.parse(i['created_at']) %>. \
+<% if i['merged'] %><%= format_state 'merged', format_tag('merged'), :bg %><% end %> \
 <%= format_state i['state'], format_tag(i['state']), :bg %> \
 <% unless i['comments'] == 0 %>\
 <%= fg('aaaaaa'){
@@ -2014,9 +2076,15 @@ Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 EOF
     end
 
-    def format_comments comments
-      return 'None.' if comments.empty?
-      comments.map { |comment| format_comment comment }
+    def format_comments_and_events elements
+      return 'None.' if elements.empty?
+      elements.map do |element|
+        if event = element['event']
+          format_event(element) unless unimportant_event?(event)
+        else
+          format_comment(element)
+        end
+      end.compact
     end
 
     def format_comment c, width = columns
@@ -2025,6 +2093,16 @@ EOF
 #{format_date DateTime.parse(c['created_at'])}:
 #{indent c['body'], 4, width}
 
+
+EOF
+    end
+
+    def format_event e, width = columns
+      reference = e['commit_id']
+      <<EOF
+#{bright { '⁕' }} #{format_event_type(e['event'])} by @#{e['actor']['login']}\
+#{" through #{underline { reference[0..6] }}" if reference} \
+#{format_date DateTime.parse(e['created_at'])}
 
 EOF
     end
@@ -2087,7 +2165,12 @@ EOF
     end
 
     def format_state state, string = state, layer = :fg
-      send(layer, state == 'closed' ? 'ff0000' : '2cc200') { string }
+      color_codes = {
+        'closed' => 'ff0000',
+        'open'   => '2cc200',
+        'merged' => '511c7d',
+      }
+      send(layer, color_codes[state]) { string }
     end
 
     def format_labels labels
@@ -2097,6 +2180,17 @@ EOF
 
     def format_tag tag
       (colorize? ? ' %s ' : '[%s]') % tag
+    end
+
+    def format_event_type(event)
+      color_codes = {
+        'reopened' => '2cc200',
+        'closed' => 'ff0000',
+        'merged' => '9677b1',
+        'assigned' => 'e1811d',
+        'referenced' => 'aaaaaa'
+      }
+      fg(color_codes[event]) { event }
     end
 
     #--
@@ -2197,16 +2291,15 @@ EOF
         %r{\b(<)?(https?://\S+|[^@\s]+@[^@\s]+)(>)?\b},
         fg(c){'\1' + underline{'\2'} + '\3'}
       )
-      # Code.
-      # string.gsub!(
-      #   /
-      #     (^\ {#{indent}}```.*?$)(.+?^\ {#{indent}}```$)|
-      #     (^|[^`])(`[^`]+`)([^`]|$)
-      #   /mx
-      # ) {
-      #   post = $5
-      #   fg(c){"#$1#$2#$3#$4".gsub(/\e\[[\d;]+m/, '')} + "#{post}"
-      # }
+
+      # Inline code
+      string.gsub!(/`([^`].+?)`(?=[^`])/, inverse { ' \1 ' })
+
+      # Code blocks
+      string.gsub!(/(?<indent>^\ {#{indent}})(```)\s*(?<lang>\w*$)(\n)(?<code>.+?)(\n)(^\ {#{indent}}```$)/m) do |m|
+        highlight(Regexp.last_match)
+      end
+
       string
     end
 
@@ -2252,6 +2345,12 @@ EOF
         puts "\r#{CURSOR[:column][position]}#{redraw}#{CURSOR[:show]}"
       end
     end
+
+    private
+
+    def unimportant_event?(event)
+      %w{ subscribed unsubscribed mentioned }.include?(event)
+    end
   end
 end
 # encoding: utf-8
@@ -2274,12 +2373,15 @@ module GHI
         return false unless user && pass
         code ||= nil # 2fa
         args = code ? [] : [54, "✔\r"]
+        note = %w[ghi]
+        note << "(#{GHI.repo})" if local
+        note << "on #{Socket.gethostname}"
         res = throb(*args) {
           headers = {}
           headers['X-GitHub-OTP'] = code if code
           body = {
             :scopes   => %w(public_repo repo),
-            :note     => 'ghi',
+            :note     => note.join(' '),
             :note_url => 'https://github.com/stephencelis/ghi'
           }
           Client.new(user, pass).post(
@@ -2303,7 +2405,18 @@ module GHI
           retry
         end
 
-        abort "#{e.message}#{CURSOR[:column][0]}"
+        if e.errors.any? { |err| err['code'] == 'already_exists' }
+          message = <<EOF.chomp
+A ghi token already exists!
+
+Please revoke all previously-generated ghi personal access tokens here:
+
+  https://github.com/settings/applications
+EOF
+        else
+          message = e.message
+        end
+        abort "#{message}#{CURSOR[:column][0]}"
       end
 
       def username
@@ -2425,7 +2538,7 @@ module GHI
       end
     end
 
-    CONTENT_TYPE = 'application/vnd.github+json'
+    CONTENT_TYPE = 'application/vnd.github.beta+json'
     USER_AGENT = 'ghi/%s (%s; +%s)' % [
       GHI::Commands::Version::VERSION,
       RUBY_DESCRIPTION,
@@ -2703,14 +2816,18 @@ module GHI
         if index = args.index { |arg| /^\d+$/ === arg }
           @issue = args.delete_at index
         else
-          @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
-          warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+          infer_issue_from_branch_prefix
         end
         @issue
       end
       alias extract_issue     issue
       alias milestone         issue
       alias extract_milestone issue
+
+      def infer_issue_from_branch_prefix
+        @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
+        warn "(Inferring issue from branch prefix: ##@issue)" if @issue
+      end
 
       def require_issue
         raise MissingArgument, 'Issue required.' unless issue
@@ -2723,6 +2840,10 @@ module GHI
       # Handles, e.g. `--[no-]milestone [<n>]`.
       def any_or_none_or input
         input ? input : { nil => '*', false => 'none' }[input]
+      end
+
+      def sort_by_creation(arr)
+        arr.sort_by { |el| el['created_at'] }
       end
     end
   end
@@ -2879,9 +3000,11 @@ EOF
 
         case action
         when 'list'
+          get_requests(:index, :events)
           res = index
           page do
-            puts format_comments(res.body)
+            elements = sort_by_creation(res.body + paged_events(events, res))
+            puts format_comments_and_events(elements)
             break unless res.next_page
             res = throb { api.get res.next_page }
           end
@@ -2910,7 +3033,7 @@ EOF
       protected
 
       def index
-        throb { api.get uri, :per_page => 100 }
+        @index ||= throb { api.get uri, :per_page => 100 }
       end
 
       def create message = 'Commented.'
@@ -2930,7 +3053,27 @@ EOF
         puts 'Comment deleted.'
       end
 
+      def events
+        @events ||= begin
+          events = []
+          res = api.get(event_uri, :per_page => 100)
+          loop do
+            events += res.body
+            break unless res.next_page
+            res = api.get res.next_page
+          end
+          events
+        end
+      end
+
       private
+
+      def get_requests(*methods)
+        threads = methods.map do |method|
+          Thread.new { send(method) }
+        end
+        threads.each { |t| t.join }
+      end
 
       def uri
         if comment
@@ -2938,6 +3081,10 @@ EOF
         else
           "/repos/#{repo}/issues/#{issue}/comments"
         end
+      end
+
+      def event_uri
+        "/repos/#{repo}/issues/#{issue}/events"
       end
 
       def require_body
@@ -2958,6 +3105,18 @@ EOF
         end
         assigns[:body] = message if message
         e
+      end
+
+      def paged_events(events, comments_res)
+        if comments_res.next_page
+          last_comment_creation = comments_res.body.last['created_at']
+          events_for_this_page, @events = events.partition do |event|
+            event['created_at'] < last_comment_creation
+          end
+          events_for_this_page
+        else
+          events
+        end
       end
     end
   end
@@ -3131,7 +3290,7 @@ EOF
               if ref = %x{
                 git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null
               }.chomp!
-                ref.split('/').last if $? == 0
+                ref.split('/', 2).last if $? == 0
               end
             end
             assigns[:head] ||= head
@@ -3235,7 +3394,7 @@ module GHI
           opts.banner = <<EOF
 usage: ghi label <labelname> [-c <color>] [-r <newname>]
    or: ghi label -D <labelname>
-   or: ghi label <issueno> [-a] [-d] [-f]
+   or: ghi label <issueno(s)> [-a] [-d] [-f] <label>
    or: ghi label -l [<issueno>]
 EOF
           opts.separator ''
@@ -3261,13 +3420,13 @@ EOF
           opts.separator ''
           opts.separator 'Issue modification options'
           opts.on '-a', '--add', 'add labels to issue' do
-            self.action = issue ? 'add' : 'create'
+            self.action = issues_present? ? 'add' : 'create'
           end
           opts.on '-d', '--delete', 'remove labels from issue' do
-            self.action = issue ? 'remove' : 'destroy'
+            self.action = issues_present? ? 'remove' : 'destroy'
           end
           opts.on '-f', '--force', 'replace existing labels' do
-            self.action = issue ? 'replace' : 'update'
+            self.action = issues_present? ? 'replace' : 'update'
           end
           opts.separator ''
         end
@@ -3278,16 +3437,16 @@ EOF
         require_repo
         options.parse! args.empty? ? %w(-l) : args
 
-        if issue
+        if issues_present?
           self.action ||= 'add'
           self.name = args.shift.to_s.split ','
           self.name.concat args
+          multi_action(action)
         else
           self.action ||= 'create'
           self.name ||= args.shift
+          send action
         end
-
-        send action
       end
 
       protected
@@ -3376,6 +3535,41 @@ EOF
       def base_uri
         "/repos/#{repo}/#{issue ? "issues/#{issue}/labels" : 'labels'}"
       end
+
+      # This method is usually inherited from Command and extracts a single issue
+      # from args - we override it to handle multiple issues at once.
+      def extract_issue
+        @issues = []
+        args.delete_if do |arg|
+          arg.match(/^\d+$/) ? @issues << arg : break
+        end
+        infer_issue_from_branch_prefix unless @issues.any?
+      end
+
+      def issues_present?
+        @issues.any? || @issue
+      end
+
+      def multi_action(action)
+        if @issues.any?
+          override_issue_reader
+          threads = @issues.map do |issue|
+            Thread.new do
+              Thread.current[:issue] = issue
+              send action
+            end
+          end
+          threads.each(&:join)
+        else
+          send action
+        end
+      end
+
+      def override_issue_reader
+        def issue
+          Thread.current[:issue]
+        end
+      end
     end
   end
 end
@@ -3388,6 +3582,7 @@ module GHI
       attr_accessor :reverse
       attr_accessor :quiet
       attr_accessor :exclude_pull_requests
+      attr_accessor :pull_requests_only
 
       def options
         OptionParser.new do |opts|
@@ -3423,7 +3618,8 @@ module GHI
           opts.on '--reverse', 'reverse (ascending) sort order' do
             self.reverse = !reverse
           end
-          opts.on('-p', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
+          opts.on('-p', '--pulls','list only pull requests') { self.pull_requests_only = true }
+          opts.on('-P', '--no-pulls','exclude pull requests') { self.exclude_pull_requests = true }
           opts.on(
             '--since <date>', 'issues more recent than',
             "e.g., '2011-04-30'"
@@ -3517,8 +3713,10 @@ module GHI
           print "\r#{CURSOR[:up][1]}" if header && paginate?
           page header do
             issues = res.body
-            if exclude_pull_requests
-              issues = issues.reject {|i| i["pull_request"].any? {|k,v| !v.nil? } }
+
+            if exclude_pull_requests || pull_requests_only
+              prs, issues = issues.partition { |i| i['pull_request'].values.any? }
+              issues = prs if pull_requests_only
             end
             if assigns[:exclude_labels]
               issues = issues.reject  do |i|
@@ -3851,7 +4049,7 @@ EOF
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
             e.unlink if e
             puts format_issue(i)
-            puts 'Opened.'
+            puts "Opened on #{repo}."
           end
         end
       rescue Client::Error => e
@@ -3900,6 +4098,7 @@ module GHI
             end
           else
             i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
+            determine_merge_status(i) if pull_request?(i)
             page do
               puts format_issue(i)
               n = i['comments']
@@ -3911,6 +4110,21 @@ module GHI
             end
           end
         end
+      end
+
+      private
+
+      def pull_request?(issue)
+        issue['pull_request']['html_url']
+      end
+
+      def determine_merge_status(pr)
+        pr['merged'] = true if pr['state'] == 'closed' && merged?
+      end
+
+      def merged?
+        # API returns with a Not Found error when the PR is not merged
+        api.get "/repos/#{repo}/pulls/#{issue}/merge" rescue false
       end
     end
   end
