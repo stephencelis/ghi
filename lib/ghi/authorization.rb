@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+require "Socket"
+
 module GHI
   module Authorization
     extend Formatting
