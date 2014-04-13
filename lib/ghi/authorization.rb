@@ -41,7 +41,7 @@ module GHI
           system "git config#{' --global' unless local} github.user #{user}"
         end
 
-        store_token! username, token, local
+        store_token! user, token, local
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
