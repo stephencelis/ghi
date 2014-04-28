@@ -14,7 +14,7 @@ $ brew install ghi
 
 Via curl:
 ``` sh
-$ curl -s https://raw.github.com/stephencelis/ghi/master/ghi > ghi && \
+$ curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
   chmod 755 ghi && \
   mv ghi /usr/local/bin
 ```
