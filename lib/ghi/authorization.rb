@@ -1,6 +1,5 @@
 # encoding: utf-8
-
-require "Socket"
+require 'socket'
 
 module GHI
   module Authorization
