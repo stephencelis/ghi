@@ -81,7 +81,7 @@ export TERM=xterm-256color # or screen-256color
 ```
 Ideally you'll want to add this to one of your shell configuration files (e.g. `~/.bashrc`).
 ``` sh
-echo "export TERM=xterm256color" >> ~/.bashrc
+echo "export TERM=xterm-256color" >> ~/.bashrc
 ```
 
 If for whatever reason you cannot set the `TERM` variable globally, it
