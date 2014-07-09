@@ -35,6 +35,7 @@ The most commonly used ghi commands are:
    label       Create, list, modify, or delete labels
    assign      Assign an issue to yourself (or someone else)
    milestone   Manage project milestones
+   find        Search for issues by keywords
 
 See 'ghi help <command>' for more information on a specific command.
 EOF

@@ -117,6 +117,10 @@ module GHI
       def sort_by_creation(arr)
         arr.sort_by { |el| el['created_at'] }
       end
+
+      def find_mode?
+        false
+      end
     end
   end
 end

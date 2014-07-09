@@ -97,7 +97,9 @@ module GHI
     def request method, path, options
       path = "/api/v3#{path}" if HOST != DEFAULT_HOST
 
-      path = URI.escape path
+      # There's no way of knowing if path is already an encoded string at this
+      # point, to be safe we try to decode it before encoding it again.
+      path = URI.encode(URI.decode(path))
       if params = options[:params] and !params.empty?
         q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
         path += "?#{q.join '&'}"
