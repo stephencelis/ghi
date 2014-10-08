@@ -2885,14 +2885,12 @@ EOF
         unless assigns.key? :assignee
           assigns[:assignee] = args.pop || Authorization.username
         end
-        if assigns.key? :assignee
-          if not assigns[:assignee].nil?
-             assigns[:assignee].sub!(/^@/, '')
-          end
-          assigns[:args].concat(
-            assigns[:assignee] ? %W(-u #{assigns[:assignee]}) : %w(--no-assign)
-          )
+        if assigns[:assignee]
+          assigns[:assignee].sub!(/^@/, '')
         end
+        assigns[:args].concat(
+          assigns[:assignee] ? %W(-u #{assigns[:assignee]}) : %w(--no-assign)
+        )
         assigns[:args] << issue if issue
         assigns[:args].concat %W(-- #{repo})
 
