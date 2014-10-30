@@ -3,7 +3,7 @@ module GHI
     class Open < Command
       attr_accessor :editor
       attr_accessor :web
-
+      attr_accessor :outfile
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
@@ -51,6 +51,12 @@ EOF
         end
       end
 
+      def write_issue_id(issue)
+          open(self.outfile, 'w') { |f|
+            f.puts issue['number']
+          }
+      end
+
       def execute
         require_repo
         self.action = 'create'
@@ -86,9 +92,8 @@ EOF
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
             e.unlink if e
-            if self.outfile
-              write_issue_id(i, self.outfile)
-            puts format_issue(i)            
+            self.write_issue_id(i) if self.outfile
+            puts format_issue(i)
             puts "Opened on #{repo}."
           end
         end
