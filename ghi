@@ -1815,7 +1815,11 @@ module GHI
             lang   = code_block['lang']
             code   = code_block['code']
 
-            output = pygmentize(lang, code)
+            if lang != ""
+              output = pygmentize(lang, code)
+            else
+              output = code
+            end
             with_indentation(output, indent)
           rescue
             code_block
@@ -2354,6 +2358,7 @@ EOF
   end
 end
 # encoding: utf-8
+require 'socket'
 
 module GHI
   module Authorization
@@ -2394,7 +2399,7 @@ module GHI
           system "git config#{' --global' unless local} github.user #{user}"
         end
 
-        store_token! username, token, local
+        store_token! user, token, local
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
@@ -4009,6 +4014,11 @@ EOF
           ) do |labels|
             (assigns[:labels] ||= []).concat labels
           end
+          opts.on(
+            '-O', '--outfile <filename>...', 'write formatted issue to filename, not stdout'
+          ) do |outfile|
+            self.outfile = outfile
+          end
           opts.separator ''
         end
       end
@@ -4048,7 +4058,8 @@ EOF
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
             e.unlink if e
-            puts format_issue(i)
+            write_issue_id(i, self.outfile) if self.outfile
+            puts format_issue(i)            
             puts "Opened on #{repo}."
           end
         end

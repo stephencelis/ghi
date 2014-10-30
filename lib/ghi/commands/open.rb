@@ -42,6 +42,11 @@ EOF
           ) do |labels|
             (assigns[:labels] ||= []).concat labels
           end
+          opts.on(
+            '-O', '--outfile <filename>...', 'write formatted issue to filename, not stdout'
+          ) do |outfile|
+            self.outfile = outfile
+          end
           opts.separator ''
         end
       end
@@ -81,7 +86,9 @@ EOF
             end
             i = throb { api.post "/repos/#{repo}/issues", assigns }.body
             e.unlink if e
-            puts format_issue(i)
+            if self.outfile
+              write_issue_id(i, self.outfile)
+            puts format_issue(i)            
             puts "Opened on #{repo}."
           end
         end
