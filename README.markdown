@@ -136,6 +136,17 @@ config (or export `$GHI_EDITOR` in your environment).
 $ git config --global ghi.editor vim
 ```
 
+- __How do I create a milestone?__
+
+Invoke `ghi milestone` with the `-s` option:
+
+``` sh
+$ git milestone -s open
+```
+
+This will open your editor to create the milestone. Much like creating an issue, the first line will be the title of the milestone, subsequent non-comment lines will be the milestone description. 
+
+
 ## Screenshot
 
 ![Example](images/example.png)
