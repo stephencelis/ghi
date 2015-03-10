@@ -9,19 +9,19 @@ GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
 
 Via brew:
 ``` sh
-$ brew install ghi
+brew install ghi
 ```
 
 Via curl:
 ``` sh
-$ curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
-  chmod 755 ghi && \
-  mv ghi /usr/local/bin
+curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
+hmod 755 ghi && \
+mv ghi /usr/local/bin
 ```
 
 Via gem:
 ``` sh
-$ gem install ghi
+gem install ghi
 ```
 
 
@@ -67,7 +67,7 @@ $ ghi list
 
 Just run the following inside your terminal and you'll be good to go:
 ``` sh
-$ git config github.host address_of_your_enterprise_host
+git config github.host address_of_your_enterprise_host
 ```
 
 - __How do I enable the pretty colored output?__
@@ -87,7 +87,7 @@ echo "export TERM=xterm-256color" >> ~/.bashrc
 If for whatever reason you cannot set the `TERM` variable globally, it
 is recommended to set an alias:
 ``` sh
-$ alias ghi='TERM=xterm-256color ghi'
+alias ghi='TERM=xterm-256color ghi'
 ```
 This runs `ghi` with full color support, but leaves the rest of your
 terminal untouched.
@@ -96,11 +96,18 @@ Ubuntu users of a version prior to 12.04, beware! Your terminal will not
 support 256 colors by default. You need to get an additional library
 before before setting the `TERM` variable.
 ``` sh
-$ sudo apt-get install ncurses-term
+sudo apt-get install ncurses-term
 ```
 
 Don't forget to reload your config file (e.g. `source ~/.bashrc`) or
 just reopen your terminal.
+
+- __What about cygwin‽__
+
+`less` can be problematic... you can use `less -R`.
+```sh
+git config --global ghi.pager "less -X -F -R"
+```
 
 - __Can I have syntax highlighting of [fenced code blocks](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting)?__
 
@@ -110,13 +117,13 @@ To enable this feature you just need to install the ruby wrapper for
 [pygments](http://pygments.org/):
 
 ``` sh
-$ gem install pygments.rb
+gem install pygments.rb
 ```
 
 Additionally you can specify the used colorset through your `gitconfig` file(s).
 
 ``` sh
-$ git config --global ghi.highlight.style colorful
+git config --global ghi.highlight.style colorful
 ```
 
 Fire up an `irb/pry` session with the following to see a list of available
@@ -133,7 +140,7 @@ You can define a custom editor by specifying `ghi.editor` in your git
 config (or export `$GHI_EDITOR` in your environment).
 
 ``` sh
-$ git config --global ghi.editor vim
+git config --global ghi.editor vim
 ```
 
 ## Screenshot
