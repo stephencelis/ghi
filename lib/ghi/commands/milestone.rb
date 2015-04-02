@@ -103,7 +103,7 @@ EOF
         case action
         when 'index'
           if web
-            Web.new(repo).open 'issues/milestones', assigns
+            Web.new(repo).open 'milestones', assigns
           else
             assigns[:per_page] = 100
             state = assigns[:state] || 'open'
