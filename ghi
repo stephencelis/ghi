@@ -1947,7 +1947,7 @@ module GHI
     end
 
     def dimensions
-      `stty size`.chomp.split(' ').map { |n| n.to_i }
+      `stty size 2>/dev/null`.chomp.split(' ').map { |n| n.to_i }
     end
 
     #--
