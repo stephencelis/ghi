@@ -2245,9 +2245,9 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. The first line will become the title. Trailing lines starting
-with '#' (like these) will be ignored, and empty messages will not be
-submitted. Comments are formatted with GitHub Flavored Markdown (GFM):
+Leave a comment. Trailing lines starting with '#' (like these) will be 
+ignored, and empty messages will not be submitted. Comments are formatted 
+with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
