@@ -118,7 +118,8 @@ module GHI
 
     def format_issues_header
       state = assigns[:state] ||= 'open'
-      header = "# #{repo || 'Global,'} #{state} issues"
+      org = assigns[:org] ||= nil
+      header = "# #{repo || org || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
           case milestone
