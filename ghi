@@ -1815,7 +1815,11 @@ module GHI
             lang   = code_block['lang']
             code   = code_block['code']
 
-            output = pygmentize(lang, code)
+            if lang != ""
+              output = pygmentize(lang, code)
+            else
+              output = code
+            end
             with_indentation(output, indent)
           rescue
             code_block
@@ -1947,7 +1951,7 @@ module GHI
     end
 
     def dimensions
-      `stty size 2>/dev/null`.chomp.split(' ').map { |n| n.to_i }
+      `stty size`.chomp.split(' ').map { |n| n.to_i }
     end
 
     #--
@@ -2245,9 +2249,9 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Trailing lines starting with '#' (like these) will be 
-ignored, and empty messages will not be submitted. Comments are formatted 
-with GitHub Flavored Markdown (GFM):
+Leave a comment. Trailing lines starting with '#' (like these) will be ignored, 
+and empty messages will not be submitted. Comments are formatted with GitHub 
+Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
@@ -2354,6 +2358,7 @@ EOF
   end
 end
 # encoding: utf-8
+require 'socket'
 
 module GHI
   module Authorization
@@ -2394,7 +2399,7 @@ module GHI
           system "git config#{' --global' unless local} github.user #{user}"
         end
 
-        store_token! username, token, local
+        store_token! user, token, local
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
@@ -3580,6 +3585,7 @@ module GHI
     class List < Command
       attr_accessor :web
       attr_accessor :reverse
+      attr_accessor :organization
       attr_accessor :quiet
       attr_accessor :exclude_pull_requests
       attr_accessor :pull_requests_only
@@ -3675,6 +3681,12 @@ module GHI
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
           end
+          opts.on(
+            '-O', '--org <organization>', 'in repos within an organization you belong to'
+          ) do |org|
+	    self.organization = org
+            @repo = nil
+          end
           opts.separator ''
         end
       end
@@ -3747,7 +3759,14 @@ module GHI
       private
 
       def uri
-        (repo ? "/repos/#{repo}" : '') << '/issues'
+        url = ''
+        if repo
+          url = "/repos/#{repo}"
+        end
+	if self.organization
+          url = "/orgs/#{self.organization}"
+        end
+        return url << '/issues'
       end
 
       def fallback
@@ -3864,7 +3883,7 @@ EOF
         case action
         when 'index'
           if web
-            Web.new(repo).open 'issues/milestones', assigns
+            Web.new(repo).open 'milestones', assigns
           else
             assigns[:per_page] = 100
             state = assigns[:state] || 'open'

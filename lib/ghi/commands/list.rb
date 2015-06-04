@@ -5,6 +5,7 @@ module GHI
     class List < Command
       attr_accessor :web
       attr_accessor :reverse
+      attr_accessor :organization
       attr_accessor :quiet
       attr_accessor :exclude_pull_requests
       attr_accessor :pull_requests_only
@@ -103,7 +104,8 @@ module GHI
           opts.on(
             '-O', '--org <organization>', 'in repos within an organization you belong to'
           ) do |org|
-            @org = org
+	    self.organization = org
+            @repo = nil
           end
           opts.separator ''
         end
@@ -178,11 +180,11 @@ module GHI
 
       def uri
         url = ''
-        if org
-          url = "/orgs/#{org}"
-        end
         if repo
           url = "/repos/#{repo}"
+        end
+	if self.organization
+          url = "/orgs/#{self.organization}"
         end
         return url << '/issues'
       end
