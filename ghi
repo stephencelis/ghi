@@ -1815,7 +1815,7 @@ module GHI
             lang   = code_block['lang']
             code   = code_block['code']
 
-	    output = pygmentize(lang, code)
+            output = pygmentize(lang, code)
             with_indentation(output, indent)
           rescue
             code_block
