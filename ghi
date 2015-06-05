@@ -1960,7 +1960,8 @@ module GHI
 
     def format_issues_header
       state = assigns[:state] ||= 'open'
-      header = "# #{repo || 'Global,'} #{state} issues"
+      org = assigns[:org] ||= nil
+      header = "# #{repo || org || 'Global,'} #{state} issues"
       if repo
         if milestone = assigns[:milestone]
           case milestone
@@ -2354,6 +2355,7 @@ EOF
   end
 end
 # encoding: utf-8
+require 'socket'
 
 module GHI
   module Authorization
@@ -2394,7 +2396,7 @@ module GHI
           system "git config#{' --global' unless local} github.user #{user}"
         end
 
-        store_token! username, token, local
+        store_token! user, token, local
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
@@ -3675,6 +3677,12 @@ module GHI
           ) do |mentioned|
             assigns[:mentioned] = mentioned || Authorization.username
           end
+          opts.on(
+            '-O', '--org <organization>', 'in repos within an organization you belong to'
+          ) do |org|
+	    assigns[:org] = org
+            @repo = nil
+          end
           opts.separator ''
         end
       end
@@ -3747,7 +3755,14 @@ module GHI
       private
 
       def uri
-        (repo ? "/repos/#{repo}" : '') << '/issues'
+        url = ''
+        if repo
+          url = "/repos/#{repo}"
+        end
+	if assigns[:org]
+          url = "/orgs/#{assigns[:org]}"
+        end
+        return url << '/issues'
       end
 
       def fallback
@@ -3864,7 +3879,7 @@ EOF
         case action
         when 'index'
           if web
-            Web.new(repo).open 'issues/milestones', assigns
+            Web.new(repo).open 'milestones', assigns
           else
             assigns[:per_page] = 100
             state = assigns[:state] || 'open'
