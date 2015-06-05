@@ -1815,11 +1815,7 @@ module GHI
             lang   = code_block['lang']
             code   = code_block['code']
 
-            if lang != ""
-              output = pygmentize(lang, code)
-            else
-              output = code
-            end
+	    output = pygmentize(lang, code)
             with_indentation(output, indent)
           rescue
             code_block
@@ -1951,7 +1947,7 @@ module GHI
     end
 
     def dimensions
-      `stty size`.chomp.split(' ').map { |n| n.to_i }
+      `stty size 2>/dev/null`.chomp.split(' ').map { |n| n.to_i }
     end
 
     #--
@@ -2250,9 +2246,9 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Trailing lines starting with '#' (like these) will be ignored, 
-and empty messages will not be submitted. Comments are formatted with GitHub 
-Flavored Markdown (GFM):
+Leave a comment. Trailing lines starting with '#' (like these) will be 
+ignored, and empty messages will not be submitted. Comments are formatted 
+with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
