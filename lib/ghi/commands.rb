@@ -14,6 +14,7 @@ module GHI
     autoload :Milestone, 'ghi/commands/milestone'
     autoload :Reopen,    'ghi/commands/reopen'
     autoload :Show,      'ghi/commands/show'
+		autoload :Status,    'ghi/commands/status'
     autoload :Unassign,  'ghi/commands/unassign'
     autoload :Version,   'ghi/commands/version'
   end

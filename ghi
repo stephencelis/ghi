@@ -3361,6 +3361,7 @@ The most commonly used ghi commands are:
    label       Create, list, modify, or delete labels
    assign      Assign an issue to yourself (or someone else)
    milestone   Manage project milestones
+   status      Determine whether or not issues are enabled for this repo
 
 See 'ghi help <command>' for more information on a specific command.
 EOF
@@ -4018,7 +4019,7 @@ EOF
           ) do |assignee|
             assigns[:assignee] = assignee
           end
-          opts.on '--claim', 'assign to yourself' do
+          opts.on '--claim', '--assign', 'assign to yourself' do
             assigns[:assignee] = Authorization.username
           end
           opts.on(
@@ -4150,6 +4151,24 @@ module GHI
       end
     end
   end
+end
+module GHI
+  module Commands
+    class Status < Command
+
+			def execute
+				require_repo
+				res = throb { api.get "/repos/#{repo}" }.body
+
+				if res['has_issues']
+					puts "Issues are enabled for this repo"
+				else
+					puts "Issues are not enabled for this repo"
+				end
+
+			end
+		end
+	end
 end
 #!/usr/bin/env ruby
 GHI.execute ARGV
