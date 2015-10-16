@@ -45,6 +45,15 @@ The most commonly used ghi commands are:
 See 'ghi help <command>' for more information on a specific command.
 ```
 
+## Contributing
+
+1. Fork this repo
+2. Do your work:
+  1. Make your changes
+  2. Run `rake build`
+  3. Make sure your changes work
+3. Open a pull request!
+
 ## FAQ
 
 - __Where does ghi look for issues?__
