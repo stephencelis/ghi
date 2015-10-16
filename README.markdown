@@ -1,9 +1,8 @@
 # ghi
 
-<https://github.com/stephencelis/ghi>
-
 GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
 
+Originally created by [Stephen Celis](https://github.com/stephencelis), now maintained by [Stephen Celis](https://github.com/stephencelis) and [Alex Chesters](https://github.com/alexchesters).
 
 ## Install
 
