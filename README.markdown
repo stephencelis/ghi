@@ -40,6 +40,9 @@ The most commonly used ghi commands are:
    label       Create, list, modify, or delete labels
    assign      Assign an issue to yourself (or someone else)
    milestone   Manage project milestones
+   status      Determine whether or not issues are enabled for this repo
+   enable      Enable issues for the current repo
+   disable     Disable issues for the current repo
 
 See 'ghi help <command>' for more information on a specific command.
 ```
