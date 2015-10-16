@@ -84,7 +84,9 @@ module GHI
 
     def truncate string, reserved
       return string unless paginate?
-      result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
+      space=columns - reserved
+      space=5 if space < 5
+      result = string.scan(/.{0,#{space}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
     end
