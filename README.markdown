@@ -54,6 +54,8 @@ See 'ghi help <command>' for more information on a specific command.
   3. Make sure your changes work
 3. Open a pull request!
 
+You can find a guide to creating a new command [here](https://github.com/stephencelis/ghi/wiki/Creating-a-new-command)
+
 ## FAQ
 
 - __Where does ghi look for issues?__
