@@ -33,6 +33,7 @@ task :build do
     f.chmod 0755
   end
   system './ghi 1>/dev/null'
+	puts "ghi succesfully built!"
 end
 
 desc 'Build the manuals'
