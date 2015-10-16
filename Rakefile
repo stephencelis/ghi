@@ -17,6 +17,8 @@ task :build do
     lib/ghi/commands/comment.rb
     lib/ghi/commands/config.rb
     lib/ghi/commands/edit.rb
+    lib/ghi/commands/disable.rb
+    lib/ghi/commands/enable.rb
     lib/ghi/commands/help.rb
     lib/ghi/commands/label.rb
     lib/ghi/commands/list.rb
