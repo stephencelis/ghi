@@ -1815,7 +1815,11 @@ module GHI
             lang   = code_block['lang']
             code   = code_block['code']
 
-            output = pygmentize(lang, code)
+            if lang != ""
+              output = pygmentize(lang, code)
+            else
+              output = code
+            end
             with_indentation(output, indent)
           rescue
             code_block
@@ -1926,7 +1930,9 @@ module GHI
 
     def truncate string, reserved
       return string unless paginate?
-      result = string.scan(/.{0,#{columns - reserved}}(?:\s|\Z)/).first.strip
+      space=columns - reserved
+      space=5 if space < 5
+      result = string.scan(/.{0,#{space}}(?:\s|\Z)/).first.strip
       result << "..." if result != string
       result
     end
@@ -1947,7 +1953,7 @@ module GHI
     end
 
     def dimensions
-      `stty size 2>/dev/null`.chomp.split(' ').map { |n| n.to_i }
+      `stty size`.chomp.split(' ').map { |n| n.to_i }
     end
 
     #--
@@ -2246,9 +2252,9 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Trailing lines starting with '#' (like these) will be 
-ignored, and empty messages will not be submitted. Comments are formatted 
-with GitHub Flavored Markdown (GFM):
+Leave a comment. Trailing lines starting with '#' (like these) will be ignored, 
+and empty messages will not be submitted. Comments are formatted with GitHub 
+Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
 
@@ -2408,12 +2414,13 @@ module GHI
         end
 
         if e.errors.any? { |err| err['code'] == 'already_exists' }
+          host = GHI.config('github.host') || 'github.com'
           message = <<EOF.chomp
 A ghi token already exists!
 
 Please revoke all previously-generated ghi personal access tokens here:
 
-  https://github.com/settings/applications
+  https://#{host}/settings/applications
 EOF
         else
           message = e.message
