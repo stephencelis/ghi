@@ -6,12 +6,12 @@ Originally created by [Stephen Celis](https://github.com/stephencelis), now main
 
 ## Install
 
-Via brew:
+Via brew ([latest stable release](https://github.com/stephencelis/ghi/releases/latest)):
 ``` sh
 brew install ghi
 ```
 
-Via curl:
+Via curl (latest bleeding-edge versions, may not be stable):
 ``` sh
 curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
 chmod 755 ghi && \
