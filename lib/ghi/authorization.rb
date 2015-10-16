@@ -52,12 +52,13 @@ module GHI
         end
 
         if e.errors.any? { |err| err['code'] == 'already_exists' }
+          host = GHI.config('github.host') || 'github.com'
           message = <<EOF.chomp
 A ghi token already exists!
 
 Please revoke all previously-generated ghi personal access tokens here:
 
-  https://github.com/settings/applications
+  https://#{host}/settings/applications
 EOF
         else
           message = e.message
