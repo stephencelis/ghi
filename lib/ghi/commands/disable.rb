@@ -2,7 +2,20 @@ module GHI
   module Commands
     class Disable < Command
 
+			def options
+        OptionParser.new do |opts|
+          opts.banner = 'usage: ghi disable'
+        end
+      end
+
 			def execute
+				begin
+          options.parse! args
+          @repo ||= ARGV[0] if ARGV.one?
+        rescue OptionParser::InvalidOption => e
+          fallback.parse! e.args
+          retry
+        end
 				require_repo
 				patch_data = {}
 				# TODO: A way to grap the actual repo name, rather than username/repo
