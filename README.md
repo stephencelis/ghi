@@ -51,14 +51,14 @@ See 'ghi help <command>' for more information on a specific command.
 
 If you're looking for a place to start, there are [issues we need help with](https://github.com/stephencelis/ghi/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)!
 
+Once you have an idea of what you want to do, there is a section in the [wiki](https://github.com/stephencelis/ghi/wiki/Contributing) to provide more detailed information but the basic steps are as follows.
+
 1. Fork this repo
 2. Do your work:
   1. Make your changes
   2. Run `rake build`
   3. Make sure your changes work
 3. Open a pull request!
-
-You can find a guide to creating a new command [here](https://github.com/stephencelis/ghi/wiki/Creating-a-new-command)
 
 ## FAQ
 
