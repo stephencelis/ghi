@@ -5,7 +5,7 @@ module GHI
     module Version
       MAJOR   = 1
       MINOR   = 0
-      PATCH   = 0
+      PATCH   = 2
       PRE     = nil
 
       VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
@@ -2212,7 +2212,6 @@ EOF
     def format_editor issue = nil
       message = ERB.new(<<EOF).result binding
 
-
 Please explain the issue. The first line will become the title. Trailing
 lines starting with '#' (like these) will be ignored, and empty messages will
 not be submitted. Issues are formatted with GitHub Flavored Markdown (GFM):
@@ -2229,6 +2228,7 @@ EOF
         "# #{line}".rstrip
         # end
       }
+      message.insert 0, "\n"
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
       ].compact.join("\n\n") if issue

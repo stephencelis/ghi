@@ -366,7 +366,6 @@ EOF
     def format_editor issue = nil
       message = ERB.new(<<EOF).result binding
 
-
 Please explain the issue. The first line will become the title. Trailing
 lines starting with '#' (like these) will be ignored, and empty messages will
 not be submitted. Issues are formatted with GitHub Flavored Markdown (GFM):
@@ -379,10 +378,10 @@ On <%= repo %>
 EOF
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line|
-        # unless line.empty?
         "# #{line}".rstrip
-        # end
       }
+      # Adding an extra newline for formatting
+      message.insert 0, "\n"
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
       ].compact.join("\n\n") if issue
