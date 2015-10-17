@@ -11,18 +11,17 @@ Via brew ([latest stable release](https://github.com/stephencelis/ghi/releases/l
 brew install ghi
 ```
 
+Via gem ([latest stable release](https://github.com/stephencelis/ghi/releases/latest)):
+``` sh
+gem install ghi
+```
+
 Via curl (latest bleeding-edge versions, may not be stable):
 ``` sh
 curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
 chmod 755 ghi && \
 mv ghi /usr/local/bin
 ```
-
-Via gem:
-``` sh
-gem install ghi
-```
-
 
 ## Usage
 
