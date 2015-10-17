@@ -62,6 +62,17 @@ module GHI
         abort options.to_s
       end
 
+      def require_repo_name
+        require_repo
+        repo_array = repo.partition "/"
+        if repo_array.length >= 2
+          repo_name = repo_array[2]
+        else
+          repo_name = nil
+        end
+        return repo_name
+      end
+        
       def detect_repo
         remote   = remotes.find { |r| r[:remote] == 'upstream' }
         remote ||= remotes.find { |r| r[:remote] == 'origin' }

@@ -16,17 +16,17 @@ module GHI
           fallback.parse! e.args
           retry
         end
-        require_repo
-        patch_data = {}
-        # TODO: A way to grap the actual repo name, rather than username/repo
-        repo_path = repo.partition "/"
-        patch_data[:name] = repo_path[2]
-        patch_data[:has_issues] = true
-        res = throb { api.patch "/repos/#{repo}", patch_data }.body
-        if res['has_issues']
-          puts "Issues are now enabled for this repo"
-        else
-          puts "Something went wrong enabling issues for this repo"
+        repo_name = require_repo_name
+        unless repo_name.nil?
+          patch_data = {}
+          patch_data[:name] = repo_name
+          patch_data[:has_issues] = true
+          res = throb { api.patch "/repos/#{repo}", patch_data }.body
+          if res['has_issues']
+            puts "Issues are now enabled for this repo"
+          else
+            puts "Something went wrong enabling issues for this repo"
+          end
         end
       end
 
