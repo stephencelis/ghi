@@ -49,6 +49,8 @@ See 'ghi help <command>' for more information on a specific command.
 
 ## Contributing
 
+If you're looking for a place to start, there are [issues we need help with](https://github.com/stephencelis/ghi/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)!
+
 1. Fork this repo
 2. Do your work:
   1. Make your changes
@@ -65,7 +67,6 @@ FAQs can be found in the [wiki](https://github.com/stephencelis/ghi/wiki/FAQ)
 ## Screenshot
 
 ![Example](images/example.png)
-
 
 ## LICENSE
 
