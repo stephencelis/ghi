@@ -52,7 +52,7 @@ EOF
 
         options.parse! args
 
-        if extract_issue
+        if GHI.config('ghi.infer-issue') != 'false' && extract_issue
           Edit.execute args.push('-so', issue, '--', repo)
           exit
         end
