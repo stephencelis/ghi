@@ -1,19 +1,16 @@
-require 'net/http'
-require 'json'
-
 module GHI
   module Commands
     module Version
+      MAJOR   = 1
+      MINOR   = 0
+      PATCH   = 0
+      PRE     = nil
+
+      VERSION = [MAJOR, MINOR, PATCH, PRE].compact.join '.'
 
       def self.execute args
-        puts "ghi version #{get_latest_version}"
+        puts "ghi version #{VERSION}"
       end
-
-      def self.get_latest_version
-        result = JSON.parse(Net::HTTP.get(URI.parse('https://api.github.com/repos/stephencelis/ghi/releases/latest')))
-        return result['tag_name'] 
-      end      
-
     end
   end
 end

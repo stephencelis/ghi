@@ -3,7 +3,7 @@ require 'ghi/commands/version'
 
 Gem::Specification.new do |s|
   s.name             = 'ghi'
-  s.version          = GHI::Commands::Version::get_latest_version
+  s.version          = GHI::Commands::Version::VERSION
   s.summary          = 'GitHub Issues command line interface'
   s.description      = <<EOF
 GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
