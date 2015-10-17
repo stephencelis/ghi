@@ -2225,9 +2225,9 @@ On <%= repo %>
 EOF
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line|
-        unless line.empty?
-          "# #{line}".rstrip
-        end
+        # unless line.empty?
+        "# #{line}".rstrip
+        # end
       }
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
