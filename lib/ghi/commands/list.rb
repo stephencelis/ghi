@@ -13,7 +13,7 @@ module GHI
         OptionParser.new do |opts|
           opts.banner = 'usage: ghi list [options]'
           opts.separator ''
-          opts.on '-a', '--global', '--all', 'all of your issues on GitHub' do
+          opts.on '-g', '--global', 'all of your issues on GitHub' do
             assigns[:filter] = 'all'
             @repo = nil
           end
