@@ -3696,8 +3696,8 @@ module GHI
             @repo = nil
           end
           opts.on(
-            '-s', '--state <in>', %w(open closed),
-            {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
+            '-s', '--state <in>', %w(all open closed),
+            {'o'=>'open', 'c'=>'closed', 'a'=>'all'}, "'all', 'open' or 'closed'"
           ) do |state|
             assigns[:state] = state
           end
@@ -3837,7 +3837,15 @@ module GHI
             if verbose
               puts issues.map { |i| format_issue i }
             else
-              puts format_issues(issues, repo.nil?)
+              if assigns[:state] == 'all'
+                open,closed = issues.partition { |i| i['state'] == 'open' }
+                print format_state 'open', "\n# Open issues\n"
+                puts format_issues(open, repo.nil?)
+                print format_state 'closed', "\n# Closed issues\n"
+                puts format_issues(closed, repo.nil?)
+              else
+                puts format_issues(issues, repo.nil?)
+              end
             end
             break unless res.next_page
             res = throb { api.get res.next_page }
@@ -3869,6 +3877,7 @@ module GHI
       def fallback
         OptionParser.new do |opts|
           opts.on('-c', '--closed') { assigns[:state] = 'closed' }
+          opts.on('-a', '--all')    { assigns[:state] = 'all' }
           opts.on('-q', '--quiet')  { self.quiet = true }
         end
       end
