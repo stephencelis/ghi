@@ -1,5 +1,6 @@
 require 'cgi'
 require 'net/https'
+require_relative './lib/ghi/commands/version'
 
 unless defined? Net::HTTP::Patch
   # PATCH support for 1.8.7.
@@ -46,11 +47,7 @@ module GHI
     end
 
     CONTENT_TYPE = 'application/vnd.github.beta+json'
-    USER_AGENT = 'ghi/%s (%s; +%s)' % [
-      GHI::Commands::Version::VERSION,
-      RUBY_DESCRIPTION,
-      'https://github.com/stephencelis/ghi'
-    ]
+    USER_AGENT = "ghi/#{GHI::Commands::Version::get_latest_version}"
     METHODS = {
       :head   => Net::HTTP::Head,
       :get    => Net::HTTP::Get,
