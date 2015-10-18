@@ -19,7 +19,9 @@ EOF
       end
 
       def execute
+        # TODO: Investigate whether or not this variable is needed
         global = true
+        
         options.parse! args.empty? ? %w(-h) : args
 
         if action == 'auth'
