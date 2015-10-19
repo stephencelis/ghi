@@ -2224,10 +2224,9 @@ On <%= repo %>
 EOF
       message.rstrip!
       message.gsub!(/(?!\A)^.*$/) { |line|
-        # unless line.empty?
         "# #{line}".rstrip
-        # end
       }
+      # Adding an extra newline for formatting
       message.insert 0, "\n"
       message.insert 0, [
         issue['title'] || issue[:title], issue['body'] || issue[:body]
@@ -3171,7 +3170,9 @@ EOF
       end
 
       def execute
+        # TODO: Investigate whether or not this variable is needed
         global = true
+        
         options.parse! args.empty? ? %w(-h) : args
 
         if action == 'auth'
