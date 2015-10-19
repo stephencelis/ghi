@@ -183,7 +183,7 @@ module GHI
         l = 9 + nmax + rmax + no_color { format_labels labels }.to_s.length
         a = i['assignee'] && i['assignee']['login'] == Authorization.username
         l += 2 if a
-        p = i['pull_request']['html_url'] and l += 2
+        p = i['pull_request']['html_url'] and l += 2 if i['pull_request']
         c = i['comments']
         l += c.to_s.length + 1 unless c == 0
         m = i['milestone']
