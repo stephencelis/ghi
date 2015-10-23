@@ -6,7 +6,7 @@ module GHI
       def options
         OptionParser.new do |opts|
           opts.banner = <<EOF
-usage: ghi edit [options] <issueno>
+usage: ghi edit <issueno> [options]
 EOF
           opts.separator ''
           opts.on(
