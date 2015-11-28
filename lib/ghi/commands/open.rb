@@ -17,7 +17,10 @@ EOF
           opts.on('-w', '--web') { self.web = true }
           opts.separator ''
           opts.separator 'Issue modification options'
-          opts.on '-m', '--message [<text>]', 'describe issue' do |text|
+          opts.on(
+              '-m', '--message [<text>]', 'describe issue',
+              "use line breaks to separate title from description"
+          ) do |text|
             if text
               assigns[:title], assigns[:body] = text.split(/\n+/, 2)
             else
