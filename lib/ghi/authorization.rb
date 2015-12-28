@@ -58,7 +58,7 @@ A ghi token already exists!
 
 Please revoke all previously-generated ghi personal access tokens here:
 
-  https://#{host}/settings/applications
+  https://#{host}/settings/tokens
 EOF
         else
           message = e.message
