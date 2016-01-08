@@ -138,9 +138,9 @@ module GHI
         if password.nil?
           raise Authorization::Required, 'Authorization required'
         end
-			when Net::HTTPMovedPermanently
-				return Response.new(http.get(res['location']))
-			end
+      when Net::HTTPMovedPermanently
+        return Response.new(http.get(res['location']))
+      end
 
       raise Error, res
     end
