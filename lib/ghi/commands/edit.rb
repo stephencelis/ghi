@@ -18,7 +18,7 @@ EOF
           opts.on(
             '-u', '--[no-]assign [<user>]', 'assign to specified user'
           ) do |assignee|
-            assigns[:assignee] = assignee
+            assigns[:assignee] = assignee || nil
           end
           opts.on '--claim', 'assign to yourself' do
             assigns[:assignee] = Authorization.username
