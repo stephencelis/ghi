@@ -36,7 +36,7 @@ EOF
           assigns[:assignee] = args.pop || Authorization.username
         end
         if assigns.key? :assignee
-          assigns[:assignee].sub! /^@/, ''
+          assigns[:assignee].sub! /^@/, '' if assigns[:assignee]
           assigns[:args].concat(
             assigns[:assignee] ? %W(-u #{assigns[:assignee]}) : %w(--no-assign)
           )
