@@ -181,8 +181,9 @@ module GHI
       issues.map { |i|
         n, title, labels = i['number'], i['title'], i['labels']
         l = 9 + nmax + rmax + no_color { format_labels labels }.to_s.length
-        a = i['assignee'] && i['assignee']['login'] == Authorization.username
-        l += 2 if a
+        a = i['assignee']
+        a_is_me = a && a['login'] == Authorization.username
+        l += a['login'].to_s.length + 2 if a
         p = i['pull_request']['html_url'] and l += 2 if i['pull_request']
         c = i['comments']
         l += c.to_s.length + 1 unless c == 0
@@ -196,7 +197,7 @@ module GHI
           (fg(:green) { m['title'] } if m),
           (fg('aaaaaa') { c } unless c == 0),
           (fg('aaaaaa') { '↑' } if p),
-          (fg(:yellow) { '@' } if a),
+          (fg(a_is_me ? :yellow : :gray) { "@#{a['login']}" } if a),
           (fg('aaaaaa') { '‡' } if m)
         ].compact.join ' '
       }
