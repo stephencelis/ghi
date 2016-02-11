@@ -46,6 +46,9 @@ The most commonly used ghi commands are:
 See 'ghi help <command>' for more information on a specific command.
 ```
 
+## Source Tree
+You may get a strange error if you use SourceTree, similar to [#275](https://github.com/stephencelis/ghi/issues/275) and [#189](https://github.com/stephencelis/ghi/issues/189). You can follow the steps [here](https://github.com/stephencelis/ghi/issues/275#issuecomment-182895962) to resolve this. 
+
 ## Contributing
 
 If you're looking for a place to start, there are [issues we need help with](https://github.com/stephencelis/ghi/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)!
