@@ -3,7 +3,6 @@ task :build do
   manifest = %w(
     lib/ghi/commands/version.rb
     lib/ghi.rb
-    lib/ghi/json.rb
     lib/ghi/formatting/colors.rb
     lib/ghi/formatting.rb
     lib/ghi/authorization.rb
