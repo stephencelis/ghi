@@ -1,5 +1,6 @@
 require 'cgi'
 require 'net/https'
+require 'json'
 
 unless defined? Net::HTTP::Patch
   # PATCH support for 1.8.7.
@@ -8,7 +9,6 @@ end
 
 module GHI
   class Client
-    autoload :JSON, 'ghi/json'
 
     class Error < RuntimeError
       attr_reader :response
