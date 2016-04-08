@@ -34,6 +34,11 @@ module GHI
             (assigns[:exclude_labels] ||= []).concat labels
           end
           opts.on(
+            '--no-labels', 'do not print labels'
+          ) do
+            assigns[:dont_print_labels] = true
+          end
+          opts.on(
             '-S', '--sort <by>', %w(created updated comments),
             {'c'=>'created','u'=>'updated','m'=>'comments'},
             "'created', 'updated', or 'comments'"

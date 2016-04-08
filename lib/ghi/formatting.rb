@@ -193,7 +193,7 @@ module GHI
           (i['repo'].to_s.rjust(rmax) if i['repo']),
           format_number(n.to_s.rjust(nmax)),
           truncate(title, l),
-          format_labels(labels),
+          (format_labels(labels) unless assigns[:dont_print_labels]),
           (fg(:green) { m['title'] } if m),
           (fg('aaaaaa') { c } unless c == 0),
           (fg('aaaaaa') { '↑' } if p),
@@ -413,8 +413,8 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Trailing lines starting with '#' (like these) will be ignored, 
-and empty messages will not be submitted. Comments are formatted with GitHub 
+Leave a comment. Trailing lines starting with '#' (like these) will be ignored,
+and empty messages will not be submitted. Comments are formatted with GitHub
 Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
