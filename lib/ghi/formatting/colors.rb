@@ -309,7 +309,7 @@ module GHI
           raise unless supports_256_colors?
           require 'pygments'
           Pygmentizer.new
-        rescue
+        rescue StandardError, LoadError
           FakePygmentizer.new
         end
       end
