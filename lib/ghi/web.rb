@@ -21,7 +21,14 @@ module GHI
     end
 
     def curl path = '', params = {}
-      uri_for(path, params).open.read
+      proxy_uri   = GHI.config 'https.proxy', :upcase => false
+      proxy_uri ||= GHI.config 'http.proxy',  :upcase => false
+      proxy = URI.parse proxy_uri
+      if !(proxy.user.nil? || proxy.password.nil?)
+        uri_for(path, params).open(:proxy_http_basic_authentication => [proxy_uri, proxy.user, proxy.password]).read
+      else
+        uri_for(path, params).open.read
+      end
     end
 
     private

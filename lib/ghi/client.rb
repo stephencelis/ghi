@@ -119,7 +119,7 @@ module GHI
       proxy ||= GHI.config 'http.proxy',  :upcase => false
       if proxy
         proxy = URI.parse proxy
-        http = Net::HTTP::Proxy(proxy.host, proxy.port).new HOST, PORT
+        http = Net::HTTP::Proxy(proxy.host, proxy.port, proxy.user, proxy.password).new HOST, PORT
       else
         http = Net::HTTP.new HOST, PORT
       end
