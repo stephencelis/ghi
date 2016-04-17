@@ -1820,7 +1820,7 @@ EOF
         else
           i = {'number'=>issue}
         end
-        filename = "GHI_COMMENT_#{issue}"
+        filename = "GHI_COMMENT_#{issue}.md"
         filename << "_#{comment['id']}" if comment
         e = Editor.new filename
         message = e.gets format_comment_editor(i, comment)
@@ -1975,7 +1975,7 @@ EOF
           begin
             if editor || assigns.empty?
               i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-              e = Editor.new "GHI_ISSUE_#{issue}"
+              e = Editor.new "GHI_ISSUE_#{issue}.md"
               message = e.gets format_editor(i)
               e.unlink "There's no issue." if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
@@ -2720,7 +2720,7 @@ EOF
             Web.new(repo).open 'issues/milestones/new'
           else
             if assigns[:title].nil?
-              e = Editor.new 'GHI_MILESTONE'
+              e = Editor.new 'GHI_MILESTONE.md'
               message = e.gets format_milestone_editor
               e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
@@ -2735,7 +2735,7 @@ EOF
           else
             if edit || assigns.empty?
               m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
-              e = Editor.new "GHI_MILESTONE_#{milestone}"
+              e = Editor.new "GHI_MILESTONE_#{milestone}.md"
               message = e.gets format_milestone_editor(m)
               e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
@@ -2863,7 +2863,7 @@ EOF
             end
             assigns[:title] = args.join ' ' unless args.empty?
             if assigns[:title].nil? || editor
-              e = Editor.new 'GHI_ISSUE'
+              e = Editor.new 'GHI_ISSUE.md'
               message = e.gets format_editor(assigns)
               e.unlink "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)

@@ -77,7 +77,7 @@ EOF
             end
             assigns[:title] = args.join ' ' unless args.empty?
             if assigns[:title].nil? || editor
-              e = Editor.new 'GHI_ISSUE'
+              e = Editor.new 'GHI_ISSUE.md'
               message = e.gets format_editor(assigns)
               e.unlink "There's no issue?" if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)

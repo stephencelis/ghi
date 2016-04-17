@@ -140,7 +140,7 @@ EOF
         else
           i = {'number'=>issue}
         end
-        filename = "GHI_COMMENT_#{issue}"
+        filename = "GHI_COMMENT_#{issue}.md"
         filename << "_#{comment['id']}" if comment
         e = Editor.new filename
         message = e.gets format_comment_editor(i, comment)

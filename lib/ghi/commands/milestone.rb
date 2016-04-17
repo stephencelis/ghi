@@ -140,7 +140,7 @@ EOF
             Web.new(repo).open 'issues/milestones/new'
           else
             if assigns[:title].nil?
-              e = Editor.new 'GHI_MILESTONE'
+              e = Editor.new 'GHI_MILESTONE.md'
               message = e.gets format_milestone_editor
               e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
@@ -155,7 +155,7 @@ EOF
           else
             if edit || assigns.empty?
               m = throb { api.get "/repos/#{repo}/milestones/#{milestone}" }.body
-              e = Editor.new "GHI_MILESTONE_#{milestone}"
+              e = Editor.new "GHI_MILESTONE_#{milestone}.md"
               message = e.gets format_milestone_editor(m)
               e.unlink 'Empty milestone.' if message.nil? || message.empty?
               assigns[:title], assigns[:description] = message.split(/\n+/, 2)
