@@ -368,7 +368,7 @@ EOF
       message = ERB.new(<<EOF).result binding
 
 Please explain the issue. The first line will become the title. Trailing
-lines starting with '#' (like these) will be ignored, and empty messages will
+markdown comments (like these) will be ignored, and empty messages will
 not be submitted. Issues are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
@@ -378,9 +378,9 @@ On <%= repo %>
 <%= no_color { format_issue issue, columns - 2 if issue } %>
 EOF
       message.rstrip!
-      message.gsub!(/(?!\A)^.*$/) { |line|
-        "# #{line}".rstrip
-      }
+      message.gsub!(/(?!\A)^.*$/) { |line| line.rstrip }
+      max_line_len = message.gsub(/(?!\A)^.*$/).max_by(&:length).length
+      message.gsub!(/(?!\A)^.*$/) { |line| "<!-- #{line.ljust(max_line_len)} -->" }
       # Adding an extra newline for formatting
       message.insert 0, "\n"
       message.insert 0, [
@@ -392,8 +392,8 @@ EOF
     def format_milestone_editor milestone = nil
       message = ERB.new(<<EOF).result binding
 
-Describe the milestone. The first line will become the title. Trailing lines
-starting with '#' (like these) will be ignored, and empty messages will not be
+Describe the milestone. The first line will become the title. Trailing
+markdown comments (like these) will be ignored, and empty messages will not be
 submitted. Milestones are formatted with GitHub Flavored Markdown (GFM):
 
   http://github.github.com/github-flavored-markdown
@@ -403,7 +403,9 @@ On <%= repo %>
 <%= no_color { format_milestone milestone, columns - 2 } if milestone %>
 EOF
       message.rstrip!
-      message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
+      message.gsub!(/(?!\A)^.*$/) { |line| line.rstrip }
+      max_line_len = message.gsub(/(?!\A)^.*$/).max_by(&:length).length
+      message.gsub!(/(?!\A)^.*$/) { |line| "<!-- #{line.ljust(max_line_len)} -->" }
       message.insert 0, [
         milestone['title'], milestone['description']
       ].join("\n\n") if milestone
@@ -413,7 +415,7 @@ EOF
     def format_comment_editor issue, comment = nil
       message = ERB.new(<<EOF).result binding
 
-Leave a comment. Trailing lines starting with '#' (like these) will be ignored,
+Leave a comment. Trailing markdown comments (like these) will be ignored,
 and empty messages will not be submitted. Comments are formatted with GitHub
 Flavored Markdown (GFM):
 
@@ -425,7 +427,9 @@ On <%= repo %> issue #<%= issue['number'] %>
 <%= no_color { format_comment comment, columns - 2 } if comment %>
 EOF
       message.rstrip!
-      message.gsub!(/(?!\A)^.*$/) { |line| "# #{line}".rstrip }
+      message.gsub!(/(?!\A)^.*$/) { |line| line.rstrip }
+      max_line_len = message.gsub(/(?!\A)^.*$/).max_by(&:length).length
+      message.gsub!(/(?!\A)^.*$/) { |line| "<!-- #{line.ljust(max_line_len)} -->" }
       message.insert 0, comment['body'] if comment
       message
     end

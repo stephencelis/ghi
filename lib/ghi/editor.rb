@@ -12,7 +12,7 @@ module GHI
         f << prefill if File.zero? path
         f.rewind
         system "#{editor} #{f.path}"
-        return File.read(f.path).gsub(/(?:^#.*$\n?)+\s*\z/, '').strip
+        return File.read(f.path).gsub(/(?:^\s*\<\!--.*--\>\s*$\n?)+\s*\z/, '').strip
       end
     end
 
