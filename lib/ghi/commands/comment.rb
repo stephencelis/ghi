@@ -142,6 +142,7 @@ EOF
         end
         filename = "GHI_COMMENT_#{issue}"
         filename << "_#{comment['id']}" if comment
+        filename << ".md"
         e = Editor.new filename
         message = e.gets format_comment_editor(i, comment)
         e.unlink 'No comment.' if message.nil? || message.empty?

@@ -70,7 +70,7 @@ EOF
           begin
             if editor || assigns.empty?
               i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
-              e = Editor.new "GHI_ISSUE_#{issue}"
+              e = Editor.new "GHI_ISSUE_#{issue}.md"
               message = e.gets format_editor(i)
               e.unlink "There's no issue." if message.nil? || message.empty?
               assigns[:title], assigns[:body] = message.split(/\n+/, 2)
