@@ -1510,8 +1510,13 @@ module GHI
 
       def require_repo
         return true if repo
-        warn 'Not a GitHub repo.'
-        warn ''
+        warn <<-WARNING
+Current directory is not a GitHub repository. Please retry this command from a
+directory that is also GitHub repository or by using the user/repo suffix:
+
+    #{$0} -- [<user>/]<repo>
+
+        WARNING
         abort options.to_s
       end
 
@@ -1525,7 +1530,7 @@ module GHI
         end
         return repo_name
       end
-        
+
       def detect_repo
         remote   = remotes.find { |r| r[:remote] == 'upstream' }
         remote ||= remotes.find { |r| r[:remote] == 'origin' }
