@@ -49,7 +49,7 @@ module GHI
       private
 
       def pull_request?(issue)
-        issue['pull_request']['html_url']
+        issue.key?('pull_request')
       end
 
       def determine_merge_status(pr)

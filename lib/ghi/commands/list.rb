@@ -151,7 +151,7 @@ module GHI
             issues = res.body
 
             if exclude_pull_requests || pull_requests_only
-              prs, issues = issues.partition { |i| i['pull_request'].values.any? }
+              prs, issues = issues.partition { |i| i.key?('pull_request') }
               issues = prs if pull_requests_only
             end
             if assigns[:exclude_labels]

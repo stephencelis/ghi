@@ -1254,7 +1254,7 @@ module GHI
       end
     end
 
-    CONTENT_TYPE = 'application/vnd.github.beta+json'
+    CONTENT_TYPE = 'application/vnd.github.v3+json'
     USER_AGENT = 'ghi/%s (%s; +%s)' % [
       GHI::Commands::Version::VERSION,
       RUBY_DESCRIPTION,
@@ -2539,7 +2539,7 @@ module GHI
             issues = res.body
 
             if exclude_pull_requests || pull_requests_only
-              prs, issues = issues.partition { |i| i['pull_request'].values.any? }
+              prs, issues = issues.partition { |i| i.key?('pull_request') }
               issues = prs if pull_requests_only
             end
             if assigns[:exclude_labels]
@@ -2949,7 +2949,7 @@ module GHI
       private
 
       def pull_request?(issue)
-        issue['pull_request']['html_url']
+        issue.key?('pull_request')
       end
 
       def determine_merge_status(pr)
