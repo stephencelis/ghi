@@ -59,9 +59,9 @@ module GHI
         return true if repo
         warn <<-WARNING
 Current directory is not a GitHub repository. Please retry this command from a
-directory that is also GitHub repository or by using the user/repo suffix:
+GitHub repository or by appending your command with the user/repo:
 
-    #{$0} -- [<user>/]<repo>
+    #{GHI.current_command} -- [<user>/]<repo>
 
         WARNING
         abort options.to_s

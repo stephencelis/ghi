@@ -9,8 +9,11 @@ module GHI
   autoload :Web,           'ghi/web'
 
   class << self
+    attr_reader :current_command
+
     def execute args
       STDOUT.sync = true
+      @current_command = "#{$0} #{args.join(' ')}".freeze
 
       double_dash = args.index { |arg| arg == '--' }
       if index = args.index { |arg| arg !~ /^-/ }
