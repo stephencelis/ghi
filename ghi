@@ -20,8 +20,11 @@ require 'optparse'
 
 module GHI
   class << self
+    attr_reader :current_command
+
     def execute args
       STDOUT.sync = true
+      @current_command = "#{$0} #{args.join(' ')}".freeze
 
       double_dash = args.index { |arg| arg == '--' }
       if index = args.index { |arg| arg !~ /^-/ }
@@ -1512,9 +1515,9 @@ module GHI
         return true if repo
         warn <<-WARNING
 Current directory is not a GitHub repository. Please retry this command from a
-directory that is also GitHub repository or by using the user/repo suffix:
+GitHub repository or by appending your command with the user/repo:
 
-    #{$0} -- [<user>/]<repo>
+    #{GHI.current_command} -- [<user>/]<repo>
 
         WARNING
         abort options.to_s
