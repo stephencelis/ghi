@@ -111,6 +111,11 @@ module GHI
 	    assigns[:org] = org
             @repo = nil
           end
+            opts.on(
+              '--by-milestone', 'filter by milestone'
+            ) do
+              assigns[:by_m] = true
+            end
           opts.separator ''
         end
       end
@@ -164,7 +169,11 @@ module GHI
             if verbose
               puts issues.map { |i| format_issue i }
             else
-              puts format_issues(issues, repo.nil?)
+              if assigns[:by_m]
+                puts format_issues_by_milestone(issues, repo.nil?)
+              else
+                puts format_issues(issues, repo.nil?)
+              end
             end
             break unless res.next_page
             res = throb { api.get res.next_page }
