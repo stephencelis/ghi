@@ -211,7 +211,7 @@ module GHI
       }
 
       milestones = {}
-      #issues_by_milestone = []
+      extracted_milestones = []
       milestone_index = 0
       issues.map { |i|
         milestone = i['milestone']
@@ -221,42 +221,34 @@ module GHI
             milestones.merge!({milestone["id"] => milestone_index })
             i.delete "milestone"
             milestone["issues"] << i
-            issues[milestones[milestone["id"]]] = milestone
+            extracted_milestones << milestone
+            milestone_index += 1
           else
             pos_of_existent_milestone = milestones[milestone["id"]]
             i.delete "milestone"
-            issues[pos_of_existent_milestone]["issues"] << i
-            issues.delete i
+            extracted_milestones[pos_of_existent_milestone]["issues"] << i
           end
-        else
-        issues.delete i
         end
-        milestone_index += 1
       }
-      issues
+      extracted_milestones.sort! { |m1, m2| m1['number'] <=> m2['number'] }
     end
 
     def format_issues_by_milestone issues, include_repo
       issues_by_milestone = extract_milestones_from_issues issues
 
-      include_repo and issues.each do |i|
-        %r{/repos/[^/]+/([^/]+)} === i['url'] and i['repo'] = $1
-      end
+      nmax, rmax = %w(number repo).map { |f|
+        issues.sort_by { |i| i[f].to_s.size }.last[f].to_s.size
+      }
+
+      l = 9 + nmax + rmax
 
       issues_by_milestone.map { |milestone|
-        n, title =  milestone['number'], milestone['title'] if milestone["issues"]
+        title =  milestone['title'] if milestone["issues"]
         [
-          "\n  ",
-          (("Milestone: ") if milestone["issues"]),
-          (fg(:green) { title } if title),
-          (milestone['issues'].map { |issue|
-            [
-              "\n  ",
-              format_number(issue["number"].to_s.rjust(5)),
-              (fg("aaaaaa") {issue["title"]})
-            ].compact.join ' '
-          } if milestone["issues"])
-        ].compact.join ' '
+          ("\n  " if milestone["issues"]),
+          ("Milestone: " + fg(:green) { truncate(title,l) } if title),
+             (format_issues(milestone["issues"], include_repo))
+        ].compact
       }
     end
 
