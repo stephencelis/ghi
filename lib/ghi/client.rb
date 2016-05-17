@@ -138,8 +138,9 @@ module GHI
         if password.nil?
           raise Authorization::Required, 'Authorization required'
         end
-      when Net::HTTPMovedPermanently
-        return Response.new(http.get(res['location']))
+      when Net::HTTPMovedPermanently, Net::HTTPTemporaryRedirect
+        path = URI.parse(res['location']).path
+        return request method, path, options
       end
 
       raise Error, res
