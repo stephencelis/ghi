@@ -203,6 +203,55 @@ module GHI
       }
     end
 
+    def extract_milestones_from_issues issues
+      return 'None.' if issues.empty?
+
+      nmax, rmax = %w(number repo).map { |f|
+        issues.sort_by { |i| i[f].to_s.size }.last[f].to_s.size
+      }
+
+      milestones = {}
+      extracted_milestones = []
+      milestone_index = 0
+      issues.map { |i|
+        milestone = i['milestone']
+        milestone["issues"] = [] if milestone && !(milestones.key? milestone["id"])
+        if milestone
+          if !milestones.key? milestone["id"]
+            milestones.merge!({milestone["id"] => milestone_index })
+            i.delete "milestone"
+            milestone["issues"] << i
+            extracted_milestones << milestone
+            milestone_index += 1
+          else
+            pos_of_existent_milestone = milestones[milestone["id"]]
+            i.delete "milestone"
+            extracted_milestones[pos_of_existent_milestone]["issues"] << i
+          end
+        end
+      }
+      extracted_milestones.sort! { |m1, m2| m1['number'] <=> m2['number'] }
+    end
+
+    def format_issues_by_milestone issues, include_repo
+      issues_by_milestone = extract_milestones_from_issues issues
+
+      nmax, rmax = %w(number repo).map { |f|
+        issues.sort_by { |i| i[f].to_s.size }.last[f].to_s.size
+      }
+
+      l = 9 + nmax + rmax
+
+      issues_by_milestone.map { |milestone|
+        title =  milestone['title'] if milestone["issues"]
+        [
+          ("\n  " if milestone["issues"]),
+          ("Milestone: " + fg(:green) { truncate(title,l) } if title),
+             (format_issues(milestone["issues"], include_repo))
+        ].compact
+      }
+    end
+
     def format_number n
       colorize? ? "#{bright { n }}:" : "#{n} "
     end
