@@ -50,7 +50,6 @@ module GHI
         pager ||= ENV['PAGER']
         pager ||= 'less'
         pager  += ' -EKRX -b1' if pager =~ /^less( -[EKRX]+)?$/
-
         if pager && !pager.empty? && pager != 'cat'
           $stdout = IO.popen pager, 'w'
         end
@@ -282,6 +281,7 @@ module GHI
 Milestone #<%= i['milestone']['number'] %>: <%= i['milestone']['title'] %>\
 <%= " \#{bright{fg(:yellow){'⚠'}}}" if past_due? i['milestone'] %>\
 <% end %>
+<% if block_given? %><%= yield %><% end %>\
 <% if i['body'] && !i['body'].empty? %>
 <%= indent i['body'], 4, width %>
 <% end %>
@@ -377,13 +377,13 @@ EOF
       [bg('2cc200'){string[0, i]}, string[i, columns - i]].join
     end
 
+    STATE_COLORS = {
+      'closed' => 'ff0000',
+      'open'   => '2cc200',
+      'merged' => '511c7d',
+    }
     def format_state state, string = state, layer = :fg
-      color_codes = {
-        'closed' => 'ff0000',
-        'open'   => '2cc200',
-        'merged' => '511c7d',
-      }
-      send(layer, color_codes[state]) { string }
+      send(layer, STATE_COLORS[state]) { string }
     end
 
     def format_labels labels
@@ -395,15 +395,161 @@ EOF
       (colorize? ? ' %s ' : '[%s]') % tag
     end
 
+    EVENT_COLORS = {
+      'reopened' => '2cc200',
+      'closed' => 'ff0000',
+      'merged' => '9677b1',
+      'assigned' => 'e1811d',
+      'referenced' => 'aaaaaa'
+    }
     def format_event_type(event)
-      color_codes = {
-        'reopened' => '2cc200',
-        'closed' => 'ff0000',
-        'merged' => '9677b1',
-        'assigned' => 'e1811d',
-        'referenced' => 'aaaaaa'
-      }
-      fg(color_codes[event]) { event }
+      fg(EVENT_COLORS[event]) { event }
+    end
+
+    def format_pull_info(pr, width = columns)
+      "\n#{format_merge_stats(pr, 4)}#{format_pr_stats(pr, 4)}\n"
+    end
+
+    def format_pr_stats(pr, indent)
+      indent = ' ' * indent
+      add, del  = pr.values_at('additions', 'deletions')
+      commits   = count_with_plural(pr['commits'].to_i, 'commit')
+      files     = count_with_plural(pr['changed_files'].to_i, 'file') + ' changed'
+      additions = fg('2cc200') { "+#{add}"}
+      deletions = fg('ff0000') { "-#{del}"}
+
+      output = [
+        fg('cccc33') { "#{commits}, #{files}" },
+        "#{additions} #{change_viz(add, del)} #{deletions}"
+      ]
+
+      output.map { |line| "#{indent}#{line}" }.join("\n")
+    end
+
+    def change_viz(additions, deletions, size = 18)
+      sign = '∎'
+      all = (additions + deletions).to_f
+
+      # when an empty file was submitted (or a binary!) there might be
+      # a total number of 0 line canges. A division of 0 / 0 throws an error,
+      # therefore we just return without further operations
+      return fg('aaaaaa') { sign * size } if all.zero?
+
+      add_percent = additions / all
+      del_percent = deletions / all
+      rel = [add_percent, del_percent].map { |p| (p * size).round.to_i }
+      rel.zip(['2cc200', 'ff0000']).map do |multiplicator, color|
+        fg(color) { sign * multiplicator }
+      end.join
+    end
+
+    def format_merge_stats(pr, indent)
+      indent = ' ' * indent
+      if date = pr['merged_at']
+        merger  = pr['merged_by']['login']
+        message = "merged by @#{merger} #{format_date DateTime.parse(date)}"
+        "#{indent}#{message}\n\n"
+      else
+        str = "#{indent}#{format_merge_head_and_base(pr)}\n"
+        "#{str}#{indent}#{format_mergeability}\n\n"
+      end
+    end
+
+    def format_mergeability
+      if clean?
+        if needs_rebase?
+          fg('e1811d') { "✔ able to merge, but needs a rebase" }
+        else
+          fg('2cc200') { "✔ able to merge" }
+        end
+      elsif dirty?
+        fg('ff0000') { "✗ pull request is dirty" }
+      end
+    end
+
+    def format_merge_head_and_base(pr)
+      head, base = pr.values_at('head', 'base').map { |br| br['label'] }
+      "#{fg('cccc33') { base }} ⬅ #{fg('cccc33') { head } }"
+    end
+
+    def count_with_plural(count, term)
+      s = count == 1 ? '' : 's'
+      "#{count} #{term}#{s}"
+    end
+
+    def format_commits(commits)
+      header = format_commits_header(commits)
+      body   = commits.map { |commit| format_commit(commit) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_commits_header(commits)
+      n = commits.size
+      count   = count_with_plural(n, 'commit')
+      authors = commits.map { |commit| commit['author']['login'] }.uniq
+      authors = enumerative_concat(authors, 'and')
+      fg('cccc33') { "#{count} by #{authors}" }
+    end
+
+    def enumerative_concat(arr, last_coordination)
+      return arr.first if arr.one?
+      "#{arr[0..-2].join(', ')} #{last_coordination} #{authors[-1]}"
+    end
+
+    def format_commit(commit, indent = 4, width = columns)
+      indent = ' ' * indent
+      sha   = commit['sha'][0..6]
+      title = commit['commit']['message'].split("\n\n").first
+      "#{indent}* #{sha} | #{truncate(title, 20)}"
+    end
+
+    def format_files(files)
+      header = format_files_header(files)
+      body   = files.map { |file| format_file(file) }.join("\n")
+      "#{header}\n\n#{body}"
+    end
+
+    def format_files_header(files)
+      add = summate_changes(files, 'additions')
+      del = summate_changes(files, 'deletions')
+      count   = count_with_plural(files.size, 'file')
+      changes = "#{add} additions and #{del} deletions"
+      fg('cccc33') { "#{count}, with #{changes}" }
+    end
+
+    def summate_changes(container, type)
+      container.map { |element| element[type] }.inject(:+)
+    end
+
+    # Truncation will look ugly when we run out of space.
+    # It's an edge case probably not worth playing around with
+    def format_file(file, width = columns)
+      space = 16
+      max_fn_width = columns - space
+      name = sprintf("%-#{max_fn_width}s", truncate(file['filename'], space))
+      state = format_file_status(file['state'])
+      add, del, changes = file.values_at('additions', 'deletions', 'changes')
+      bar = change_viz(add, del, 5)
+      changes = sprintf("%5s", changes)
+      "#{state} #{name} #{changes} #{bar}"
+    end
+
+    FILE_STATUS_SIGNS = {
+      'added'    => %w(2cc200 +),
+      'modified' => %w(yellow ~),
+      'removed'  => %w(ff0000 -),
+    }
+    def format_file_status(state)
+      col, sign = FILE_STATUS_SIGNS[state]
+      fg(col) { sign }
+    end
+
+    def format_diff(diff)
+      diff.gsub!(/^((?:diff|index|---|\+\+\+).*)/, bright { '\1' })
+      diff.gsub!(/^(@@ .* @@)/, fg('387593') { '\1' })
+      diff.gsub!(/^(\+($|[^\+]?.*))/, fg('8abb3b') { '\1' })
+      diff.gsub!(/^(-($|[^-]?.*))/,  fg('ff7f66') { '\1' })
+      diff
     end
 
     #--

@@ -23,7 +23,7 @@ module GHI
       attr_accessor :action
       attr_accessor :verbose
 
-      def initialize args
+      def initialize args = []
         @args = args.map! { |a| a.dup }
       end
 
@@ -79,8 +79,8 @@ GitHub repository or by appending your command with the user/repo:
       end
 
       def detect_repo
-        remote   = remotes.find { |r| r[:remote] == 'upstream' }
-        remote ||= remotes.find { |r| r[:remote] == 'origin' }
+        remote   = upstream
+        remote ||= origin
         remote ||= remotes.find { |r| r[:user]   == Authorization.username }
         Command.detected_repo = true and remote[:repo] if remote
       end
@@ -117,6 +117,18 @@ GitHub repository or by appending your command with the user/repo:
         warn "(Inferring issue from branch prefix: ##@issue)" if @issue
       end
 
+      def current_branch
+        `git symbolic-ref --short HEAD 2>/dev/null`.chomp
+      end
+
+      def origin
+        remotes.find { |r| r[:remote] == 'origin' }
+      end
+
+      def upstream
+        remotes.find { |r| r[:remote] == 'upstream' }
+      end
+
       def require_issue
         raise MissingArgument, 'Issue required.' unless issue
       end
@@ -132,6 +144,34 @@ GitHub repository or by appending your command with the user/repo:
 
       def sort_by_creation(arr)
         arr.sort_by { |el| el['created_at'] }
+      end
+
+      def output_issue_comments(n)
+        return if n.zero?
+        puts "#{n} comment#{'s' unless n == 1}:\n\n"
+        Comment.execute %W(-l #{issue} -- #{repo})
+      end
+
+      def issue_uri
+        "/repos/#{repo}/issues/#{issue}"
+      end
+
+      def pull_uri
+        "/repos/#{repo}/pulls/#{issue}"
+      end
+
+      # Takes code blocks that will execute multithreaded. Returns an
+      # array of each threads return value.
+      # Code blocks need to handle their errors themselves!
+      def do_threaded(*blks)
+        threads = blks.map { |blk| Thread.new { blk.call } }
+        threads.map { |t| t.join; t.value }
+      end
+
+      # Subclasses should implement this and call super - their template string
+      # will be prepended by the IGNORE_MARKER.
+      def template_explanation(str)
+        str.lines.map { |line| "#{IGNORE_MARKER} #{line}".strip }.join("\n")
       end
     end
   end

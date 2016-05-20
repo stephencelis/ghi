@@ -8,6 +8,8 @@ module GHI
   autoload :Formatting,    'ghi/formatting'
   autoload :Web,           'ghi/web'
 
+  IGNORE_MARKER = '#|#'
+
   class << self
     attr_reader :current_command
 
@@ -128,43 +130,9 @@ EOF
 
     private
 
-    ALIASES = Hash.new { |_, key|
-      [key] if /^\d+$/ === key
-    }.update(
-      'claim'    => %w(assign),
-      'create'   => %w(open),
-      'e'        => %w(edit),
-      'l'        => %w(list),
-      'L'        => %w(label),
-      'm'        => %w(comment),
-      'M'        => %w(milestone),
-      'new'      => %w(open),
-      'o'        => %w(open),
-      'reopen'   => %w(open),
-      'rm'       => %w(close),
-      's'        => %w(show),
-      'st'       => %w(list),
-      'tag'      => %w(label),
-      'unassign' => %w(assign -d),
-      'update'   => %w(edit)
-    )
-
-    def fetch_alias command, args
-      return command unless fetched = ALIASES[command]
-
-      # If the <command> is an issue number, check the options to see if an
-      # edit or show is desired.
-      if fetched.first =~ /^\d+$/
-        edit_options = Commands::Edit.new([]).options.top.list
-        edit_options.reject! { |arg| !arg.is_a?(OptionParser::Switch) }
-        edit_options.map! { |arg| [arg.short, arg.long] }
-        edit_options.flatten!
-        fetched.unshift((edit_options & args).empty? ? 'show' : 'edit')
-      end
-
-      command = fetched.shift
-      args.unshift(*fetched)
-      command
+    def fetch_alias(command, args)
+      Commands::Aliases.fetch(command, args)
     end
+
   end
 end
