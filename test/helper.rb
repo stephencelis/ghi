@@ -2,7 +2,9 @@ require "typhoeus"
 require "json"
 require "shellwords"
 require "pp"
+require "securerandom"
 require "mock_data"
+require "test/unit"
 
 def append_token headers
 	headers.merge(:Authorization=>"token #{ENV["GHI_TOKEN"]}")
@@ -49,8 +51,41 @@ def delete path, options ={}
 	request(path,:delete,options)
 end
 
+def delete_repo repo_name
+	unless ENV["NO_DELETE_REPO"]=="1"
+		delete("repos/#{repo_name}")
+	end
+end
+
+def ghi_exec
+	File.expand_path('../ghi', File.dirname(__FILE__))
+end
+
 def get_attr index, attr
 	Shellwords.escape(issues[index][attr])
+end
+
+def gen_token
+	ENV["GHI_TOKEN"]=`#{ghi_exec} config --auth --just_print_token`.chop
+	response=request("users/#{ENV['GITHUB_USER']}",:head,{},false)
+
+	assert_equal('public_repo, repo',response.headers["X-OAuth-Scopes"])
+end
+
+def delete_token
+	unless ENV["NO_DELETE_TOKEN"]=="1"
+		token_info=get_body("authorizations","Impossible api error").detect {|token| token["token_last_eight"] == ENV["GHI_TOKEN"][-8..-1]}
+		assert_not_equal(nil,token_info,"Token with hash: #{ENV["GHI_TOKEN"]} does not exist")
+		delete("authorizations/#{token_info["id"]}")
+	end
+end
+
+def create_repo
+	repo_name=SecureRandom.uuid
+	response=post("user/repos",{body:{'name':repo_name}})
+	response_body=JSON.load(response.response_body)
+	assert_not_equal(nil,response_body["name"],"Could not create repo #{repo_name}")
+	response_body["full_name"]
 end
 
 def get_issue index=0
