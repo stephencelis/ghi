@@ -5,6 +5,7 @@ require "pp"
 require "securerandom"
 require "mock_data"
 require "test/unit"
+require "date"
 
 def append_token headers
 	headers.merge(:Authorization=>"token #{ENV["GHI_TOKEN"]}")
@@ -110,8 +111,66 @@ def get_milestone index=0
 	milestones[index]
 end
 
+def extract_labels response_issue
+	tmp_labels=[]
+	response_issue["labels"].each do |label|
+		tmp_labels<<label["name"]
+	end
+	tmp_labels.uniq.sort
+end
+
 def get_body path, err_msg=""
 	response=get(path)
 	assert_equal(200,response.code,err_msg)
 	JSON.load(response.body)
+end
+
+def create_milestone repo_name, index=0
+	milestone=get_milestone index
+
+	`#{ghi_exec} milestone "#{milestone[:title]}" -m "#{milestone[:des]}" --due "#{milestone[:due]}"  -- #{repo_name}`
+
+	response_milestones=get_body("repos/#{repo_name}/milestones","Repo #{repo_name} does not exist")
+
+	assert_operator(1,:<=,response_milestones.length,"No milestone exist")
+	response_milestone=response_milestones[-1]
+
+	assert_equal(milestone[:title],response_milestone["title"],"Title not proper")
+	assert_equal(milestone[:des],response_milestone["description"],"Descreption not proper")
+	assert_equal(Date.parse(milestone[:due]),Date.parse(response_milestone["due_on"]),"Due date not proper")
+end
+
+def open_issue repo_name, index=0
+	issue=get_issue index
+	milestone_index = issue[:milestone]-1
+	milestone_title = get_milestone(milestone_index)[:title]
+
+	milestone_exist=false
+	response_milestones=get_body("repos/#{repo_name}/milestones","Repo #{repo_name} does not exist")
+	response_milestones.each do |tmp_milestone|
+		if milestone_title == tmp_milestone["title"]
+			milestone_exist=true
+			break
+		end
+	end
+
+	if not milestone_exist
+		create_milestone repo_name, milestone_index
+	end
+
+	`#{ghi_exec} open "#{issue[:title]}" -m "#{issue[:des]}" -L "#{issue[:labels].join(",")}" -u "#{ENV['GITHUB_USER']}" -M "#{issue[:milestone]}" -- #{repo_name}`
+
+	response_issues = get_body("repos/#{repo_name}/issues","Repo #{repo_name} does not exist")
+
+	assert_operator(1,:<=,response_issues.length,"No issues exist")
+	response_issue = response_issues[0]
+
+	assert_equal(issue[:title],response_issue["title"],"Title not proper")
+	assert_equal(issue[:des],response_issue["body"],"Descreption not proper")
+	assert_not_equal(nil,response_issue["assignee"],"No user assigned")
+	assert_equal(ENV['GITHUB_USER'],response_issue["assignee"]["login"],"Not assigned to proper user")
+	assert_equal(issue[:labels].uniq.sort,extract_labels(response_issue),"Labels do not match")
+	assert_not_equal(nil,response_issue["milestone"],"Milestone not added to issue")
+	# Milestone title is unique
+	assert_equal(milestone_title,response_issue["milestone"]["title"],"Milestone not proper")
 end
