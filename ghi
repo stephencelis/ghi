@@ -1085,7 +1085,7 @@ module GHI
         @token = GHI.config 'ghi.token'
       end
 
-      def authorize! user = username, pass = password, local = true
+      def authorize! user = username, pass = password, local = true, just_print_token = false
         return false unless user && pass
         code ||= nil # 2fa
         args = code ? [] : [54, "✔\r"]
@@ -1106,11 +1106,15 @@ module GHI
         }
         @token = res.body['token']
 
-        unless username
-          system "git config#{' --global' unless local} github.user #{user}"
-        end
+        if just_print_token
+            puts token
+        else
+            unless username
+                system "git config#{' --global' unless local} github.user #{user}"
+            end
 
-        store_token! user, token, local
+            store_token! user, token, local
+        end
       rescue Client::Error => e
         if e.response['X-GitHub-OTP'] =~ /required/
           puts "Bad code." if code
@@ -1882,6 +1886,9 @@ EOF
           opts.on '--local', 'set for local repo only' do
             assigns[:local] = true
           end
+          opts.on '--just_print_token', "Just print the token don't add it to ~/.gitconfig(Useful while testing)" do
+            assigns[:just_print_token] = true
+          end
           opts.on '--auth [<username>]' do |username|
             self.action = 'auth'
             assigns[:username] = username || Authorization.username
@@ -1899,7 +1906,7 @@ EOF
         if action == 'auth'
           assigns[:password] = Authorization.password || get_password
           Authorization.authorize!(
-            assigns[:username], assigns[:password], assigns[:local]
+            assigns[:username], assigns[:password], assigns[:local], assigns[:just_print_token]
           )
         end
       end
