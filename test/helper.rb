@@ -1,6 +1,8 @@
 require "typhoeus"
 require "json"
+require "shellwords"
 require "pp"
+require "mock_data"
 
 def append_token headers
 	headers.merge(:Authorization=>"token #{ENV["GHI_TOKEN"]}")
@@ -45,6 +47,32 @@ end
 
 def delete path, options ={}
 	request(path,:delete,options)
+end
+
+def get_attr index, attr
+	Shellwords.escape(issues[index][attr])
+end
+
+def get_issue index=0
+	if index == -1
+		tmp_issues=issues
+	else
+		tmp_issues=[issues[index]]
+	end
+	for i in 0..(tmp_issues.length-1)
+		tmp_issues[i][:des].gsub!(/\n/,"<br>")
+		# http://stackoverflow.com/questions/12700218/how-do-i-escape-a-single-quote-in-ruby
+		tmp_issues[i][:des].gsub!(/'/){"\\'"}
+	end
+	return (index != -1)?tmp_issues[0]:tmp_issues
+end
+
+def get_comment index=0
+	comments[index]
+end
+
+def get_milestone index=0
+	milestones[index]
 end
 
 def get_body path, err_msg=""
