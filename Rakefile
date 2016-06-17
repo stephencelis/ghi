@@ -1,3 +1,5 @@
+require 'single_test/tasks'
+
 desc 'Build the standalone script'
 task :build do
   manifest = %w(
