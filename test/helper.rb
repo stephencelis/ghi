@@ -125,6 +125,17 @@ def get_body path, err_msg=""
 	JSON.load(response.body)
 end
 
+def create_comment repo_name, issue_no=1, index=0
+	comment=get_comment index
+
+	`#{ghi_exec} comment -m "#{comment}" #{issue_no} -- #{repo_name}`
+
+	response_body=get_body("repos/#{repo_name}/issues/#{issue_no}/comments","Issue does not exist")
+
+	assert_operator(1,:<=,response_body.length,"No comments exist")
+	assert_equal(comment,response_body[-1]["body"],"Comment text not proper")
+end
+
 def create_milestone repo_name, index=0
 	milestone=get_milestone index
 
