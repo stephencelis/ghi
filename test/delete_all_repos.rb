@@ -12,19 +12,19 @@ puts "The account name(login) is #{ENV["GITHUB_USER"]}"
 puts "Do you want to continue [N/y]"
 option = gets
 if option.chop == "y"
-	puts "Deleting"
-	while true
-		response=request("users/#{ENV["GITHUB_USER"]}/repos",:get,{},true)
-		repos=JSON.load(response.body)
-		if repos.length == 0
-			puts "Exiting"
-			break
-		end
-		repos.each do |repo|
-			puts "Deleting #{repo["full_name"]}"
-			delete_repo(repo["full_name"])
-		end
-	end
+  puts "Deleting"
+  while true
+    response=request("users/#{ENV["GITHUB_USER"]}/repos",:get,{},true)
+    repos=JSON.load(response.body)
+    if repos.length == 0
+      puts "Exiting"
+      break
+    end
+    repos.each do |repo|
+      puts "Deleting #{repo["full_name"]}"
+      delete_repo(repo["full_name"])
+    end
+  end
 else
-	puts 'Not deleting'
+  puts 'Not deleting'
 end

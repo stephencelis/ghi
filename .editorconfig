@@ -8,5 +8,5 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.rb]
-indent_style = tab
-tab_width = 2
+indent_style = space
+indent_size = 2
