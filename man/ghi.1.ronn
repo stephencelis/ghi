@@ -47,6 +47,12 @@ The <command> is either the name of a GHI command (see below) or an alias.
   * `ghi-close`(1):
     Close an issue.
 
+  * `ghi-lock`(1):
+    Lock an issue's conversation, limiting it to collaborators.
+
+  * `ghi-unlock`(1):
+    Unlock an issue's conversation, opening it to all viewers.
+
   * `ghi-comment`(1):
     Leave a comment on an issue.
 

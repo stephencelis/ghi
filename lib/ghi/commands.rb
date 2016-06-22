@@ -13,11 +13,13 @@ module GHI
 		autoload :Enable,    'ghi/commands/enable'
     autoload :Help,      'ghi/commands/help'
     autoload :Label,     'ghi/commands/label'
+    autoload :Lock,      'ghi/commands/lock'
     autoload :Milestone, 'ghi/commands/milestone'
     autoload :Reopen,    'ghi/commands/reopen'
     autoload :Show,      'ghi/commands/show'
 		autoload :Status,    'ghi/commands/status'
     autoload :Unassign,  'ghi/commands/unassign'
+    autoload :Unlock,    'ghi/commands/unlock'
     autoload :Version,   'ghi/commands/version'
   end
 end

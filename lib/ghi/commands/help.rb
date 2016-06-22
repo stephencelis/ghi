@@ -30,6 +30,8 @@ The most commonly used ghi commands are:
    show        Show an issue's details
    open        Open (or reopen) an issue
    close       Close an issue
+   lock        Lock an issue's conversation, limiting it to collaborators
+   unlock      Unlock an issue's conversation, opening it to all viewers
    edit        Modify an existing issue
    comment     Leave a comment on an issue
    label       Create, list, modify, or delete labels
