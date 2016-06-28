@@ -78,15 +78,28 @@ EOF
         else
           uri = "/repos/#{repo}/labels"
         end
+
+        # early exit if no labels found.
         labels = throb { api.get uri }.body
-        if labels.empty?
-          puts 'None.'
-        else
-          puts labels.map { |label|
-            name = label['name']
-            colorize? ? bg(label['color']) { " #{name} " } : name
-          }
-        end
+	        if labels.empty?
+	          puts 'None.'
+	          return
+	        end
+
+        query = "?page="
+        page = 1
+        begin
+	      labels = throb { api.get (uri + query + page.to_s) }.body
+	      if labels.empty?
+	      	break
+	      else
+	        puts labels.map { |label|
+	          name = label['name']
+	          colorize? ? bg(label['color']) { " #{name} " } : name
+	        }
+	      end
+	      page += 1
+	    end while true
       end
 
       def create
