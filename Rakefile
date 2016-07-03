@@ -21,10 +21,12 @@ task :build do
     lib/ghi/commands/help.rb
     lib/ghi/commands/label.rb
     lib/ghi/commands/list.rb
+    lib/ghi/commands/lock.rb
     lib/ghi/commands/milestone.rb
     lib/ghi/commands/open.rb
     lib/ghi/commands/show.rb
     lib/ghi/commands/status.rb
+    lib/ghi/commands/unlock.rb
     bin/ghi
   )
   files = FileList[*manifest]
