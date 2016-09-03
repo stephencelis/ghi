@@ -23,6 +23,10 @@ chmod 755 ghi && \
 mv ghi /usr/local/bin
 ```
 
+## Configuration
+
+`ghi` needs to act on your behalf, but it's best if you don't tell it your GitHub password.  Instead, create a token just for it.  Go to https://github.com/settings/tokens and generate a personal access token, give it repo perms, then run `git config --global ghi.token <that token>`.
+
 ## Usage
 
 ```
