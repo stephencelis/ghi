@@ -1617,9 +1617,21 @@ GitHub repository or by appending your command with the user/repo:
         end
         @issue
       end
+
       alias extract_issue     issue
-      alias milestone         issue
-      alias extract_milestone issue
+
+      def extract_milestone
+        return @milestone if defined? @milestone
+        extract_issue
+        @milestone = nil
+        if @issue
+          i = throb { api.get "/repos/#{repo}/issues/#{@issue}" }.body
+          @milestone = i["milestone"]["number"] if i["milestone"]
+        end
+        @milestone
+      end
+
+      alias milestone extract_milestone
 
       def infer_issue_from_branch_prefix
         @issue = `git symbolic-ref --short HEAD 2>/dev/null`[/^\d+/];
@@ -2789,7 +2801,6 @@ EOF
       def execute
         self.action = 'index'
         require_repo
-        extract_milestone
 
         begin
           options.parse! args
