@@ -68,6 +68,9 @@ EOF
         case action
         when 'edit'
           begin
+            unless args.empty?
+              assigns[:title], assigns[:body] = args.join(' '), assigns[:title]
+            end
             if editor || assigns.empty?
               i = throb { api.get "/repos/#{repo}/issues/#{issue}" }.body
               e = Editor.new "GHI_ISSUE_#{issue}.md"
