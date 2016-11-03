@@ -139,6 +139,9 @@ EOF
           if web
             Web.new(repo).open 'issues/milestones/new'
           else
+            unless args.empty?
+              assigns[:title], assigns[:description] = args.join(' '), assigns[:title]
+            end
             if assigns[:title].nil?
               e = Editor.new 'GHI_MILESTONE.md'
               message = e.gets format_milestone_editor
