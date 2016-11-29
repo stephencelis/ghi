@@ -132,6 +132,7 @@ module GHI
           fallback.parse! e.args
           retry
         end
+        assigns[:sort] ||= GHI.config('ghi.sort')
         assigns[:labels] = assigns[:labels].join ',' if assigns[:labels]
         if assigns[:exclude_labels]
           assigns[:exclude_labels] = assigns[:exclude_labels].join ','
