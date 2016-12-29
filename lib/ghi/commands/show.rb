@@ -1,7 +1,7 @@
 module GHI
   module Commands
     class Show < Command
-      attr_accessor :patch, :web
+      attr_accessor :patch, :web, :print_link
 
       def options
         OptionParser.new do |opts|
@@ -9,6 +9,7 @@ module GHI
           opts.separator ''
           opts.on('-p', '--patch') { self.patch = true }
           opts.on('-w', '--web') { self.web = true }
+          opts.on('-P', '--print-link') { self.print_link = true }
         end
       end
 
@@ -17,6 +18,7 @@ module GHI
         require_repo
         options.parse! args
         patch_path = "pull/#{issue}.patch" if patch # URI also in API...
+        puts "https://github.com/#{repo}/issues/#{issue}" if print_link
         if web
           Web.new(repo).open patch_path || "issues/#{issue}"
         else
