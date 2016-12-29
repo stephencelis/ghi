@@ -253,7 +253,7 @@ module GHI
     end
 
     def format_number n
-      colorize? ? "#{bright { n }}:" : "#{n} "
+      colorize? ? "#{bright { n }}:" : "#{n}:"
     end
 
     # TODO: Show milestone, number of comments, pull request attached.
