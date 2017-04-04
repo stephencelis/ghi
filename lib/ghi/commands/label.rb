@@ -16,7 +16,7 @@ module GHI
 usage: ghi label <labelname> [-c <color>] [-r <newname>]
    or: ghi label -D <labelname>
    or: ghi label <issueno(s)> [-a] [-d] [-f] <label>
-   or: ghi label -l [<issueno>]
+   or: ghi label -l [<issueno>] [-v]
 EOF
           opts.separator ''
           opts.on '-l', '--list [<issueno>]', 'list label names' do |n|
@@ -37,6 +37,9 @@ EOF
           opts.on '-r', '--rename <labelname>', 'new label name' do |name|
             assigns[:name] = name
             self.action = 'update'
+          end
+          opts.on '-v', '--verbose', 'show color values for labels' do |v|
+            self.verbose = true
           end
           opts.separator ''
           opts.separator 'Issue modification options'
@@ -84,6 +87,9 @@ EOF
         else
           puts labels.map { |label|
             name = label['name']
+            if self.verbose
+              name += " ##{label['color']}"
+            end
             colorize? ? bg(label['color']) { " #{name} " } : name
           }
         end
