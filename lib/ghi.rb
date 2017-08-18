@@ -90,7 +90,7 @@ EOF
           else
             abort e.message
           end
-        rescue SocketError => e
+        rescue SocketError, OpenSSL::SSL::SSLError => e
           abort "Couldn't find internet."
         rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT => e
           abort "Couldn't find GitHub."
