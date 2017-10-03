@@ -38,7 +38,7 @@ EOF
             assigns[:name] = name
             self.action = 'update'
           end
-          opts.on '-v', '--verbose', 'show color values for labels' do |v|
+          opts.on '-v', '--verbose', 'show color values for labels' do
             self.verbose = true
           end
           opts.separator ''
