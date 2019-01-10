@@ -18,8 +18,8 @@ module GHI
             @repo = nil
           end
           opts.on(
-            '-s', '--state <in>', %w(open closed),
-            {'o'=>'open', 'c'=>'closed'}, "'open' or 'closed'"
+            '-s', '--state <in>', %w(open closed all),
+            {'o'=>'open', 'c'=>'closed', 'a'=>'all'}, "'open', 'closed', 'all'"
           ) do |state|
             assigns[:state] = state
           end
@@ -205,6 +205,7 @@ module GHI
       def fallback
         OptionParser.new do |opts|
           opts.on('-c', '--closed') { assigns[:state] = 'closed' }
+          opts.on('-a', '--all') { assigns[:state] = 'all' }
           opts.on('-q', '--quiet')  { self.quiet = true }
         end
       end
