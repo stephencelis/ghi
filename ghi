@@ -2932,7 +2932,9 @@ EOF
           opts.separator 'Issue modification options'
           opts.on(
               '-m', '--message [<text>]', 'describe issue',
-              "use line breaks to separate title from description"
+              "use line breaks to separate title from description",
+              "use <p> -[ ] <text> for incomplete task in comment",
+              "use <p> - [ x ] <text> for complete task in comment"
           ) do |text|
             if text
               assigns[:title], assigns[:body] = text.split(/\n+/, 2)
