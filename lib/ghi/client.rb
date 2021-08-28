@@ -2,6 +2,8 @@ require 'cgi'
 require 'net/https'
 require 'json'
 
+require 'pry'
+
 unless defined? Net::HTTP::Patch
   # PATCH support for 1.8.7.
   Net::HTTP::Patch = Class.new(Net::HTTP::Post) { METHOD = 'PATCH' }

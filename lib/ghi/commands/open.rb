@@ -50,6 +50,7 @@ EOF
       end
 
       def execute
+        binding.pry
         require_repo
         self.action = 'create'
 
