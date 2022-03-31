@@ -65,6 +65,7 @@ EOF
         require_repo
         require_issue
         options.parse! args
+
         case action
         when 'edit'
           begin

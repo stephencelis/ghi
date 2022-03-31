@@ -2,6 +2,8 @@ require 'cgi'
 require 'net/https'
 require 'json'
 
+require 'pry'
+
 unless defined? Net::HTTP::Patch
   # PATCH support for 1.8.7.
   Net::HTTP::Patch = Class.new(Net::HTTP::Post) { METHOD = 'PATCH' }
@@ -97,7 +99,7 @@ module GHI
     def request method, path, options
       path = "/api/v3#{path}" if HOST != DEFAULT_HOST
 
-      path = URI.escape path
+      path = CGI.escape path
       if params = options[:params] and !params.empty?
         q = params.map { |k, v| "#{CGI.escape k.to_s}=#{CGI.escape v.to_s}" }
         path += "?#{q.join '&'}"
