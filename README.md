@@ -1,6 +1,7 @@
 # ghi
 
 GitHub Issues on the command line. Use your `$EDITOR`, not your browser.
+#(editor)
 
 `ghi` was originally created by [Stephen Celis](https://github.com/stephencelis), and is now maintained by [drazisil](https://github.com/drazisil)'s fork [here](https://github.com/drazisil/ghi).
 
