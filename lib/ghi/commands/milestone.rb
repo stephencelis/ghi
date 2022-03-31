@@ -82,7 +82,6 @@ EOF
       def execute
         self.action = 'index'
         require_repo
-        extract_milestone
 
         begin
           options.parse! args
