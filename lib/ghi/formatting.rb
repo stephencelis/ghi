@@ -161,7 +161,7 @@ module GHI
       if excluded_labels = assigns[:exclude_labels]
         header << ", excluding those labeled #{excluded_labels.gsub ',', ', '}"
       end
-      if sort = assigns[:sort]
+      if sort = assigns[:sort] || GHI.config('ghi.sort')
         header << ", by #{sort} #{reverse ? 'ascending' : 'descending'}"
       end
       format_state assigns[:state], header
